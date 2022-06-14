@@ -1,0 +1,133 @@
+@keyframes bgAnimationShow {
+    from { left:20%; opacity: 0; }
+    to { left:30%; opacity: .9; }
+}
+  
+@keyframes bgAnimationHide {
+    from { left:30%; opacity: .9; }
+    to { left:20%; opacity: 0; }
+}
+
+@keyframes loginAnimationShow {
+    from { right:0%; opacity: 0; }
+    to { right:5%; opacity: .9; }
+}
+  
+
+@media screen and (min-width: 1201px) , (min-height:601px){
+    .el-main:before {
+      animation-name: bgAnimationShow;
+    }
+}
+
+@media screen and (max-width: 1200px) , (max-height: 600px){
+    .el-main:before {
+      animation-name: bgAnimationHide;
+    }
+    .login-box {
+        left: 50%;
+    }
+}
+
+.container {
+    background-color: #0e3068;
+}
+
+.el-main {
+    position: relative;
+    overflow: hidden;
+    // min-height: calc(100% - 60px);
+
+    &::before {
+        position: absolute;
+        top: 55%;
+        left: 30%;
+        transform: translate(-50%,-50%);
+        width: 800px;
+        height: 600px;
+        content: '';
+        background: url(../../assets/bg_01.png) no-repeat center;
+        background-size: cover;
+        animation-duration: 1s;
+        animation-fill-mode: forwards;
+    }
+
+    .bg-icon {
+        position: absolute;
+        display: block;
+        background-size: 100%;
+    }
+
+    .bg-icon-01 {
+        left: 65px;
+        top: 46px;
+        width: 137px;
+        height: 36px;
+        background-image: url(../../assets/bg_02.png);
+    }
+
+    .bg-icon-02 {
+        right: 60px;
+        top: 100px;
+        width: 137px;
+        height: 36px;
+        background-image: url(../../assets/bg_03.png);
+    }
+
+    .bg-icon-03 {
+        right: 70px;
+        bottom: 100px;
+        width: 137px;
+        height: 36px;
+        transform: rotateY(180deg);
+        background-image: url(../../assets/bg_02.png);
+    }
+
+    .bg-icon-04 {
+        left: 60px;
+        bottom: 146px;
+        width: 137px;
+        height: 20px;
+        transform: rotateY(180deg);
+        background-image: url(../../assets/bg_03.png);
+    }
+}
+
+.login-box {
+    position: absolute;
+    top: 50%;
+    right: 5%;
+    transform: translate(-50%,-50%);
+    width: 330px;
+    padding: 30px 40px 20px 40px;
+    border-radius: 10px;
+    background-color: white;
+    animation-name: loginAnimationShow;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+
+    h3 {
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+    }
+
+    .un,.ps {
+        display: block;
+        width: 250px;
+        margin: 15px auto 10px;
+    }
+
+    .loginBtn {
+        width: 250px;
+        height: 40px;
+        margin: 16px auto;
+    }
+
+    .login-input {
+        width: 250px;
+    }
+}
+
+:deep(.el-input__wrapper) {
+    width: 100%;
+}

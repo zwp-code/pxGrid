@@ -1,0 +1,42 @@
+<div class="container">
+    <el-container class="full-h" direction="vertical">
+        <el-main>
+            <i class="bg-icon bg-icon-01"></i>
+            <i class="bg-icon bg-icon-03"></i>
+            <i class="bg-icon bg-icon-04"></i>
+            <i class="bg-icon bg-icon-02"></i>
+            <div class="login-box text-center">
+                <h3 class="text-left">登录</h3>
+                <el-input
+                class="un"
+                placeholder="请输入手机号"
+                v-model="username"
+                size='large'
+                clearable>
+                    <template #prefix>
+                        <el-icon class="el-input__icon"><user /></el-icon>
+                    </template>
+                </el-input>
+                <el-input 
+                class="ps" 
+                placeholder="请输入密码" 
+                v-model="password" 
+                show-password 
+                size='large'
+                @keyup.enter.native="login">
+                    <template #prefix>
+                        <el-icon class="el-input__icon"><lock /></el-icon>
+                    </template>
+                </el-input>
+                <p class="login-input flex-between">
+                    <el-checkbox v-model="isChecked">记住我</el-checkbox>
+                    <span style="color:#377d9b;font-size:14px" @click="forgetPassword" class="pointer">忘记密码</span>
+                </p>
+                <el-button type="primary" class='loginBtn' @click="login" :loading="loginLoading">登录</el-button>
+                <div>
+                    <el-button type="text" :disabled='loginLoading'>还没有账号？去注册</el-button>
+                </div>
+            </div>
+        </el-main>
+    </el-container>
+</div>

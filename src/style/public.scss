@@ -1,0 +1,253 @@
+@import 'config.scss';
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+  
+ul {
+    list-style: none;
+}
+
+input,
+textarea {
+    -webkit-appearance:none;
+}
+
+i,a {
+    text-decoration: none;
+}
+
+img {
+    width: 100%;
+    height: 100%;
+}
+
+body,html{
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: $fontFamily_2;
+    font-size: $medium;
+    color: $PrimaryTextColor;
+    -webkit-tap-highlight-color:transparent;
+    // font-size: 76%;
+}
+
+
+#app {
+    width: 100%;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    // text-align: center;
+}
+
+.gs-filter {
+    background-color: hsla(0,0%,100%,.25);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(30px);
+    box-shadow: none;
+    transition: all .5s;
+}
+
+.container {
+    @include full;
+    @extend .scrollbar;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.scrollHidden {
+    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+
+.scrollY {
+    overflow-y: auto;
+}
+
+.scrollX {
+    overflow-x: auto;
+}
+
+.scrollAuto {
+    overflow: auto;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.full-layout {
+    width: 100%;
+    height: 100%;
+}
+
+
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.oneline {
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    display:-webkit-box;
+    -webkit-line-clamp:1;
+    -webkit-box-orient:vertical;
+    /* 这两个在技术上是一样的, 为了兼容了浏览器两个都加上 */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+
+    -ms-word-break: break-all;
+    /* 这个的使用在web-kit中有些危险，他可能会阶段所有东西 */
+    word-break: break-all;
+    /* Instead use this non-standard one: */
+    // word-break: break-word;
+
+    /* 如果浏览器支持的话增加一个连接符(Blink不支持) */
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
+
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.flex-start {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.flex-end {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.flex-column-center {
+    @extend .flex-center;
+    flex-direction: column;
+}
+
+.flex-column-start {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.flex-warp {
+    flex-wrap: wrap;
+}
+
+.full-w {
+    width: 100%;
+}
+
+.full-h {
+    height: 100%;
+}
+
+// element plus 自定义样式
+
+.z-popover {
+    z-index: 2101 !important;
+}
+
+.z-popper {
+    top:70px !important;
+}
+
+.el-dialog.z-dialog {
+    border-radius: 10px;
+}
+
+.el-drawer.ttb.z-drawer {
+    min-width: 300px;
+    top: 60px;
+}
+
+.el-message.z-message {
+    top: 65px !important;
+}
+
+
+
+/* chrome & safari 浏览器 */
+.scrollbar::-webkit-scrollbar {  /* 滚动条整体部分 */
+    width:8px;
+    margin: 2px 20px 2px 4px;
+}
+.scrollbar::-webkit-scrollbar-button { /* 滚动条两端的按钮 */
+    width:0px;
+    height: 0px;
+    background-color: #ededed;
+}
+.scrollbar::-webkit-scrollbar:horizontal {
+    height:6px;
+    margin-bottom:2px;
+}
+.scrollbar::-webkit-scrollbar-track {  /* 外层轨道 */
+    border-radius: 0px;
+}
+.scrollbar::-webkit-scrollbar-track-piece {  /*内层轨道，滚动条中间部分 */
+    background-color: #ededed;
+    border-radius: 0px;
+}
+.scrollbar::-webkit-scrollbar-thumb {  /* 滑块 */
+    width:8px;
+    border-radius: 10px;
+    background: #bfbfbf;
+}
+.scrollbar::-webkit-scrollbar-corner { /* 边角 */
+    width: 8px;
+    background-color: #ededed;
+}
+.scrollbar::-webkit-scrollbar-thumb:hover { /* 鼠标移入滑块 */
+    background: #b2b2b2;
+}
+
+
+@media only screen and (min-width: 320px){
+    html {
+        font-size: 76% !important;
+    }
+}
+@media only screen and (min-width: 640px){
+    html {
+        font-size: 85% !important;
+    }
+}
+@media only screen and (min-width: 750px){
+    html {
+        font-size: 90% !important;
+    }
+}
+@media only screen and (min-width: 1242px){
+    html {
+        font-size: 105% !important;
+    }
+}

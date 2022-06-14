@@ -1,0 +1,128 @@
+$PrimaryColor:#0052d9;
+$SecondColor:#d4e3fc;
+
+$PrimaryTextColor:#2c3e50;
+$SecondTextColor:#5e6d82;  
+
+$white:#ffffff;
+$grey_1:#eeeeee;
+$grey_2:#c5c5c5;
+$grey_3:#a6a6a6;
+$blue:#0052d9;
+$red:#e34d59;
+$orange:#ed7b2f;
+$green:#00a870;
+$purple:#834ec2;
+$yellow:#ebb105;
+$pink:#ed49b4;
+$skyblue:#0594fa;
+
+$large:24px;
+$medium:16px;
+$small:14px;
+$mini:12px;
+
+
+$fontFamily_1:"Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;
+$fontFamily_2:"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Hiragino Sans GB,Microsoft YaHei UI,Microsoft YaHei,Source Han Sans CN,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol";
+$fontFamily_3:"-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Ubuntu,Helvetica Neue,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol";
+
+
+//保留1行，不换行
+@mixin no-wrap() {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+//根据参数，保留几行
+@mixin ellipsis($lines: 1) {
+    @if $lines !=1 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: $lines;
+        -webkit-box-orient: vertical;
+        word-wrap: break-word;
+    }
+    @else {
+        word-break: keep-all;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}
+
+//透明度
+@mixin alpha($num) {
+    filter: alpha(opcity=$num*100);
+    -moz-opacity: $num;
+    -khtml-opacity: $num;
+    opacity: $num;
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=$num*100);
+}
+
+//阴影
+@mixin box-shadow($x:0px,$y:0px,$size:5px,$color:$grey_2,$opacity:0.8) {
+    $red:red($color);
+    $green:green($color);
+    $blue:blue($color);
+    box-shadow: $x $y $size rgba($red, $green,$blue,$opacity);
+    -webkit-box-shadow: $x $y $size rgba($red, $green,$blue,$opacity);
+    -moz-box-shadow: $x $y $size rgba($red, $green,$blue,$opacity);
+}
+
+//圆角
+@mixin border-radius($radius) {
+    border-radius: $radius;
+    -ms-border-radius: $radius;
+    -moz-border-radius: $radius;
+    -webkit-border-radius: $radius;
+}
+
+//全屏展示
+@mixin full() {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+//也是全屏
+@mixin full-block() {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+//根据固定宽高居中展示
+@mixin center-midddle($width,$height) {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: $width;
+    height: $height;
+    margin-left: -$width/2;
+    margin-top: -$height/2;
+}
+
+//定位在中间
+@mixin center() {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%,-50%);
+}
+
+
+//模糊，不是毛玻璃效果
+@mixin blur($width:10px) {
+    -webkit-filter: blur($width);
+    -moz-filter:blur($width);
+    -ms-filter: blur($width);
+    filter: blur($width);
+}
+
