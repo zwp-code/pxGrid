@@ -99,6 +99,7 @@
     right: 5%;
     transform: translate(-50%,-50%);
     width: 330px;
+    height: 340px;
     padding: 30px 40px 20px 40px;
     border-radius: 10px;
     background-color: white;
@@ -130,4 +131,8 @@
 
 :deep(.el-input__wrapper) {
     width: 100%;
+}
+
+:deep(.el-checkbox .el-checkbox__inner::after) {
+    transform: rotate(45deg) scaleY(1) !important;
 }

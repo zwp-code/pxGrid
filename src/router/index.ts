@@ -8,12 +8,12 @@ const routes:RouteRecordRaw[] = [
     {
         path:'/',
         redirect:'/home',
-        component:() => import('@/views/home/index.vue')
+        component:() => import('@/views/login/index.vue')
     },
     {
         path:'/home',
         name:'home',
-        component:() => import('@/views/home/index.vue'),
+        component:() => import('@/views/login/index.vue'),
         meta:
         { title:'首页', keepAlive:true }
     },
