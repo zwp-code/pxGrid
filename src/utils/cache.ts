@@ -1,6 +1,6 @@
 // let localStorageKeys:string[] = ['token', 'uid', 'un', 'pwd'];
-let KeyPrefix:string = 'star-'; // 键前缀
-let localkeys:string[] = ['token', 'uid', 'un', 'pwd'];
+let KeyPrefix:string = 'px-'; // 键前缀
+let localkeys:string[] = ['token', 'uid', 'lang', 'mycolor'];
 let sessionkeys:string[] = [];
 
 interface operations {

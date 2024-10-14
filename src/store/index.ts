@@ -1,11 +1,11 @@
-import { createStore } from 'vuex';
-import user from '@/store/modules/user';
-// import app from '@/store/modules/app';
+import { defineStore } from 'pinia';
 
-
-export default createStore({
-    modules: {
-        user
-        // app
+export const useEditSpaceStore = defineStore('editSpace', {
+    state: () => 
+    {
+        return {
+        };
+    },
+    actions: {
     }
 });

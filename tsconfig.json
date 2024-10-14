@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2015",
     "useDefineForClassFields": true,
     "module": "esnext",
     "moduleResolution": "node",
@@ -10,14 +10,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
+    "noImplicitAny":false,
     "lib": ["esnext", "dom"],
     "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["element-plus/global"]
+    "types": ["element-plus/global", "vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "src/utils/worker.js"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

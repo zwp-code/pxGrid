@@ -1,22 +1,24 @@
 {
-  "name": "program-star",
+  "name": "pixel-animation",
   "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.1",
-    "element-plus": "^2.2.6",
-    "axios": "^0.26.1",
-    "echarts": "^5.3.2",
+    "axios": "^1.2.0",
+    "element-plus": "^2.4.3",
+    "pinia": "^2.0.17",
     "screenfull": "^5.1.0",
+    "vue": "^3.2.25",
     "vue-router": "^4.0.13",
     "vue-uuid": "^2.0.2",
-    "vuex": "^4.0.2",
-    "vue": "^3.2.25"
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "vue-i18n": "^9.3.0-beta.16"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.17.0",
@@ -30,14 +32,19 @@
     "eslint-plugin-n": "^15.2.1",
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-vue": "^9.1.0",
+    "rollup-plugin-commonjs": "^10.1.0",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
     "sass-resources-loader": "^2.2.4",
     "style-loader": "^3.3.1",
     "typescript": "^4.5.4",
+    "unplugin-element-plus": "^0.4.1",
     "vite": "^2.9.9",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-eslint": "^1.6.1",
+    "vite-plugin-optimize-persist": "^0.1.2",
+    "vite-plugin-package-config": "^0.1.1",
+    "vite-plugin-require-transform": "^1.0.3",
     "vue-tsc": "^0.34.7"
   }
 }

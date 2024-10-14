@@ -13,12 +13,6 @@
 
 <script setup lang="ts">
 import { reactive, toRefs, onMounted } from 'vue';
-import {useStore} from 'vuex';
-const store = useStore();
-onMounted(() => 
-{
-    // store.dispatch('user/getUserData');
-});
 </script>
 
 

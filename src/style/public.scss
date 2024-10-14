@@ -1,5 +1,10 @@
 @import 'config.scss';
 
+@font-face {
+    font-family: 'PixelFont';
+    src: url('../../public/font/font.ttf') format('truetype'); /* 根据实际文件类型调整 */
+}
+
 * {
     padding: 0;
     margin: 0;
@@ -28,7 +33,7 @@ body,html{
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: $fontFamily_2;
+    font-family: $fontFamily_1;
     font-size: $medium;
     color: $PrimaryTextColor;
     -webkit-tap-highlight-color:transparent;
@@ -42,6 +47,10 @@ body,html{
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     // text-align: center;
+}
+
+.pixelFont {
+    font-family: 'PixelFont', sans-serif;
 }
 
 .gs-filter {
@@ -159,10 +168,19 @@ body,html{
     flex-direction: column;
 }
 
+.flex-column-end {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    flex-direction: column;
+}
+
 .flex-warp {
     flex-wrap: wrap;
 }
-
+.flex-nowarp {
+    flex-wrap: wrap;
+}
 .full-w {
     width: 100%;
 }

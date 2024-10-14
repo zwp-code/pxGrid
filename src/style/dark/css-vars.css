@@ -1,0 +1,91 @@
+html.dark {
+    /* 自定义深色背景颜色 */
+    --el-color-primary: #0052d9c9;
+    --el-color-success: #00a870c9;
+    --el-color-warning: #ebb105c9;
+    --el-color-danger: #e34d59c9;
+    --el-color-error: #e34d59c9;
+    --el-color-info: #a6a6a6c9;
+
+    --el-text-color:#ffffff;
+    --el-bg-color:#242424;
+    --el-bg-color-second:#303030;
+    --el-shadow-color:#1e1e1e;
+    --el-bg-color-page:#282828;
+    --el-bg-color-mask:#2424249e;
+    --el-text-color-second:#808080;
+
+    --el-bg-color-top:#303030;
+    --el-bg-color-menu:#1a1a1a;
+
+    --el-bg-color-tool:#303030;
+    --el-bg-color-island:#000;
+
+    --el-bg-color-folder:#000000c9;
+
+    --el-bg-island-active:#6a6a6a66;
+    --el-bg-island-nav:#dbdbdb2a;
+
+    --el-shadow-aside:#d9d9d9;
+    --el-shadow-nav:#dfdfdf;
+}
+
+html.light {
+    --el-color-primary: #0052d9;
+    --el-color-success: #00a870;
+    --el-color-warning: #ebb105;
+    --el-color-danger: #e34d59;
+    --el-color-error: #e34d59;
+    --el-color-info: #a6a6a6;
+
+    --el-text-color:#2c3e50;
+    --el-bg-color:#ffffff;
+    --el-bg-color-second:#f5f5f5;
+    --el-shadow-color:#ebedf0;
+    --el-bg-color-page:#ffffff;
+    --el-bg-color-mask:#ffffff9e;
+    --el-text-color-second:#808080;
+
+    --el-bg-color-top:#f5f5f5;
+    --el-bg-color-menu:#e6e6e6;
+
+    --el-bg-color-tool:#888888;
+    --el-bg-color-island:#efefef;
+
+    --el-bg-color-folder:#bfbfbfc9;
+    --el-bg-island-active:#6a6a6a42;
+    --el-bg-island-nav:#dbdbdbad;
+
+    --el-shadow-aside:#d9d9d9;
+    --el-shadow-nav:#dfdfdf;
+}
+
+html {
+    --el-color-primary: #0052d9;
+    --el-color-success: #00a870;
+    --el-color-warning: #ebb105;
+    --el-color-danger: #e34d59;
+    --el-color-error: #e34d59;
+    --el-color-info: #a6a6a6;
+
+    --el-text-color:#2c3e50;
+    --el-bg-color:#ffffff;
+    --el-bg-color-second:#f5f5f5;
+    --el-shadow-color:#ebedf0;
+    --el-bg-color-page:#ffffff;
+    --el-bg-color-mask:#ffffff9e;
+    --el-text-color-second:#808080;
+
+    --el-bg-color-top:#f5f5f5;
+    --el-bg-color-menu:#e6e6e6;
+
+    --el-bg-color-tool:#adadad;
+    --el-bg-color-island:#efefef;
+
+    --el-bg-color-folder:#bfbfbfc9;
+    --el-bg-island-active:#6a6a6a42;
+    --el-bg-island-nav:#dbdbdbad;
+
+    --el-shadow-aside:#d9d9d9;
+    --el-shadow-nav:#dfdfdf;
+}

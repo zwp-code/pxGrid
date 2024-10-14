@@ -1,0 +1,139 @@
+.container {
+    background-color: var(--el-shadow-color);
+}
+
+.functionBox {
+    height: 100%;
+    background-color: var(--el-bg-color-second);
+    box-shadow: 1px 0px 4px 4px var(--el-shadow-aside);
+    padding: 15px 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 8;
+
+    .toolItem {
+        width: 30px;
+        height: 30px;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: var(--el-bg-color);
+        transition: all .3s;
+        margin: 10px 0 0 0;
+
+        :hover {
+            transform: scale(1.1);
+        }
+    }
+
+    .active {
+        background-color: var(--el-bg-color-tool);
+    }
+}
+
+.pixelBox {
+    // position: relative;
+    flex: 1;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    #Canvas {
+        // position: absolute;
+        // top: 0;
+        // left: 0;
+        // width: 100%;
+        // height: 100%;
+    }
+
+    #BGCanvas, #PixelCanvas {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.el-main {
+    flex: 3;
+    flex-basis: auto;
+    overflow: hidden;
+    min-height: 600px;
+}
+
+.el-header, .el-footer {
+    background-color: var(--el-bg-color);
+    width: 100%;
+    box-shadow: 0px 0px 4px 4px var(--el-shadow-nav);
+    z-index: 9;
+}
+
+.el-footer {
+    height: 80px;
+}
+
+.el-aside {
+    background-color: var(--el-bg-color-second);
+    box-shadow: -1px 0px 4px 4px var(--el-shadow-aside);
+    min-width: 300px;
+    width: 100%;
+    flex: 1;
+    padding: 20px;
+    z-index: 10;
+}
+
+
+.function-block, .function-block-column {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+
+    .function-label {
+        margin-right: 16px;
+    }
+
+    .mycolor {
+        cursor: pointer;
+        border-radius: 3px;
+        width: 20px;
+        height: 20px;
+        box-shadow: 0px 0px 4px 4px var(--el-shadow-aside);
+        margin: 10px;
+    }
+}
+
+.function-block-between {
+    justify-content: space-between;
+}
+
+.function-block-column {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+
+
+.el-slider {
+    width: 160px;
+}
+
+
+.brush-cursor {
+    cursor: url('icon/brush_cursor.png') -3 10, auto;
+}
+
+.eraser-cursor {
+    cursor: url('icon/eraser_cursor.png') -3 10, auto;
+}
+
+.straw-cursor {
+    cursor: url('icon/straw_cursor.png') -3 10, auto;
+}
+
+.option-input {
+    width: 150px;
+    margin-bottom: 8px;
+}
