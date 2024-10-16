@@ -72,3 +72,28 @@ export function copyText (text)
     message.success('复制成功');
     document.body.removeChild(input);
 }
+
+export function getOrderedRectangleCoordinates (x0, y0, x1, y1)
+{
+    return {
+        x0 : Math.min(x0, x1),
+        y0 : Math.min(y0, y1),
+        x1 : Math.max(x0, x1),
+        y1 : Math.max(y0, y1)
+    };
+}
+
+export function removeNullFrom2DArray (arr) 
+{
+    return arr.filter((subArr) => 
+    {
+        return subArr.every((item) => item !== null);
+    });
+}
+
+export function unique2DArray (arr) 
+{
+    const uniqueSet = new Set(arr.map((item) => JSON.stringify(item)));
+    const uniqueArr = Array.from(uniqueSet).map((item:any) => JSON.parse(item));
+    return removeNullFrom2DArray(uniqueArr);
+}

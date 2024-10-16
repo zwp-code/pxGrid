@@ -32,7 +32,7 @@
 }
 
 .pixelBox {
-    // position: relative;
+    position: relative;
     flex: 1;
     height: 100%;
     overflow: auto;
@@ -49,11 +49,18 @@
         // height: 100%;
     }
 
-    #BGCanvas, #PixelCanvas {
+    #Canvas, #PixelCanvas {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
+    }
+
+    .gridInfo {
+        position: absolute;
+        bottom: 10px;
+        right: 50%;
+        transform: translate(50%, 0);
     }
 }
 
@@ -131,6 +138,18 @@
 
 .straw-cursor {
     cursor: url('icon/straw_cursor.png') -3 10, auto;
+}
+
+.circle-cursor {
+    cursor: url('icon/circle_cursor.png') -3 10, auto;
+}
+
+.rect-cursor {
+    cursor: url('icon/rect_cursor.png') -3 10, auto;
+}
+
+.bucket-cursor {
+    cursor: url('icon/bucket_cursor.png') -3 8, auto;
 }
 
 .option-input {

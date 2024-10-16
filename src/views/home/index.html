@@ -37,9 +37,21 @@
                                 content="形状"
                                 placement="right"
                             >
-                                <div class="pointer toolItem" @click="handleChangeTool(3)" :class="{ 'active': currentTool === 3 }">
-                                    <img :src="require('@/assets/shape.png')"/>
-                                </div>
+                                <el-dropdown placement="bottom-start" trigger="click">
+                                    <div class="pointer toolItem" @click="handleChangeTool(3)" :class="{ 'active': currentTool === 3 }">
+                                        <img :src="requireShapeImg"/>
+                                    </div>
+                                    <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="drawShape('rect')">矩 形</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('circle')">圆 形</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('line')">直 线</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('fillRect')">填充矩形</el-dropdown-item>
+                                        <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
+                                    </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                                
                             </el-tooltip>
                             <el-tooltip
                                 content="油漆桶"
@@ -55,15 +67,27 @@
                                 content="变换"
                                 placement="right"
                             >
-                                <div class="pointer toolItem" @click="handleChangeTool(5)" :class="{ 'active': currentTool === 5 }">
-                                    <img :src="require('@/assets/transform.png')"/>
-                                </div>
+                                <el-dropdown placement="bottom-start" trigger="click">
+                                    <div class="pointer toolItem" @click="handleChangeTool(5)" :class="{ 'active': currentTool === 5 }">
+                                        <img :src="requireTransformImg"/>
+                                    </div>
+                                    <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="drawTransform('hReverse')">水平翻转</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('ssz')">顺时针旋转</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('nsz')">逆时针旋转</el-dropdown-item>
+                                        <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
+                                    </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                                
                             </el-tooltip>
                             <el-tooltip
                                 content="清空画布"
                                 placement="right"
                             >
-                                <div class="pointer toolItem" @click="handleChangeTool(6)" :class="{ 'active': currentTool === 6 }">
+                                <div class="pointer toolItem" @click="handleChangeTool(6)">
                                     <img :src="require('@/assets/clear.png')"/>
                                 </div>
                             </el-tooltip>
@@ -71,8 +95,9 @@
                         
                     </div>
                     <div class="pixelBox">
+                        <canvas id="PixelCanvas" width="512" height="512"></canvas>
                         <canvas id="Canvas" width="512" height="512"></canvas>
-                        <p v-if="gridInfo!=='[]'">{{ gridInfo }}</p>
+                        <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
                         <!-- <canvas id="BGCanvas" width="300" height="300"></canvas>
                         <canvas id="PixelCanvas" width="300" height="300"></canvas> -->
                     </div>
@@ -90,6 +115,12 @@
                     <div>
                         <el-link type="primary" :underline="false" @click="handleSaveColor">保存</el-link>
                         <el-link type="primary" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
+                    </div>
+                </div>
+                <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0">
+                    <div>
+                        <span class="function-label">填充颜色</span>
+                        <el-color-picker v-model="shapeFillColor" show-alpha/>
                     </div>
                 </div>
                 <div class="function-block-column">
