@@ -117,7 +117,7 @@
                         <el-link type="primary" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
                     </div>
                 </div>
-                <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0">
+                <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0 && currentTool===3">
                     <div>
                         <span class="function-label">填充颜色</span>
                         <el-color-picker v-model="shapeFillColor" show-alpha/>
@@ -126,14 +126,23 @@
                 <div class="function-block-column">
                     <span class="function-label">常用颜色</span>
                     <div style="margin-top: 15px;" class="flex-start flex-warp">
-                        <div v-for="item in myColorList[0].list.slice(0, 11)" :key="item" :style="{backgroundColor: item}" class="mycolor"></div>
+                        <el-dropdown v-for="(item, index) in myColorList[0].list.slice(0, 11)" :key="item" trigger="contextmenu">
+                            <div :style="{backgroundColor: item}" class="mycolor" @click="handleChangeColor(item)"></div>
+                            <template #dropdown>
+                              <el-dropdown-menu>
+                                <el-dropdown-item @click="handleEditMyColor(item, 1, index)">修 改</el-dropdown-item>
+                                <el-dropdown-item @click="handleDeleteMyColor(index, 1)">删 除</el-dropdown-item>
+                              </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                        
                         <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);">
                             <el-popover placement="bottom" :width="250" trigger="click" :visible="addMyColorVisible">
                                 <template #reference>
-                                    <el-icon color="#808080" @click="addMyColorVisible=true"><Plus /></el-icon>
+                                    <el-icon color="#808080" @click="addMyColorVisible=true;editMyColorMask=null"><Plus /></el-icon>
                                 </template>
                                 <div>
-                                    <p>添加颜色</p>
+                                    <p>{{editMyColorMask?'修改颜色':'添加颜色'}}</p>
                                     <div class="flex-between" style="margin-top: 10px;">
                                         <el-color-picker v-model="myColor" show-alpha/>
                                         <el-select v-model="myColorGroup" placeholder="选择分组" style="width: 150px">

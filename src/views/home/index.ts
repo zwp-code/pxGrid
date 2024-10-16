@@ -2,7 +2,7 @@ import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, compu
 import { ElConfigProvider } from 'element-plus';
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
 import en from 'element-plus/dist/locale/en.mjs';
-import { copyText, extractRgbaValues, getOrderedRectangleCoordinates, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, extractRgbaValues, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
 export default defineComponent({
     name:'home',
     components: {
@@ -23,9 +23,8 @@ export default defineComponent({
             isDrawing:false,
             isErasering:false,
             isDrawShape:false,
-            isBucketing:false,
-            shapeFillColor:'#000000',
-            brushColor:'#000000',
+            shapeFillColor:'#000000ff',
+            brushColor:'#000000ff',
             brushSize:10,
             canvasWidth:12,
             canvasHeight:12,
@@ -43,7 +42,7 @@ export default defineComponent({
                     id:1,
                     groupName:'常用颜色',
                     list:[
-                        '#000', '#fff'
+                        '#000000', '#ffffff'
                     ]
                 }
             ],
@@ -52,6 +51,7 @@ export default defineComponent({
             isAddGroup:false,
             myGroupName:'',
             addMyColorVisible:false,
+            editMyColorMask:null as any,
             currentDrawShape:'rect',
             currentDrawTransform:'hReverse',
 
@@ -90,13 +90,59 @@ export default defineComponent({
             {
                 data.myColorList.forEach((item) => 
                 {
-                    if (item.id === Number(data.myColorGroup))
+                    if (data.editMyColorMask)
                     {
-                        item.list.push(data.myColor);
+                        if (item.id === data.editMyColorMask.id && data.editMyColorMask.id === data.myColorGroup)
+                        {
+                            // let index = item.list.findIndex((item) => item === data.editMyColorMask.value)
+                            item.list[data.editMyColorMask.index] = data.myColor;
+                        }
+                        else if (item.id === data.editMyColorMask.id && data.editMyColorMask.id !== data.myColorGroup)
+                        {
+                            // let index = item.list.findIndex((item) => item === data.editMyColorMask.value)
+                            item.list.splice(data.editMyColorMask.index, 1);
+                            for (let i = 0; i < data.myColorList.length; i++)
+                            {
+                                if (data.myColorGroup === data.myColorList[i].id)
+                                {
+                                    data.myColorList[i].list.push(data.myColor);
+                                    break;
+                                }
+                            }
+                        }
                     }
+                    else
+                    {
+                        if (item.id === Number(data.myColorGroup))
+                        {
+                            item.list.push(data.myColor);
+                        }
+                    }
+                    
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
                 data.addMyColorVisible = false;
+            },
+            handleEditMyColor (value, id, index)
+            {
+                data.addMyColorVisible = true;
+                data.editMyColorMask = {
+                    id,
+                    value,
+                    index
+                };
+                data.myColor = value;
+            },
+            handleDeleteMyColor (value, id)
+            {
+                data.myColorList.forEach((item) => 
+                {
+                    if (item.id === id)
+                    {
+                        item.list.splice(value, 1);
+                    }
+                });
+                proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
             },
             changeLanguage ()
             {
@@ -149,6 +195,7 @@ export default defineComponent({
                 methods.computeScale();
                 methods.drawPixelArea();
                 data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                methods.initCanvasRecord();
                 methods.reDraw();
             },
             handleChangeRatio (e)
@@ -160,6 +207,40 @@ export default defineComponent({
                     // else data.widthHeightRatio = 1;
                     console.log(data.widthHeightRatio);
                     
+                }
+            },
+            handleChangeColor (value)
+            {
+                data.brushColor = value;
+            },
+            initCanvasRecord ()
+            {
+                let arr = [] as any;
+                for (let i = 0; i < data.canvasHeight; i++) 
+                {
+                    for (let j = 0; j < data.canvasWidth; j++) 
+                    {
+                        arr.push([j, i, '#00000000']);
+                    }
+                }
+                if (data.drawRecord.length)
+                {
+                    for (let i = 0; i < arr.length; i++)
+                    {
+                        for (let j = 0; j < data.drawRecord.length; j++)
+                        {
+                            if (arr[i][0] === data.drawRecord[j][0] && arr[i][1] === data.drawRecord[j][1]) 
+                            {
+                                arr[i][2] = data.drawRecord[j][2];
+                                break;
+                            }
+                        }
+                    }
+                    data.drawRecord = arr;
+                }
+                else
+                {
+                    data.drawRecord = arr;
                 }
             },
             drawPixelArea ()
@@ -188,8 +269,12 @@ export default defineComponent({
                         let originY = (j * py + data.bgCanvas.height / 2) - data.canvasHeight * py / 2;
                         data.ctx2.fillRect(originX, originY, px, py);
                         data.drawAreaList.push([originX, originY]);
+
+                        // data.drawRecord.push([i, j, '#00000000']);
+                        
                     }
                 }
+                // console.log(data.drawRecord);
                 // if (data.drawAreaList.length >= data.canvasWidth * data.canvasHeight) cancelAnimationFrame(data.AnimationFrameId_1);
             },
             drawLoop () 
@@ -297,6 +382,8 @@ export default defineComponent({
                     event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
                 {
                     methods.stop();
+                    const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
+                    const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                     if (data.currentTool === 0) 
                     {
                         data.isDrawing = true;
@@ -313,12 +400,13 @@ export default defineComponent({
                     else if (data.currentTool === 1) 
                     {
                         data.isErasering = true;
+                        methods.removeDrawRecord([col, row]);
                     }
                     else if (data.currentTool === 2)
                     {
                         if (!data.drawRecord.length) return;
-                        const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
+                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
+                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         console.log(row, col);
                         for (let i = 0; i < data.drawRecord.length; i++)
                         {
@@ -334,8 +422,8 @@ export default defineComponent({
                     {
                         // 绘制形状
                         data.isDrawShape = true;
-                        const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
+                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
+                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
                         let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
                         data.lastX = gridX + data.scale / 2;
@@ -345,34 +433,20 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 4)
                     {
-                        // data.isBucketing = true;
                         const targetColor = data.ctx1.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-                        console.log(targetColor);
-                        // console.log(data.ctx1.getImageData(130, 130, 21, 21).data);
-                        
-                        
-                        const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
-                        let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                        let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                        data.lastX = gridX + data.scale / 2;
-                        data.lastY = gridY + data.scale / 2;
+                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
+                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         console.log(data.drawRecord);
+                        let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
+                        console.log(replacementColor);
                         
-                        methods.fillChunk2(col, row, '#000000', rgbaToHex(extractRgbaValues(data.brushColor)));
-                        // for (let i = beginX; i < data.canvasWidth * data.scale; i += data.scale) 
-                        // {
-                        //     for (let j = beginY; j < data.canvasHeight * data.scale; j += data.scale) 
-                        //     {
-                        //         methods.fillChunk(data.lastX, data.lastY, data.scale, targetColor, extractRgbaValues(data.brushColor));
-                        //     }
-                        // }
+                        methods.fillChunk(col, row, rgbaToHex(targetColor), replacementColor);
 
                     }
                 }
             },
 
-            fillChunk2 (x, y, targetColor, replacementColor)
+            fillChunk (x, y, targetColor, replacementColor)
             {
                 console.log(targetColor, replacementColor);
                 
@@ -396,18 +470,13 @@ export default defineComponent({
                     {
                         if (data.drawRecord[i][0] === col && data.drawRecord[i][1] === row)
                         {
+                            console.log(color);
+                            
                             data.drawRecord[i][2] = color;
                             break;
                         }
                     }
                 };
-                // for (let i = 0; i < data.canvasWidth; i++)
-                // {
-                //     for (let j = 0; j < data.canvasHeight; j++)
-                //     {
-
-                //     }
-                // }
                 while (stack.length > 0) 
                 {
                     const [x, y]:any = stack.pop();
@@ -435,125 +504,10 @@ export default defineComponent({
                             stack.push([x, y + 1]);
                         }
                     }
+                    // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                     methods.reDraw();
                 }
-            },
-
-            fillChunk (x, y, targetColor, replacementColor)
-            {
-                let beginX = data.canvas.width / 2 - (data.canvasWidth * data.scale) / 2;
-                let beginY = data.canvas.height / 2 - (data.canvasHeight * data.scale) / 2;
-                const imageData = data.ctx1.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
-                const data1 = imageData.data;
-                const width = data.canvasWidth * data.scale;
-                const height = data.canvasHeight * data.scale;
-                const stack = [[x, y]];
-                // 获取二维数组下标
-                const getColorIndex = (x, y) => (y * width + x) * 4;
-                
-                // 判断色差
-                const isColorMatch = (color1, color2) => 
-                {
-                    for (let i = 0; i < 3; i++) 
-                    {
-                        if (color1[i] !== color2[i]) 
-                        {   // 也不一定比需要一样 可以设置像素差值 比如说色差一点点可以忽略，根据需求决定
-                            return false;
-                        }
-                    }
-                  return true;
-                };
-                
-                // 设置颜色
-                const setColor = (x, y, color) => 
-                {
-                  const index = getColorIndex(x, y);
-                  data1[index] = color[0];
-                  data1[index + 1] = color[1];
-                  data1[index + 2] = color[2];
-                  data1[index + 3] = color[3];
-                };
-                
-                // 循环下标判断色差 然后填色
-                while (stack.length > 0) 
-                {
-                  const [currentX, currentY]:any = stack.pop();
-                  const currentIndex = getColorIndex(currentX, currentY);
-                  const currentColor = [
-                    data1[currentIndex],
-                    data1[currentIndex + 1],
-                    data1[currentIndex + 2],
-                    data1[currentIndex + 3]
-                  ];
-                  if (isColorMatch(currentColor, targetColor)) 
-                  {
-                    setColor(currentX, currentY, replacementColor);
-                    if (currentX > 0) 
-                    {
-                      const leftColorIndex = getColorIndex(currentX - 1, currentY);
-                      const leftColor = [
-                        data1[leftColorIndex],
-                        data1[leftColorIndex + 1],
-                        data1[leftColorIndex + 2],
-                        data1[leftColorIndex + 3]
-                      ];
-                      if (isColorMatch(leftColor, targetColor)) 
-                      {
-                        stack.push([currentX - 1, currentY]);
-                      }
-                    }
-        
-                    if (currentX < width - 1) 
-                    {
-                      const rightColorIndex = getColorIndex(currentX + 1, currentY);
-                      const rightColor = [
-                        data1[rightColorIndex],
-                        data1[rightColorIndex + 1],
-                        data1[rightColorIndex + 2],
-                        data1[rightColorIndex + 3]
-                      ];
-                      if (isColorMatch(rightColor, targetColor)) 
-                      {
-                        stack.push([currentX + 1, currentY]);
-                      }
-                    }
-        
-                    if (currentY > 0) 
-                    {
-                      const topColorIndex = getColorIndex(currentX, currentY - 1);
-                      const topColor = [
-                        data1[topColorIndex],
-                        data1[topColorIndex + 1],
-                        data1[topColorIndex + 2],
-                        data1[topColorIndex + 3]
-                      ];
-                      if (isColorMatch(topColor, targetColor)) 
-                      {
-                        stack.push([currentX, currentY - 1]);
-                      }
-                    }
-        
-                    if (currentY < height - 1) 
-                    {
-                      const bottomColorIndex = getColorIndex(currentX, currentY + 1);
-                      const bottomColor = [
-                        data1[bottomColorIndex],
-                        data1[bottomColorIndex + 1],
-                        data1[bottomColorIndex + 2],
-                        data1[bottomColorIndex + 3]
-                      ];
-                      if (isColorMatch(bottomColor, targetColor)) 
-                      {
-                        stack.push([currentX, currentY + 1]);
-                      }
-                    }
-                  }
-                }
-                data.ctx1.putImageData(imageData, beginX, beginY);
-                console.log(data.ctx1.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale));
-                
-            },
-          
+            },      
             draw (event) 
             {
                 methods.addCursorClass();
@@ -776,7 +730,16 @@ export default defineComponent({
             addDrawRecord (value)
             {
                 let flag = false;
-                if (!isHexColor(value[2])) value[2] = rgbaToHex(value[2]);
+                console.log(value);
+                
+                if (!isHexColor(value[2])) 
+                {
+                    value[2] = rgbaToHex(extractRgbaValues(value[2]));
+                }
+                else if (isHexColor(value[2]) && value[2].length < 9)
+                {
+                    value[2] = rgbaToHex(hexToRgba(value[2]));
+                }
                 for (let i = 0; i < data.drawRecord.length; i++)
                 {
                     if (data.drawRecord[i][0] === value[0] && data.drawRecord[i][1] === value[1])
@@ -792,21 +755,30 @@ export default defineComponent({
             removeDrawRecord (value)
             {
                 console.log(value);
-                
-                let index = data.drawRecord.findIndex((element) => 
+                for (let i = 0; i < data.drawRecord.length; i++)
                 {
-                    return element[0] === value[0] && element[1] === value[1];
-                });
-                if (index >= 0)
-                {
-                    data.drawRecord.splice(index, 1);
-                    setTimeout(() => 
+                    if (data.drawRecord[i][0] === value[0] && data.drawRecord[i][1] === value[1])
                     {
-                        data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                        // methods.drawPixelArea();
-                        methods.reDraw();
-                    }, 80);
+                        data.drawRecord[i][2] = '#00000000';
+                        break;
+                    }
                 }
+                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                methods.reDraw();
+                // let index = data.drawRecord.findIndex((element) => 
+                // {
+                //     return element[0] === value[0] && element[1] === value[1];
+                // });
+                // if (index >= 0)
+                // {
+                //     data.drawRecord.splice(index, 1);
+                //     setTimeout(() => 
+                //     {
+                //         data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                //         // methods.drawPixelArea();
+                //         methods.reDraw();
+                //     }, 80);
+                // }
             },
 
             reDraw ()
@@ -818,11 +790,14 @@ export default defineComponent({
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 for (let i = 0; i < data.drawRecord.length; i++)
                 {
-                    if (data.drawRecord[i][0] > data.canvasWidth || data.drawRecord[i][1] > data.canvasHeight) return;
-                    let gridX = (data.drawRecord[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                    let gridY = (data.drawRecord[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                    data.ctx1.fillStyle = data.drawRecord[i][2];
-                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                    if (data.drawRecord[i][0] > data.canvasWidth || data.drawRecord[i][1] > data.canvasHeight) continue;
+                    if (data.drawRecord[i][2] !== '#00000000') 
+                    {
+                        let gridX = (data.drawRecord[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                        let gridY = (data.drawRecord[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                        data.ctx1.fillStyle = data.drawRecord[i][2];
+                        data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                    }
                 }
                 
             },
@@ -1028,6 +1003,7 @@ export default defineComponent({
             data.ctx2 = data.bgCanvas.getContext('2d');
             methods.computeScale();
             methods.drawPixelArea();
+            methods.initCanvasRecord();
             methods.startDrawing();
             // data.scaleX = Math.max(1, (data.canvas.width / data.canvasWidth / 2));
             // data.scaleY = Math.max(1, (data.canvas.height / data.canvasHeight / 2));

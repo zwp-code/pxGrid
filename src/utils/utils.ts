@@ -11,6 +11,7 @@ export function rgbaToHex (arr)
     let r = Math.round(arr[0]);
     let g = Math.round(arr[1]);
     let b = Math.round(arr[2]);
+    if (arr[3] > 1) arr[3] = arr[3] / 255;
     let a = Math.round(arr[3] * 255);
   
     let hexR = r.toString(16).padStart(2, '0');
@@ -21,9 +22,30 @@ export function rgbaToHex (arr)
     return `#${hexR}${hexG}${hexB}${hexA}`;
 }
 
+export function hexToRgba (hex) 
+{
+    let r = 0, g = 0, b = 0, a = 255;
+    if (hex.length === 7) 
+    {
+      r = parseInt(hex.slice(1, 3), 16);
+      g = parseInt(hex.slice(3, 5), 16);
+      b = parseInt(hex.slice(5, 7), 16);
+    } 
+    else if (hex.length === 9) 
+    {
+      r = parseInt(hex.slice(1, 3), 16);
+      g = parseInt(hex.slice(3, 5), 16);
+      b = parseInt(hex.slice(5, 7), 16);
+      a = parseInt(hex.slice(7, 9), 16);
+    }
+    // return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+    return [r, g, b, a / 255];
+}
+
 
 export function extractRgbaValues (rgbaString) 
 {
+    if (isHexColor(rgbaString)) return hexToRgba(rgbaString);
     const regex = /rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/;
     const matches = rgbaString.match(regex);
     if (matches) 
@@ -42,10 +64,10 @@ export function extractRgbaValues (rgbaString)
 
 export function isHexColor (color) 
 {
-    const hexColorRegex = /^#([0-9A-Fa-f]{3}){1,2}$/;
-    return hexColorRegex.test(color);
+    const hexWithAlphaRegex = /^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$/;
+    const hexWithoutAlphaRegex = /^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$/;
+    return hexWithAlphaRegex.test(color) || hexWithoutAlphaRegex.test(color);
 }
-
 
 export function formatTime (value:any) 
 {
