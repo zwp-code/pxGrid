@@ -1,19 +1,32 @@
 import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed } from 'vue';
 import { ElConfigProvider } from 'element-plus';
+import { useI18n } from 'vue-i18n';
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
 import en from 'element-plus/dist/locale/en.mjs';
+import MyColorDialog from '@/components/dialog/MyColorDialog.vue';
+import NoticeDialog from '@/components/dialog/NoticeDialog.vue';
+import DonateDialog from '@/components/dialog/DonateDialog.vue';
+import { useEditSpaceStore } from '@/store';
+import fullScreen from '@/hooks/fullScreen';
 import { copyText, extractRgbaValues, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
+import axios from 'axios';
+import { uuid } from 'vue-uuid';
 export default defineComponent({
     name:'home',
     components: {
-        ElConfigProvider
+        ElConfigProvider,
+        MyColorDialog,
+        DonateDialog,
+        NoticeDialog
     },
     props:{},
     emits:[],
     setup (props, context)
     {
         const { proxy }:any = getCurrentInstance();
-        const language = (navigator.language || 'en').toLocaleLowerCase();
+        const { locale: i18nLanguage } = useI18n();
+        const editSpaceStore = useEditSpaceStore();
+        const language = (navigator.language || 'zh').toLocaleLowerCase();
         let data = reactive({
             locale:en,
             bgCanvas:null as any,
@@ -34,7 +47,7 @@ export default defineComponent({
             drawAreaList:[] as any,
             currentTool:0,
 
-            drawRecord:[] as any,
+            drawRecord:[] as any, // 绘画信息 包括帧和图层信息
             drawShapeList:[] as any,
             gridInfo:'[]',
             myColorList:[
@@ -46,20 +59,34 @@ export default defineComponent({
                     ]
                 }
             ],
-            myColor:'#fff',
+            myColor:'#ffffff',
             myColorGroup:1,
             isAddGroup:false,
             myGroupName:'',
             addMyColorVisible:false,
             editMyColorMask:null as any,
+
             currentDrawShape:'rect',
             currentDrawTransform:'hReverse',
 
-            historyRecord:[] as any,
+            historyRecord:[] as any, // 绘画历史记录
             historyMaxLength:10,
             
             lastX:0,
             lastY:0,
+
+            MyColorDialogVisible:false,
+            donateVisible:false,
+            noticeVisible:false,
+            notice:{
+                title:'',
+                content:''
+            },
+
+            currentFrameIndex:0,
+            currentLayerIndex:0,
+            maxFrame:10,
+            maxLayer:6,
             AnimationFrameId_1:null as any
         });
 
@@ -71,6 +98,17 @@ export default defineComponent({
             requireTransformImg: computed(() => 
             {
                 return new URL(`../../assets/${data.currentDrawTransform}.png`, import.meta.url).href;
+            }),
+            requireVisibleImg: computed(() => 
+            {
+                return (value) => 
+                {
+                    if (value)
+                    {
+                        return new URL(`../../assets/visible.png`, import.meta.url).href;
+                    }
+                    return new URL(`../../assets/hidden.png`, import.meta.url).href;
+                };
             })
         };
         
@@ -156,19 +194,29 @@ export default defineComponent({
                 }
                 else 
                 {
-                    data.locale = en;
+                    data.locale = zhCn;
                 }
-                // editSpaceStore.lang = localStorage.getItem('db-lang') || language.split('-')[0] || 'en';
-                // localStorage.setItem('db-lang', editSpaceStore.lang);
-                // console.log(editSpaceStore.lang);
+                editSpaceStore.lang = localStorage.getItem('db-lang') || language.split('-')[0] || 'zh';
+                localStorage.setItem('db-lang', editSpaceStore.lang);
                 
             },
             handleChangeTool (index)
             {
                 if (index === 6)
                 {
-                    data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                    data.drawRecord = [];
+                    // 清空当前选择的图层绘画信息
+                    // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                    // data.drawRecord = [];
+                    let layerArr = [] as any;
+                    for (let i = 0; i < data.canvasHeight; i++) 
+                    {
+                        for (let j = 0; j < data.canvasWidth; j++) 
+                        {
+                            layerArr.push([j, i, '#00000000']);
+                        }
+                    }
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = layerArr;
+                    methods.reDraw();
                     return;
                 }
                 data.currentTool = index;
@@ -194,8 +242,8 @@ export default defineComponent({
                 }
                 methods.computeScale();
                 methods.drawPixelArea();
-                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                methods.initCanvasRecord();
+                // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                methods.initCanvasRecord('scale');
                 methods.reDraw();
             },
             handleChangeRatio (e)
@@ -213,35 +261,64 @@ export default defineComponent({
             {
                 data.brushColor = value;
             },
-            initCanvasRecord ()
+            initCanvasRecord (type)
             {
-                let arr = [] as any;
-                for (let i = 0; i < data.canvasHeight; i++) 
+                // 初始化图层和帧数据
+                if (type === 'init')
                 {
-                    for (let j = 0; j < data.canvasWidth; j++) 
+                    // 首次初始化
+                    let layerArr = [] as any;
+                    for (let i = 0; i < data.canvasHeight; i++) 
                     {
-                        arr.push([j, i, '#00000000']);
-                    }
-                }
-                if (data.drawRecord.length)
-                {
-                    for (let i = 0; i < arr.length; i++)
-                    {
-                        for (let j = 0; j < data.drawRecord.length; j++)
+                        for (let j = 0; j < data.canvasWidth; j++) 
                         {
-                            if (arr[i][0] === data.drawRecord[j][0] && arr[i][1] === data.drawRecord[j][1]) 
-                            {
-                                arr[i][2] = data.drawRecord[j][2];
-                                break;
-                            }
+                            layerArr.push([j, i, '#00000000']);
                         }
                     }
-                    data.drawRecord = arr;
+                    data.drawRecord.push({
+                        frameId:uuid.v1(), // 帧id
+                        layer:[ // 图层
+                            {
+                                layerId:uuid.v4(),
+                                layerName:'图层1',
+                                isRender:true, // 是否渲染
+                                layerData:layerArr // 绘画信息
+                            }
+                            
+                        ]
+                    });
                 }
-                else
+                else if (type === 'scale')
                 {
-                    data.drawRecord = arr;
+                    //
                 }
+                // let layerArr = [] as any;
+                // for (let i = 0; i < data.canvasHeight; i++) 
+                // {
+                //     for (let j = 0; j < data.canvasWidth; j++) 
+                //     {
+                //         layerArr.push([j, i, '#00000000']);
+                //     }
+                // }
+                // if (data.drawRecord.length)
+                // {
+                //     for (let i = 0; i < arr.length; i++)
+                //     {
+                //         for (let j = 0; j < data.drawRecord.length; j++)
+                //         {
+                //             if (arr[i][0] === data.drawRecord[j][0] && arr[i][1] === data.drawRecord[j][1]) 
+                //             {
+                //                 arr[i][2] = data.drawRecord[j][2];
+                //                 break;
+                //             }
+                //         }
+                //     }
+                //     data.drawRecord = arr;
+                // }
+                // else
+                // {
+                //     data.drawRecord ;
+                // }
             },
             drawPixelArea ()
             {
@@ -351,7 +428,7 @@ export default defineComponent({
                         data.drawRecord[i][1] = row;
                     }
                 }
-                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.reDraw();
             },
             startDrawing () 
@@ -369,7 +446,7 @@ export default defineComponent({
                     data.scale = Math.max(1, data.scale);
                     console.log(data.scale);
                     data.brushSize = data.scale;
-                    data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                    // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                     methods.drawPixelArea();
                     methods.reDraw();
                 });
@@ -523,24 +600,26 @@ export default defineComponent({
                         
                         // console.log((col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2, 
                         //     (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2);
-                        let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                        let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                        // data.ctx1.globalAlpha = 1;
-                        // data.ctx1.save();
-                        data.ctx1.lineWidth = data.brushSize;
-                        // data.ctx1.save();
-                        // data.ctx1.globalCompositeOperation = data.currentTool === 1 ? 'destination-out' : 'source-over';
-                        data.ctx1.strokeStyle = data.brushColor;
-                        data.ctx1.lineCap = 'square';
-                        data.ctx1.beginPath();
-                        // data.ctx1.moveTo(data.lastX, data.lastY);
-                        data.ctx1.lineTo(gridX + data.scale / 2, gridY + data.scale / 2);
-
-                        data.ctx1.stroke();
-                        // data.lastX = gridX + data.scale / 2;
-                        // data.lastY = gridY + data.scale / 2;
-                        // requestAnimationFrame(methods.draw);
                         methods.addDrawRecord([col, row, data.brushColor]);
+                        if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
+                        {
+                            let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                            let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                            // data.ctx1.globalAlpha = 1;
+                            // data.ctx1.save();
+                            data.ctx1.lineWidth = data.brushSize;
+                            // data.ctx1.save();
+                            // data.ctx1.globalCompositeOperation = data.currentTool === 1 ? 'destination-out' : 'source-over';
+                            data.ctx1.strokeStyle = data.brushColor;
+                            data.ctx1.lineCap = 'square';
+                            data.ctx1.beginPath();
+                            // data.ctx1.moveTo(data.lastX, data.lastY);
+                            data.ctx1.lineTo(gridX + data.scale / 2, gridY + data.scale / 2);
+
+                            data.ctx1.stroke();
+                        }
+                        // requestAnimationFrame(methods.draw);
+                        // methods.addDrawRecord([col, row, data.brushColor]);
                     }
                     if (data.isErasering)
                     {
@@ -561,15 +640,10 @@ export default defineComponent({
                             let rectWidth = (gridX + data.scale / 2 - data.lastX);
                             let rectHeight = (gridY + data.scale / 2 - data.lastY); 
 
-                            data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                            // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                             methods.reDraw();
                             data.ctx1.beginPath();
                             console.log(gridX, gridY, data.lastX, data.lastY, rectWidth, rectHeight);
-                            // data.ctx1.rect(140.5, 140.5, 0, 0);
-                            // data.ctx1.rect(140.5, 130, 0, 0);
-                            // data.ctx1.rect(140.5, 130, 0, 21);
-                            // data.ctx1.rect(140.5, 140.5, 0, 31.5);
-                            // data.ctx1.rect(140.5, 130, 0, 42);
                             if (gridY + data.scale / 2 === data.lastY && gridX + data.scale / 2 !== data.lastX)
                             {
                                 if (gridX + data.scale / 2 > data.lastX)
@@ -642,7 +716,7 @@ export default defineComponent({
                             let endX = data.drawShapeList[l - 1][0];
                             let endY = data.drawShapeList[l - 1][1];
                             let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
-                            data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                            // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                             methods.reDraw();
                             for (let i = 0; i < arr.length; i++)
                             {
@@ -729,7 +803,7 @@ export default defineComponent({
             },
             addDrawRecord (value)
             {
-                let flag = false;
+                // let flag = false;
                 console.log(value);
                 
                 if (!isHexColor(value[2])) 
@@ -740,64 +814,59 @@ export default defineComponent({
                 {
                     value[2] = rgbaToHex(hexToRgba(value[2]));
                 }
-                for (let i = 0; i < data.drawRecord.length; i++)
+                let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                for (let v = 0; v < arr.length; v++)
                 {
-                    if (data.drawRecord[i][0] === value[0] && data.drawRecord[i][1] === value[1])
+                    if (arr[v][0] === value[0] && arr[v][1] === value[1])
                     {
-                        data.drawRecord[i][2] = value[2];
-                        flag = true;
+                        arr[v][2] = value[2];
                         break;
                     }
                 }
-                if (!flag) data.drawRecord.push(value);
+                console.log(data.drawRecord);
+                
+                // if (!flag) data.drawRecord.push(value);
             },
 
             removeDrawRecord (value)
             {
                 console.log(value);
-                for (let i = 0; i < data.drawRecord.length; i++)
+                let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                for (let v = 0; v < arr.length; v++)
                 {
-                    if (data.drawRecord[i][0] === value[0] && data.drawRecord[i][1] === value[1])
+                    if (arr[v][0] === value[0] && arr[v][1] === value[1])
                     {
-                        data.drawRecord[i][2] = '#00000000';
+                        arr[v][2] = '#00000000';
                         break;
                     }
                 }
-                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.reDraw();
-                // let index = data.drawRecord.findIndex((element) => 
-                // {
-                //     return element[0] === value[0] && element[1] === value[1];
-                // });
-                // if (index >= 0)
-                // {
-                //     data.drawRecord.splice(index, 1);
-                //     setTimeout(() => 
-                //     {
-                //         data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                //         // methods.drawPixelArea();
-                //         methods.reDraw();
-                //     }, 80);
-                // }
             },
 
             reDraw ()
             {
                 // 重新绘制内容
-                if (!data.drawRecord.length) return;
-                // console.log(data.drawRecord);
-                // data.ctx1.restore();
-                // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                for (let i = 0; i < data.drawRecord.length; i++)
+                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                let arr = data.drawRecord[data.currentFrameIndex].layer;
+                for (let i = arr.length - 1; i >= 0; i--)
                 {
-                    if (data.drawRecord[i][0] > data.canvasWidth || data.drawRecord[i][1] > data.canvasHeight) continue;
-                    if (data.drawRecord[i][2] !== '#00000000') 
+                    // 从最后一项开始绘制
+                    if (arr[i].isRender)
                     {
-                        let gridX = (data.drawRecord[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                        let gridY = (data.drawRecord[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                        data.ctx1.fillStyle = data.drawRecord[i][2];
-                        data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                        for (let v = 0; v < arr[i].layerData.length; v++)
+                        {
+                            if (arr[i].layerData[v][0] > data.canvasWidth || arr[i].layerData[v][1] > data.canvasHeight) continue;
+                            if (arr[i].layerData[v][2] !== '#00000000') 
+                            {
+                                let gridX = (arr[i].layerData[v][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                                let gridY = (arr[i].layerData[v][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                                data.ctx1.fillStyle = arr[i].layerData[v][2];
+                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                            }
+                        }
                     }
+                    
                 }
                 
             },
@@ -936,6 +1005,7 @@ export default defineComponent({
                 else if (data.currentTool === 3)
                 {
                     if (data.currentDrawShape.toLowerCase().indexOf('rect') !== -1) data.canvas.classList.add('rect-cursor');
+                    else if (data.currentDrawShape === 'line') data.canvas.classList.add('brush-cursor');
                     else if (data.currentDrawShape.toLowerCase().indexOf('circle') !== -1) data.canvas.classList.add('circle-cursor');
                 }
                 else if (data.currentTool === 4) data.canvas.classList.add('bucket-cursor');
@@ -983,6 +1053,61 @@ export default defineComponent({
                 {
                     proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
                 }
+            },
+            handleLanguageCommand (command)
+            {
+                i18nLanguage.value = command;
+                proxy.$utils.cache.lang.set(command);
+                editSpaceStore.lang = command;
+            },
+            getNoticeData ()
+            {
+                axios.get(`${import.meta.env.VITE_APP_API_URL}json/notice.json`)
+                    .then((res) => 
+                    {
+                        if (res.data.length > 0)
+                        {
+                            data.noticeVisible = true;
+                            data.notice = proxy.$utils.cache.lang.get() === 'zh' ? res.data[0] : res.data[1];
+                        }
+                    })
+                    .catch((err) => 
+                    {
+                        // proxy.$message.error(err);
+                        console.error(err);
+                    });
+            },
+            handleAddLayer ()
+            {
+                // 新建图层
+                if (data.drawRecord[data.currentFrameIndex].layer.length > data.maxLayer) return proxy.$message.warning('图层达到上限');
+                let layerArr = [] as any;
+                for (let i = 0; i < data.canvasHeight; i++) 
+                {
+                    for (let j = 0; j < data.canvasWidth; j++) 
+                    {
+                        layerArr.push([j, i, '#00000000']);
+                    }
+                }
+                let length = data.drawRecord[data.currentFrameIndex].layer.length;
+                let obj = {
+                    layerId:uuid.v4(),
+                    layerName: `图层${length + 1}`,
+                    isRender:true, // 是否渲染
+                    layerData:layerArr // 绘画信息
+                };
+                data.drawRecord[data.currentFrameIndex].layer.unshift(obj);
+            },
+            handleChangeLayer (index)
+            {
+                // 切换图层
+                data.currentLayerIndex = index;
+            },
+            handleChangeLayerVisible (index)
+            {
+                let flag = data.drawRecord[data.currentFrameIndex].layer[index].isRender;
+                data.drawRecord[data.currentFrameIndex].layer[index].isRender = !flag;
+                methods.reDraw();
             }
         };
         
@@ -1003,8 +1128,9 @@ export default defineComponent({
             data.ctx2 = data.bgCanvas.getContext('2d');
             methods.computeScale();
             methods.drawPixelArea();
-            methods.initCanvasRecord();
+            methods.initCanvasRecord('init');
             methods.startDrawing();
+            methods.getNoticeData();
             // data.scaleX = Math.max(1, (data.canvas.width / data.canvasWidth / 2));
             // data.scaleY = Math.max(1, (data.canvas.height / data.canvasHeight / 2));
             // if (data.canvasHeight === data.canvasWidth) data.scaleY = data.scaleX;
@@ -1018,7 +1144,9 @@ export default defineComponent({
         return {
             ...toRefs(data),
             ...methods,
-            ...computedApi
+            ...computedApi,
+            copyText,
+            ...fullScreen()
         };
     }
 });

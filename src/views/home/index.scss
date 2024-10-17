@@ -76,6 +76,13 @@
     width: 100%;
     box-shadow: 0px 0px 4px 4px var(--el-shadow-nav);
     z-index: 9;
+
+    i {
+        cursor: pointer;
+        &:hover {
+            color: var(--el-color-primary);
+        }
+    }
 }
 
 .el-footer {
@@ -155,4 +162,24 @@
 .option-input {
     width: 150px;
     margin-bottom: 8px;
+}
+
+
+.layer-item {
+    height: 40px;
+    background-color: var(--el-bg-color);
+    margin: 10px 10px 10px 0;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 14px;
+
+    .layer-pic {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+}
+
+.active {
+    background-color: var(--el-bg-color-tool);
 }

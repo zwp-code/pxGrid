@@ -2,8 +2,52 @@
     <div class="container full-h">
         <el-container class="full-h flex-warp">
             <el-main class="flex-column-center" style="display: flex;padding: 0;">
-                <el-header class="flex-start">
+                <el-header class="flex-between">
                     <h1>像素格子</h1>
+                    <div class="flex-end">
+                        <el-tooltip
+                        content="撤销"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="ScreenFull"><Back /></el-icon>
+                        </el-tooltip>
+
+                        <el-tooltip
+                        content="恢复"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="ScreenFull"><Right /></el-icon>
+                        </el-tooltip>
+
+                        <el-tooltip
+                        content="导出"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="ScreenFull"><Files /></el-icon>
+                        </el-tooltip>
+
+                        <el-tooltip
+                        content="全屏"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="ScreenFull"><FullScreen /></el-icon>
+                        </el-tooltip>
+
+                        <el-tooltip
+                        content="赞助"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="donateVisible=true"><ShoppingCart /></el-icon>
+                        </el-tooltip>
+
+                        <el-dropdown trigger="click" @command="handleLanguageCommand">
+                            <span class="el-dropdown-link">
+                                语言
+                                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                            </span>
+                            <template #dropdown>
+                            <el-dropdown-menu>
+                                <!-- <el-dropdown-item command="en">英 文</el-dropdown-item> -->
+                                <el-dropdown-item command="zh">中 文</el-dropdown-item>
+                            </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                    </div>
                 </el-header>
                 <div class="flex-start flex-nowarp full-w" style="flex: 1;">
                     <div class="functionBox">
@@ -84,7 +128,7 @@
                                 
                             </el-tooltip>
                             <el-tooltip
-                                content="清空画布"
+                                content="清空图层"
                                 placement="right"
                             >
                                 <div class="pointer toolItem" @click="handleChangeTool(6)">
@@ -94,7 +138,7 @@
                         </div>
                         
                     </div>
-                    <div class="pixelBox">
+                    <div class="pixelBox scrollbar">
                         <canvas id="PixelCanvas" width="512" height="512"></canvas>
                         <canvas id="Canvas" width="512" height="512"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
@@ -105,120 +149,162 @@
                 <el-footer class="flex-start">帧</el-footer>
             </el-main>
             <el-aside>
-                <h1>功能面板</h1>
-                <el-divider border-style="dashed" />
-                <div class="function-block function-block-between">
-                    <div>
-                        <span class="function-label">画笔颜色</span>
-                        <el-color-picker v-model="brushColor" show-alpha/>
-                    </div>
-                    <div>
-                        <el-link type="primary" :underline="false" @click="handleSaveColor">保存</el-link>
-                        <el-link type="primary" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
-                    </div>
-                </div>
-                <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0 && currentTool===3">
-                    <div>
-                        <span class="function-label">填充颜色</span>
-                        <el-color-picker v-model="shapeFillColor" show-alpha/>
-                    </div>
-                </div>
-                <div class="function-block-column">
-                    <span class="function-label">常用颜色</span>
-                    <div style="margin-top: 15px;" class="flex-start flex-warp">
-                        <el-dropdown v-for="(item, index) in myColorList[0].list.slice(0, 11)" :key="item" trigger="contextmenu">
-                            <div :style="{backgroundColor: item}" class="mycolor" @click="handleChangeColor(item)"></div>
-                            <template #dropdown>
-                              <el-dropdown-menu>
-                                <el-dropdown-item @click="handleEditMyColor(item, 1, index)">修 改</el-dropdown-item>
-                                <el-dropdown-item @click="handleDeleteMyColor(index, 1)">删 除</el-dropdown-item>
-                              </el-dropdown-menu>
-                            </template>
-                        </el-dropdown>
-                        
-                        <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);">
-                            <el-popover placement="bottom" :width="250" trigger="click" :visible="addMyColorVisible">
-                                <template #reference>
-                                    <el-icon color="#808080" @click="addMyColorVisible=true;editMyColorMask=null"><Plus /></el-icon>
-                                </template>
-                                <div>
-                                    <p>{{editMyColorMask?'修改颜色':'添加颜色'}}</p>
-                                    <div class="flex-between" style="margin-top: 10px;">
-                                        <el-color-picker v-model="myColor" show-alpha/>
-                                        <el-select v-model="myColorGroup" placeholder="选择分组" style="width: 150px">
-                                            <el-option
-                                                v-for="item in myColorList"
-                                                :key="item.id"
-                                                :label="item.groupName"
-                                                :value="item.id"
-                                                />
-                                                <template #footer>
-                                                    <el-button v-if="!isAddGroup" text bg size="small" @click="isAddGroup=true">
-                                                        新建分组
-                                                    </el-button>
-                                                    <template v-else>
-                                                        <el-input
-                                                        v-model="myGroupName"
-                                                        class="option-input"
-                                                        placeholder="请输入分组"
-                                                        size="small"
+                <div class="flex-column-center full-h">
+                    <div style="flex: 50%;">
+                        <h1>属性面板</h1>
+                        <el-divider border-style="dashed" />
+                        <div class="function-block function-block-between">
+                            <div>
+                                <span class="function-label">画笔颜色</span>
+                                <el-color-picker v-model="brushColor" show-alpha/>
+                            </div>
+                            <div>
+                                <el-link type="primary" :underline="false" @click="handleSaveColor">保存</el-link>
+                                <el-link type="primary" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
+                            </div>
+                        </div>
+                        <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0 && currentTool===3">
+                            <div>
+                                <span class="function-label">填充颜色</span>
+                                <el-color-picker v-model="shapeFillColor" show-alpha/>
+                            </div>
+                        </div>
+                        <div class="function-block-column">
+                            <span class="function-label">常用颜色</span>
+                            <div style="margin-top: 15px;" class="flex-start flex-warp">
+                                <el-dropdown v-for="(item, index) in myColorList[0].list.slice(0, 10)" :key="item" trigger="contextmenu">
+                                    <div :style="{backgroundColor: item}" class="mycolor" @click="handleChangeColor(item)"></div>
+                                    <template #dropdown>
+                                      <el-dropdown-menu>
+                                        <el-dropdown-item @click="copyText(item)">复 制</el-dropdown-item>
+                                        <el-dropdown-item @click="handleEditMyColor(item, 1, index)">修 改</el-dropdown-item>
+                                        <el-dropdown-item @click="handleDeleteMyColor(index, 1)">删 除</el-dropdown-item>
+                                      </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                                
+                                <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);">
+                                    <el-popover placement="bottom" :width="250" trigger="click" :visible="addMyColorVisible">
+                                        <template #reference>
+                                            <el-icon color="#808080" @click="addMyColorVisible=true;editMyColorMask=null"><Plus /></el-icon>
+                                        </template>
+                                        <div>
+                                            <p>{{editMyColorMask?'修改颜色':'添加颜色'}}</p>
+                                            <div class="flex-between" style="margin-top: 10px;">
+                                                <el-color-picker v-model="myColor" show-alpha/>
+                                                <el-select v-model="myColorGroup" placeholder="选择分组" style="width: 150px">
+                                                    <el-option
+                                                        v-for="item in myColorList"
+                                                        :key="item.id"
+                                                        :label="item.groupName"
+                                                        :value="item.id"
                                                         />
-                                                        <div class="flex-end">
-                                                            <el-button size="small" @click="myGroupName='';isAddGroup=false">取消</el-button>
-                                                            <el-button type="primary" size="small" @click="addColorGroup">保存</el-button>  
-                                                        </div>
-                                                        
-                                                    </template>
-                                                </template>
-                                        </el-select>
-                                    </div>
-                                   
-                                    <div class="flex-end" style="margin-top: 10px;">
-                                        <el-button type="primary" plain @click="addMyColorVisible=false">取 消</el-button>
-                                        <el-button type="primary" @click="handleAddColor">保 存</el-button>
-                                    </div>
+                                                        <template #footer>
+                                                            <el-button v-if="!isAddGroup" text bg size="small" @click="isAddGroup=true">
+                                                                新建分组
+                                                            </el-button>
+                                                            <template v-else>
+                                                                <el-input
+                                                                v-model="myGroupName"
+                                                                class="option-input"
+                                                                placeholder="请输入分组"
+                                                                size="small"
+                                                                maxlength="10"
+                                                                />
+                                                                <div class="flex-end">
+                                                                    <el-button size="small" @click="myGroupName='';isAddGroup=false">取消</el-button>
+                                                                    <el-button type="primary" size="small" @click="addColorGroup">保存</el-button>  
+                                                                </div>
+                                                                
+                                                            </template>
+                                                        </template>
+                                                </el-select>
+                                            </div>
+                                           
+                                            <div class="flex-end" style="margin-top: 10px;">
+                                                <el-button type="primary" plain @click="addMyColorVisible=false">取 消</el-button>
+                                                <el-button type="primary" @click="handleAddColor">保 存</el-button>
+                                            </div>
+                                        </div>
+                                    </el-popover>
                                 </div>
-                            </el-popover>
+                                <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" @click="MyColorDialogVisible=true">
+                                    <el-icon color="#808080"><MoreFilled /></el-icon>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);">
-                            <el-icon color="#808080"><MoreFilled /></el-icon>
+                        <!-- <div class="function-block">
+                            <span class="function-label">画笔大小</span>
+                            <el-slider v-model="brushSize" :step="1" :max="40" :min="10"/>
+                        </div> -->
+                        <div class="function-block-column">
+                            <span class="function-label">画布像素</span>
+                            <div style="margin-top: 15px;" class="flex-between full-w">
+                                <el-input
+                                v-model="canvasWidth"
+                                style="max-width: 120px"
+                                type="number"
+                                :max="128"
+                                :min="6"
+                                @change="(e) => handleChangeCanvasSize(e, 'canvasWidth')"
+                                >
+                                    <template #prepend>宽</template>
+                                </el-input>
+                                <el-input
+                                v-model="canvasHeight"
+                                style="max-width: 120px"
+                                type="number"
+                                :max="128"
+                                :min="6"
+                                @change="(e) => handleChangeCanvasSize(e, 'canvasHeight')"
+                                >
+                                    <template #prepend>高</template>
+                                </el-input>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <el-checkbox v-model="isCheckedRatio" label="保持纵横比" @change="handleChangeRatio" />
+                            </div>
+                            
                         </div>
                     </div>
-                </div>
-                <!-- <div class="function-block">
-                    <span class="function-label">画笔大小</span>
-                    <el-slider v-model="brushSize" :step="1" :max="40" :min="10"/>
-                </div> -->
-                <div class="function-block-column">
-                    <span class="function-label">画布像素</span>
-                    <div style="margin-top: 15px;" class="flex-between full-w">
-                        <el-input
-                        v-model="canvasWidth"
-                        style="max-width: 120px"
-                        type="number"
-                        :max="128"
-                        :min="6"
-                        @change="(e) => handleChangeCanvasSize(e, 'canvasWidth')"
-                        >
-                            <template #prepend>宽</template>
-                        </el-input>
-                        <el-input
-                        v-model="canvasHeight"
-                        style="max-width: 120px"
-                        type="number"
-                        :max="128"
-                        :min="6"
-                        @change="(e) => handleChangeCanvasSize(e, 'canvasHeight')"
-                        >
-                            <template #prepend>高</template>
-                        </el-input>
+                    <div style="flex: 50%;margin-top: 10px;" class="full-w" v-if="drawRecord.length">
+                        <h1 class="flex-between">图层面板 <el-icon class="pointer" @click="handleAddLayer"><CirclePlusFilled /></el-icon></h1>
+                        <el-divider border-style="dashed" />
+                        <div class="scrollbar scrollY full-w" style="height: calc(100% - 71px);">
+                            <div v-for="(item, index) in drawRecord[currentFrameIndex].layer" 
+                            :key="item.layerId" 
+                            class="layer-item flex-between pointer" 
+                            :class="{ 'active': currentLayerIndex === index }" @click="handleChangeLayer(index)">
+                                <div class="flex-start">
+                                    <div class="pointer layer-pic" @click="handleChangeLayerVisible(index)">
+                                        <img :src="requireVisibleImg(item.isRender)" />
+                                    </div>
+                                    <div>{{ item.layerName }}</div>
+                                </div>
+                                <div class="flex-end">
+                                    <el-icon style="margin-right:10px" class="pointer"><CopyDocument /></el-icon>
+                                    <el-popconfirm title="确认删除该图层？" width="200">
+                                        <template #reference>
+                                            <el-icon class="pointer"><Delete /></el-icon>
+                                        </template>
+                                    </el-popconfirm>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div style="margin-top: 10px;">
-                        <el-checkbox v-model="isCheckedRatio" label="保持纵横比" @change="handleChangeRatio" />
-                    </div>
-                    
                 </div>
             </el-aside>
         </el-container>
+        <teleport to="body">
+            <MyColorDialog 
+            :visible="MyColorDialogVisible" 
+            v-if="MyColorDialogVisible"
+            @select="(color) => brushColor = color"
+            @close="MyColorDialogVisible=false">
+            </MyColorDialog>
+            <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog>
+            <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog>
+        </teleport>
+        
     </div>
 </el-config-provider>

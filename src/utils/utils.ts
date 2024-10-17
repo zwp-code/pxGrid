@@ -19,7 +19,7 @@ export function rgbaToHex (arr)
     let hexB = b.toString(16).padStart(2, '0');
     let hexA = a.toString(16).padStart(2, '0');
   
-    return `#${hexR}${hexG}${hexB}${hexA}`;
+    return `#${hexR}${hexG}${hexB}${hexA}`.toLocaleLowerCase();
 }
 
 export function hexToRgba (hex) 
@@ -27,16 +27,16 @@ export function hexToRgba (hex)
     let r = 0, g = 0, b = 0, a = 255;
     if (hex.length === 7) 
     {
-      r = parseInt(hex.slice(1, 3), 16);
-      g = parseInt(hex.slice(3, 5), 16);
-      b = parseInt(hex.slice(5, 7), 16);
+        r = parseInt(hex.slice(1, 3), 16);
+        g = parseInt(hex.slice(3, 5), 16);
+        b = parseInt(hex.slice(5, 7), 16);
     } 
     else if (hex.length === 9) 
     {
-      r = parseInt(hex.slice(1, 3), 16);
-      g = parseInt(hex.slice(3, 5), 16);
-      b = parseInt(hex.slice(5, 7), 16);
-      a = parseInt(hex.slice(7, 9), 16);
+        r = parseInt(hex.slice(1, 3), 16);
+        g = parseInt(hex.slice(3, 5), 16);
+        b = parseInt(hex.slice(5, 7), 16);
+        a = parseInt(hex.slice(7, 9), 16);
     }
     // return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
     return [r, g, b, a / 255];
@@ -60,6 +60,22 @@ export function extractRgbaValues (rgbaString)
         
     }
     return [];
+}
+
+export function getColumnsList (list, columnsNum = 2) 
+{
+    const arrObject = {};
+    for (let i = 0; i < columnsNum; i++) 
+    {
+        arrObject[i] = []; // 创建空的对象数组
+    }
+    list.forEach((element, index) =>  arrObject[index % columnsNum].push(element));
+    const cloGapList = [] as any;
+    for (let key in arrObject) 
+    {
+        cloGapList.push(...arrObject[key]);
+    }
+    return cloGapList;
 }
 
 export function isHexColor (color) 
