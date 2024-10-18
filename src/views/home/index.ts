@@ -184,9 +184,9 @@ export default defineComponent({
             },
             changeLanguage ()
             {
-                if (localStorage.getItem('db-lang'))
+                if (localStorage.getItem('px-lang'))
                 {
-                    data.locale = localStorage.getItem('db-lang') === 'zh' ? zhCn : en;
+                    data.locale = localStorage.getItem('px-lang') === 'zh' ? zhCn : en;
                 }
                 else if (language.split('-')[0])
                 {
@@ -196,8 +196,8 @@ export default defineComponent({
                 {
                     data.locale = zhCn;
                 }
-                editSpaceStore.lang = localStorage.getItem('db-lang') || language.split('-')[0] || 'zh';
-                localStorage.setItem('db-lang', editSpaceStore.lang);
+                editSpaceStore.lang = localStorage.getItem('px-lang') || language.split('-')[0] || 'zh';
+                localStorage.setItem('px-lang', editSpaceStore.lang);
                 
             },
             handleChangeTool (index)
