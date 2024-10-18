@@ -18,7 +18,7 @@ html.dark {
     --el-bg-color-top:#303030;
     --el-bg-color-menu:#1a1a1a;
 
-    --el-bg-color-tool:#303030;
+    --el-bg-color-tool:#534f4f;
     --el-bg-color-island:#000;
 
     --el-bg-color-folder:#000000c9;
@@ -26,8 +26,9 @@ html.dark {
     --el-bg-island-active:#6a6a6a66;
     --el-bg-island-nav:#dbdbdb2a;
 
-    --el-shadow-aside:#d9d9d9;
-    --el-shadow-nav:#dfdfdf;
+    --el-shadow-aside:#191919;
+    --el-shadow-nav:#191919;
+    --el-shadow-color:#292929;
 }
 
 html.light {
@@ -49,7 +50,7 @@ html.light {
     --el-bg-color-top:#f5f5f5;
     --el-bg-color-menu:#e6e6e6;
 
-    --el-bg-color-tool:#888888;
+    --el-bg-color-tool:#cbc9c9;
     --el-bg-color-island:#efefef;
 
     --el-bg-color-folder:#bfbfbfc9;
@@ -58,6 +59,7 @@ html.light {
 
     --el-shadow-aside:#d9d9d9;
     --el-shadow-nav:#dfdfdf;
+    --el-shadow-color:#d9d9d9;
 }
 
 html {
@@ -79,7 +81,7 @@ html {
     --el-bg-color-top:#f5f5f5;
     --el-bg-color-menu:#e6e6e6;
 
-    --el-bg-color-tool:#adadad;
+    --el-bg-color-tool:#cbc9c9;
     --el-bg-color-island:#efefef;
 
     --el-bg-color-folder:#bfbfbfc9;
@@ -88,4 +90,5 @@ html {
 
     --el-shadow-aside:#d9d9d9;
     --el-shadow-nav:#dfdfdf;
+    --el-shadow-color:#d9d9d9;
 }

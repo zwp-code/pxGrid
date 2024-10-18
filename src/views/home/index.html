@@ -20,7 +20,14 @@
                         <el-tooltip
                         content="导出"
                         placement="bottom">
-                            <el-icon style="margin-right: 25px;" @click="ScreenFull"><Files /></el-icon>
+                            <el-icon style="margin-right: 25px;" @click="exportVisible=true"><Files /></el-icon>
+                        </el-tooltip>
+
+                        <el-tooltip
+                        :content="checkTheme ? '夜间模式' : '白天模式'"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="changeTheme" v-if="checkTheme"><Moon /></el-icon>
+                            <el-icon style="margin-right: 25px;" @click="changeTheme" v-else><Sunny /></el-icon>
                         </el-tooltip>
 
                         <el-tooltip
@@ -58,7 +65,7 @@
                             >
                                 <div class="pointer toolItem" style="margin-top: 0;" @click="handleChangeTool(0)"
                                 :class="{ 'active': currentTool === 0 }">
-                                    <img :src="require('@/assets/brush.png')"/>
+                                    <img :src="requireIcon('brush')"/>
                                 </div>
                             </el-tooltip>
                             <el-tooltip
@@ -66,7 +73,7 @@
                                 placement="right"
                             >
                                 <div class="pointer toolItem" @click="handleChangeTool(1)" :class="{ 'active': currentTool === 1 }">
-                                    <img :src="require('@/assets/eraser.png')"/>
+                                    <img :src="requireIcon('eraser')"/>
                                 </div>
                             </el-tooltip>
                             <el-tooltip
@@ -74,7 +81,7 @@
                                 placement="right"
                             >
                                 <div class="pointer toolItem" @click="handleChangeTool(2)" :class="{ 'active': currentTool === 2 }">
-                                    <img :src="require('@/assets/straw.png')"/>
+                                    <img :src="requireIcon('straw')"/>
                                 </div>
                             </el-tooltip>
                             <el-tooltip
@@ -102,7 +109,7 @@
                                 placement="right"
                             >
                                 <div class="pointer toolItem" @click="handleChangeTool(4)" :class="{ 'active': currentTool === 4 }">
-                                    <img :src="require('@/assets/bucket.png')"/>
+                                    <img :src="requireIcon('bucket')"/>
                                 </div>
                             </el-tooltip>
                         </div>
@@ -132,7 +139,7 @@
                                 placement="right"
                             >
                                 <div class="pointer toolItem" @click="handleChangeTool(6)">
-                                    <img :src="require('@/assets/clear.png')"/>
+                                    <img :src="requireIcon('clear')"/>
                                 </div>
                             </el-tooltip>
                         </div>
@@ -141,12 +148,37 @@
                     <div class="pixelBox scrollbar">
                         <canvas id="PixelCanvas" width="512" height="512"></canvas>
                         <canvas id="Canvas" width="512" height="512"></canvas>
+                        <canvas id="RealCanvas"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
                         <!-- <canvas id="BGCanvas" width="300" height="300"></canvas>
                         <canvas id="PixelCanvas" width="300" height="300"></canvas> -->
                     </div>
                 </div>
-                <el-footer class="flex-start">帧</el-footer>
+                <el-footer class="flex-start">
+                    <div class="text-center">帧</div>
+                    <div class="flex-start frame-list scrollbar">
+                        <el-dropdown v-for="(item, index) in drawRecord" :key="item.frameId" trigger="contextmenu">
+                            <div
+                            @click="handleChangeFrame(index)"
+                            class="frame-item pointer"
+                            :class="{ 'active': currentFrameIndex === index }">
+                                <img :src="item.currentFrameImg" v-if="item.currentFrameImg">
+                            </div>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                  <el-dropdown-item @click="handleCopyFrame(index)">复 制</el-dropdown-item>
+                                  <el-dropdown-item @click="handleExportFrame(index)">导 出</el-dropdown-item>
+                                  <el-dropdown-item @click="handleDeleteFrame(index)" v-if="index!==0">删 除</el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                        <div class="frame-item pointer frame-add flex-center"
+                        @click="handleAddFrame"
+                        v-if="drawRecord.length < maxFrame">
+                            <el-icon><Plus /></el-icon>
+                        </div>
+                    </div>
+                </el-footer>
             </el-main>
             <el-aside>
                 <div class="flex-column-center full-h">
@@ -173,7 +205,7 @@
                             <span class="function-label">常用颜色</span>
                             <div style="margin-top: 15px;" class="flex-start flex-warp">
                                 <el-dropdown v-for="(item, index) in myColorList[0].list.slice(0, 10)" :key="item" trigger="contextmenu">
-                                    <div :style="{backgroundColor: item}" class="mycolor" @click="handleChangeColor(item)"></div>
+                                    <div :style="{backgroundColor: item}" class="mycolor" @click="brushColor=item"></div>
                                     <template #dropdown>
                                       <el-dropdown-menu>
                                         <el-dropdown-item @click="copyText(item)">复 制</el-dropdown-item>
@@ -270,22 +302,33 @@
                     <div style="flex: 50%;margin-top: 10px;" class="full-w" v-if="drawRecord.length">
                         <h1 class="flex-between">图层面板 <el-icon class="pointer" @click="handleAddLayer"><CirclePlusFilled /></el-icon></h1>
                         <el-divider border-style="dashed" />
-                        <div class="scrollbar scrollY full-w" style="height: calc(100% - 71px);">
+                        <div class="scrollbar scrollY full-w layer-list" style="height: calc(100% - 71px);">
                             <div v-for="(item, index) in drawRecord[currentFrameIndex].layer" 
                             :key="item.layerId" 
                             class="layer-item flex-between pointer" 
-                            :class="{ 'active': currentLayerIndex === index }" @click="handleChangeLayer(index)">
+                            :class="{ 'active': currentLayerIndex === index }" @click.self="handleChangeLayer(index)">
                                 <div class="flex-start">
                                     <div class="pointer layer-pic" @click="handleChangeLayerVisible(index)">
                                         <img :src="requireVisibleImg(item.isRender)" />
                                     </div>
-                                    <div>{{ item.layerName }}</div>
+                                    <div v-if="currentEditLayer.index===index">
+                                        <el-input
+                                        v-model="currentEditLayer.name" 
+                                        :maxlength="10"
+                                        @click.stop="null"
+                                        @blur="handleEditLayerName"
+                                        @keyup.enter="handleEditLayerName"
+                                        placeholder="请输入图层名称" 
+                                        style="width:150px">
+                                        </el-input>
+                                    </div>
+                                    <div @dblclick="handleDoubleClickLayer(index, item.layerName)" v-else>{{ item.layerName }}</div>
                                 </div>
                                 <div class="flex-end">
-                                    <el-icon style="margin-right:10px" class="pointer"><CopyDocument /></el-icon>
-                                    <el-popconfirm title="确认删除该图层？" width="200">
+                                    <el-icon style="margin-right:10px" class="pointer" @click="handleCopyLayer(index)"><CopyDocument /></el-icon>
+                                    <el-popconfirm title="确认删除该图层？" width="200" @confirm="handleDeleteLayer(index)">
                                         <template #reference>
-                                            <el-icon class="pointer"><Delete /></el-icon>
+                                            <el-icon class="pointer" v-if="index!==drawRecord[currentFrameIndex].layer.length - 1"><Delete /></el-icon>
                                         </template>
                                     </el-popconfirm>
                                 </div>
@@ -304,6 +347,9 @@
             </MyColorDialog>
             <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog>
             <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog>
+            <ExportDialog v-if="exportVisible" :visible="exportVisible" 
+            @export="handleExport"
+            @close="exportVisible=false"></ExportDialog>
         </teleport>
         
     </div>

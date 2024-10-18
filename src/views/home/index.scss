@@ -41,7 +41,10 @@
     justify-content: center;
     align-items: center;
 
-    #Canvas {
+    #RealCanvas {
+        position: absolute;
+        top: 9999px;
+        left: 9999px;
         // position: absolute;
         // top: 0;
         // left: 0;
@@ -114,7 +117,7 @@
         border-radius: 3px;
         width: 20px;
         height: 20px;
-        box-shadow: 0px 0px 4px 4px var(--el-shadow-aside);
+        box-shadow: 0px 0px 4px 4px var(--el-shadow-color);
         margin: 10px;
     }
 }
@@ -164,22 +167,50 @@
     margin-bottom: 8px;
 }
 
-
-.layer-item {
-    height: 40px;
-    background-color: var(--el-bg-color);
-    margin: 10px 10px 10px 0;
-    padding: 5px;
-    border-radius: 5px;
-    font-size: 14px;
-
-    .layer-pic {
-        width: 20px;
-        height: 20px;
-        margin-right: 10px;
+.layer-list {
+    .layer-item {
+        height: 40px;
+        background-color: var(--el-bg-color);
+        margin: 10px 10px 10px 0;
+        padding: 5px;
+        border-radius: 5px;
+        font-size: 14px;
+    
+        .layer-pic {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+    }
+    .active {
+        background-color: var(--el-bg-color-tool);
     }
 }
 
-.active {
-    background-color: var(--el-bg-color-tool);
+
+.frame-list {
+    margin-left: 20px;
+    overflow: auto;
+    .frame-item {
+        border: 2px solid var(--el-shadow-aside);
+        border-radius: 5px;
+        width: 70px;
+        height: 70px;
+        margin: 0 5px;
+        background-color: var(--el-bg-island-nav);
+
+        img {
+            object-fit: contain;
+        }
+    }
+
+    .frame-add {
+        font-size: 30px;
+        min-width: 70px;
+    }
+
+    .active {
+        border: 2px solid var(--el-color-primary);
+    }
 }
+

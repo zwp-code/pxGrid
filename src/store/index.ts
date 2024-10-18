@@ -4,7 +4,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
     state: () => 
     {
         return {
-            lang:''
+            lang:'',
+            themeValue:false
         };
     },
     actions: {

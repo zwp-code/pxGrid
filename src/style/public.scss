@@ -35,7 +35,7 @@ body,html{
     overflow: hidden;
     font-family: $fontFamily_1;
     font-size: $medium;
-    color: $PrimaryTextColor;
+    color: var(--el-text-color);
     -webkit-tap-highlight-color:transparent;
     // font-size: 76%;
 }

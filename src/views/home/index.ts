@@ -6,10 +6,13 @@ import en from 'element-plus/dist/locale/en.mjs';
 import MyColorDialog from '@/components/dialog/MyColorDialog.vue';
 import NoticeDialog from '@/components/dialog/NoticeDialog.vue';
 import DonateDialog from '@/components/dialog/DonateDialog.vue';
+import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import fullScreen from '@/hooks/fullScreen';
-import { copyText, extractRgbaValues, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, extractRgbaValues, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
+import { useToggle } from '@vueuse/shared';
+import { useDark } from '@vueuse/core';
 import { uuid } from 'vue-uuid';
 export default defineComponent({
     name:'home',
@@ -17,7 +20,8 @@ export default defineComponent({
         ElConfigProvider,
         MyColorDialog,
         DonateDialog,
-        NoticeDialog
+        NoticeDialog,
+        ExportDialog
     },
     props:{},
     emits:[],
@@ -31,8 +35,10 @@ export default defineComponent({
             locale:en,
             bgCanvas:null as any,
             canvas:null as any,
+            realCanvas:null as any,
             ctx1:null as any,
             ctx2:null as any,
+            ctx3:null as any,
             isDrawing:false,
             isErasering:false,
             isDrawShape:false,
@@ -85,19 +91,92 @@ export default defineComponent({
 
             currentFrameIndex:0,
             currentLayerIndex:0,
+            currentEditLayer:{
+                index:-1,
+                name:''
+            },
+            
+            FrameTimer:null as any,
             maxFrame:10,
             maxLayer:6,
+            exportVisible:false,
+            exportLoaidng:false,
             AnimationFrameId_1:null as any
         });
 
+        const isDark = useDark({
+            // 存储到localStorage/sessionStorage中的Key 根据自己的需求更改
+            storageKey: 'px-theme',
+            // 暗黑class名字
+            valueDark: 'dark'
+        });
+
+        const isLight = useDark({
+            // 存储到localStorage/sessionStorage中的Key 根据自己的需求更改
+            storageKey: 'px-theme',
+            // 高亮class名字
+            valueLight: 'light'
+        });
+
+        const theme = useDark({
+            // 存储到localStorage/sessionStorage中的Key 根据自己的需求更改
+            storageKey: 'px-theme',
+            // 暗黑class名字
+            valueDark: 'dark',
+            valueLight: 'light'
+        });
+        const toggleDark = useToggle(theme);
+
+        const initTheme = () => 
+        {
+            let useThemeKey = window.localStorage.getItem('px-theme');
+            if (useThemeKey)
+            {
+                if (useThemeKey === 'light' || useThemeKey === 'auto')
+                {
+                    useToggle(isLight);
+                    editSpaceStore.themeValue = false;
+                }
+                else
+                {
+                    useToggle(isDark);
+                    editSpaceStore.themeValue = true;
+                }
+            }
+            else
+            {
+                useToggle(isLight);
+                editSpaceStore.themeValue = false;
+            }
+        };
+
         const computedApi = {
+            requireIcon: computed(() => 
+            {
+                return (value) => 
+                {
+                    if (editSpaceStore.themeValue)
+                    {
+                        return new URL(`../../assets/light/${value}.png`, import.meta.url).href;
+                    }
+                    return new URL(`../../assets/dark/${value}.png`, import.meta.url).href;
+                };
+            }),
             requireShapeImg: computed(() => 
             {
-                return new URL(`../../assets/${data.currentDrawShape}.png`, import.meta.url).href;
+                if (editSpaceStore.themeValue)
+                {
+                    return new URL(`../../assets/light/${data.currentDrawShape}.png`, import.meta.url).href;
+                }
+                return new URL(`../../assets/dark/${data.currentDrawShape}.png`, import.meta.url).href;
             }),
             requireTransformImg: computed(() => 
             {
-                return new URL(`../../assets/${data.currentDrawTransform}.png`, import.meta.url).href;
+                if (editSpaceStore.themeValue)
+                {
+                    return new URL(`../../assets/light/${data.currentDrawTransform}.png`, import.meta.url).href;
+                }
+                return new URL(`../../assets/dark/${data.currentDrawTransform}.png`, import.meta.url).href;
             }),
             requireVisibleImg: computed(() => 
             {
@@ -105,14 +184,31 @@ export default defineComponent({
                 {
                     if (value)
                     {
-                        return new URL(`../../assets/visible.png`, import.meta.url).href;
+                        if (editSpaceStore.themeValue)
+                        {
+                            return new URL(`../../assets/light/visible.png`, import.meta.url).href;
+                        }
+                        return new URL(`../../assets/dark/visible.png`, import.meta.url).href;
                     }
-                    return new URL(`../../assets/hidden.png`, import.meta.url).href;
+                    if (editSpaceStore.themeValue)
+                    {
+                        return new URL(`../../assets/light/hidden.png`, import.meta.url).href;
+                    }
+                    return new URL(`../../assets/dark/hidden.png`, import.meta.url).href;
                 };
+            }),
+            checkTheme: computed(() => 
+            {
+                return editSpaceStore.themeValue;
             })
         };
         
         let methods = {
+            changeTheme ()
+            {
+                toggleDark();
+                editSpaceStore.themeValue = !editSpaceStore.themeValue;
+            },
             addColorGroup ()
             {
                 if (data.myGroupName !== '')
@@ -244,7 +340,7 @@ export default defineComponent({
                 methods.drawPixelArea();
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.initCanvasRecord('scale');
-                methods.reDraw();
+                // methods.reDraw();
             },
             handleChangeRatio (e)
             {
@@ -256,10 +352,6 @@ export default defineComponent({
                     console.log(data.widthHeightRatio);
                     
                 }
-            },
-            handleChangeColor (value)
-            {
-                data.brushColor = value;
             },
             initCanvasRecord (type)
             {
@@ -277,6 +369,7 @@ export default defineComponent({
                     }
                     data.drawRecord.push({
                         frameId:uuid.v1(), // 帧id
+                        currentFrameImg:null as any, // 当前帧图片信息
                         layer:[ // 图层
                             {
                                 layerId:uuid.v4(),
@@ -284,41 +377,42 @@ export default defineComponent({
                                 isRender:true, // 是否渲染
                                 layerData:layerArr // 绘画信息
                             }
-                            
                         ]
                     });
+                    methods.handleFrameImg(data.ctx2);
                 }
                 else if (type === 'scale')
                 {
-                    //
+                    
+                    // 每个帧的图层都要进行比例调整
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        for (let v = 0; v < data.drawRecord[i].layer.length; v++)
+                        {
+                            let layerArr = [] as any;
+                            for (let y = 0; y < data.canvasHeight; y++) 
+                            {
+                                for (let x = 0; x < data.canvasWidth; x++) 
+                                {
+                                    layerArr.push([x, y, '#00000000']);
+                                }
+                            }
+                            for (let k = 0; k < layerArr.length; k++)
+                            {
+                                for (let j = 0; j < data.drawRecord[i].layer[v].layerData.length; j++)
+                                {
+                                    if (layerArr[k][0] === data.drawRecord[i].layer[v].layerData[j][0] && layerArr[i][1] === data.drawRecord[i].layer[v].layerData[j][1]) 
+                                    {
+                                        layerArr[k][2] = data.drawRecord[i].layer[v].layerData[j][2];
+                                        break;
+                                    }
+                                }
+                            }
+                            data.drawRecord[i].layer[v].layerData = layerArr;
+                        }
+                    }
+                    methods.reDraw();
                 }
-                // let layerArr = [] as any;
-                // for (let i = 0; i < data.canvasHeight; i++) 
-                // {
-                //     for (let j = 0; j < data.canvasWidth; j++) 
-                //     {
-                //         layerArr.push([j, i, '#00000000']);
-                //     }
-                // }
-                // if (data.drawRecord.length)
-                // {
-                //     for (let i = 0; i < arr.length; i++)
-                //     {
-                //         for (let j = 0; j < data.drawRecord.length; j++)
-                //         {
-                //             if (arr[i][0] === data.drawRecord[j][0] && arr[i][1] === data.drawRecord[j][1]) 
-                //             {
-                //                 arr[i][2] = data.drawRecord[j][2];
-                //                 break;
-                //             }
-                //         }
-                //     }
-                //     data.drawRecord = arr;
-                // }
-                // else
-                // {
-                //     data.drawRecord ;
-                // }
             },
             drawPixelArea ()
             {
@@ -581,14 +675,12 @@ export default defineComponent({
                             stack.push([x, y + 1]);
                         }
                     }
-                    // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                     methods.reDraw();
                 }
             },      
             draw (event) 
             {
                 methods.addCursorClass();
-                // if (!data.isDrawing && !data.isErasering) return;
                 if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
                 {
                     const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
@@ -596,30 +688,18 @@ export default defineComponent({
                     data.gridInfo = `[${col}, ${row}]`;
                     if (data.isDrawing) 
                     {
-                        // console.log(event.offsetX, event.offsetY);
-                        
-                        // console.log((col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2, 
-                        //     (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2);
                         methods.addDrawRecord([col, row, data.brushColor]);
                         if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                         {
                             let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
                             let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                            // data.ctx1.globalAlpha = 1;
-                            // data.ctx1.save();
                             data.ctx1.lineWidth = data.brushSize;
-                            // data.ctx1.save();
-                            // data.ctx1.globalCompositeOperation = data.currentTool === 1 ? 'destination-out' : 'source-over';
                             data.ctx1.strokeStyle = data.brushColor;
                             data.ctx1.lineCap = 'square';
                             data.ctx1.beginPath();
-                            // data.ctx1.moveTo(data.lastX, data.lastY);
                             data.ctx1.lineTo(gridX + data.scale / 2, gridY + data.scale / 2);
-
                             data.ctx1.stroke();
                         }
-                        // requestAnimationFrame(methods.draw);
-                        // methods.addDrawRecord([col, row, data.brushColor]);
                     }
                     if (data.isErasering)
                     {
@@ -635,110 +715,93 @@ export default defineComponent({
                         if (data.currentDrawShape === 'rect' || data.currentDrawShape === 'fillRect')
                         {
                             methods.addShapeList(col, row);
-                            let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                            let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                            let rectWidth = (gridX + data.scale / 2 - data.lastX);
-                            let rectHeight = (gridY + data.scale / 2 - data.lastY); 
-
-                            // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                            methods.reDraw();
-                            data.ctx1.beginPath();
-                            console.log(gridX, gridY, data.lastX, data.lastY, rectWidth, rectHeight);
-                            if (gridY + data.scale / 2 === data.lastY && gridX + data.scale / 2 !== data.lastX)
+                            if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                if (gridX + data.scale / 2 > data.lastX)
+                                let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                                let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                                let rectWidth = (gridX + data.scale / 2 - data.lastX);
+                                let rectHeight = (gridY + data.scale / 2 - data.lastY);
+                                methods.reDraw();
+                                data.ctx1.beginPath();
+                                if (gridY + data.scale / 2 === data.lastY && gridX + data.scale / 2 !== data.lastX)
                                 {
-                                    // 向右移动
-                                    data.ctx1.rect(data.lastX - data.scale / 2, data.lastY, rectWidth + data.scale, rectHeight);
+                                    if (gridX + data.scale / 2 > data.lastX)
+                                    {
+                                        // 向右移动
+                                        data.ctx1.rect(data.lastX - data.scale / 2, data.lastY, rectWidth + data.scale, rectHeight);
+                                    }
+                                    else
+                                    {
+                                        // 向左移动
+                                        data.ctx1.rect(data.lastX + data.scale / 2, data.lastY, rectWidth - data.scale, rectHeight);
+                                    }
+                                }
+                                else if (gridX + data.scale / 2 === data.lastX && gridY + data.scale / 2 !== data.lastY)
+                                {
+                                    if (gridY + data.scale / 2 > data.lastY)
+                                    {
+                                        // 向下移动
+                                        data.ctx1.rect(data.lastX, data.lastY - data.scale / 2, rectWidth, rectHeight + data.scale);
+                                    }
+                                    else
+                                    {
+                                        // 向上移动
+                                        data.ctx1.rect(data.lastX, data.lastY + data.scale / 2, rectWidth, rectHeight - data.scale);
+                                    }
+                                }
+                                else if (gridX + data.scale / 2 === data.lastX && gridY + data.scale / 2 === data.lastY)
+                                {
+                                    data.ctx1.rect(data.lastX, data.lastY, rectWidth, rectHeight);
                                 }
                                 else
                                 {
-                                    data.ctx1.rect(data.lastX + data.scale / 2, data.lastY, rectWidth - data.scale, rectHeight);
+                                    data.ctx1.rect(data.lastX, data.lastY, rectWidth, rectHeight);
                                 }
-                            }
-                            else if (gridX + data.scale / 2 === data.lastX && gridY + data.scale / 2 !== data.lastY)
-                            {
-                                if (gridY + data.scale / 2 > data.lastY)
+                                if (data.currentDrawShape === 'fillRect')
                                 {
-                                    // 向下移动
-                                    data.ctx1.rect(data.lastX, data.lastY - data.scale / 2, rectWidth, rectHeight + data.scale);
+                                    data.ctx1.fillStyle = data.shapeFillColor;
+                                    data.ctx1.fill();
                                 }
-                                else
-                                {
-                                    data.ctx1.rect(data.lastX, data.lastY + data.scale / 2, rectWidth, rectHeight - data.scale);
-                                }
+                                data.ctx1.stroke();
                             }
-                            else if (gridX + data.scale / 2 === data.lastX && gridY + data.scale / 2 === data.lastY)
-                            {
-                                data.ctx1.rect(data.lastX, data.lastY, rectWidth, rectHeight);
-                            }
-                            else
-                            {
-                                data.ctx1.rect(data.lastX, data.lastY, rectWidth, rectHeight);
-                            }
-                            if (data.currentDrawShape === 'fillRect')
-                            {
-                                data.ctx1.fillStyle = data.shapeFillColor;
-                                data.ctx1.fill();
-                            }
-                            data.ctx1.stroke();
-                            // data.ctx1.globalCompositeOperation = 'source-over';
-                            // data.ctx1.fillRect(data.lastX - data.scale / 2, data.lastY - data.scale / 2, rectWidth, rectHeight);
-                            // // 画框
-                            // data.ctx1.globalCompositeOperation = 'destination-out';
-                            // data.ctx1.fillRect(data.lastX, data.lastY, rectWidth, rectHeight);
-                            // // methods.reDraw();
-                            // // //描边
-                            // data.ctx1.globalCompositeOperation = 'source-over';
-                            // // if (rectWidth === 0) rectWidth += data.scale / 2;
-                            // // if (rectHeight === 0) rectHeight += data.scale / 2;
-                            // if (rectWidth === 0) rectHeight += data.scale / 2;
-                            // if (rectHeight === 0) rectWidth += data.scale / 2;
-                            // data.ctx1.moveTo(data.lastX, data.lastY);
-                            // data.ctx1.lineTo(data.lastX + rectWidth, data.lastY);
-                            // data.ctx1.lineTo(data.lastX + rectWidth, data.lastY + rectHeight);
-                            // data.ctx1.lineTo(data.lastX, data.lastY + rectHeight);
-                            // data.ctx1.lineTo(data.lastX, data.lastY);
-                            // data.ctx1.rect(data.lastX, data.lastY, rectWidth, rectHeight);
-                            // data.ctx1.stroke();
-                            // methods.saveShapeData();
-                            // data.ctx1.closePath();
-                            // console.log(data.lastX, data.lastY);
-                            
-                            // console.log(rectWidth, rectHeight);
                         }
                         else if (data.currentDrawShape === 'circle')
                         {
                             methods.addShapeList(col, row);
-                            let l = data.drawShapeList.length;
-                            let startX = data.drawShapeList[0][0];
-                            let startY = data.drawShapeList[0][1];
-                            let endX = data.drawShapeList[l - 1][0];
-                            let endY = data.drawShapeList[l - 1][1];
-                            let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
-                            // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                            methods.reDraw();
-                            for (let i = 0; i < arr.length; i++)
+                            if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
-                                let gridX = (arr[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                                let gridY = (arr[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                                data.ctx1.fillStyle = arr[i][2];
-                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                let l = data.drawShapeList.length;
+                                let startX = data.drawShapeList[0][0];
+                                let startY = data.drawShapeList[0][1];
+                                let endX = data.drawShapeList[l - 1][0];
+                                let endY = data.drawShapeList[l - 1][1];
+                                let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
+                                methods.reDraw();
+                                for (let i = 0; i < arr.length; i++)
+                                {
+                                    if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
+                                    let gridX = (arr[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                                    let gridY = (arr[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                                    data.ctx1.fillStyle = arr[i][2];
+                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                }
                             }
                             
                         }
                         else if (data.currentDrawShape === 'line')
                         {
                             methods.addShapeList(col, row);
-                            let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                            let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                            if (gridX + data.scale / 2 === data.lastX || gridY +  data.scale / 2 === data.lastY)
+                            if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                data.ctx1.beginPath();
-                                data.ctx1.moveTo(data.lastX, data.lastY);
-                                data.ctx1.lineTo(gridX + data.scale / 2, gridY +  data.scale / 2);
-                                data.ctx1.stroke();
+                                let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                                let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                                if (gridX + data.scale / 2 === data.lastX || gridY +  data.scale / 2 === data.lastY)
+                                {
+                                    data.ctx1.beginPath();
+                                    data.ctx1.moveTo(data.lastX, data.lastY);
+                                    data.ctx1.lineTo(gridX + data.scale / 2, gridY +  data.scale / 2);
+                                    data.ctx1.stroke();
+                                }
                             }
                         }
                     }
@@ -794,18 +857,21 @@ export default defineComponent({
                     pixels.push([x, 2 * yC - y]);
                     pixels.push([2 * xC - x - evenX, 2 * yC - y]);
                 }
-                // console.log(pixels);
-                
-                // const uniqueSet = new Set(pixels.map((item) => JSON.stringify(item)));
-                // const uniqueArr = Array.from(uniqueSet).map((item:any) => JSON.parse(item));
                 return unique2DArray(pixels);
 
             },
+
+            handleFrameImg (ctx)
+            {
+                let beginX = data.drawAreaList[0][0];
+                let beginY = data.drawAreaList[0][1];
+                const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
+                const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+                data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
+            },
             addDrawRecord (value)
             {
-                // let flag = false;
                 console.log(value);
-                
                 if (!isHexColor(value[2])) 
                 {
                     value[2] = rgbaToHex(extractRgbaValues(value[2]));
@@ -824,8 +890,13 @@ export default defineComponent({
                     }
                 }
                 console.log(data.drawRecord);
+                // 更新帧图片
+                data.FrameTimer && clearTimeout(data.FrameTimer);
+                data.FrameTimer = setTimeout(() => 
+                {
+                    methods.handleFrameImg(data.ctx1);
+                }, 1000);
                 
-                // if (!flag) data.drawRecord.push(value);
             },
 
             removeDrawRecord (value)
@@ -840,7 +911,6 @@ export default defineComponent({
                         break;
                     }
                 }
-                // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.reDraw();
             },
 
@@ -1077,6 +1147,7 @@ export default defineComponent({
                         console.error(err);
                     });
             },
+            // 图层开始
             handleAddLayer ()
             {
                 // 新建图层
@@ -1108,6 +1179,142 @@ export default defineComponent({
                 let flag = data.drawRecord[data.currentFrameIndex].layer[index].isRender;
                 data.drawRecord[data.currentFrameIndex].layer[index].isRender = !flag;
                 methods.reDraw();
+            },
+            handleDeleteLayer (index)
+            {
+                data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
+                data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
+                
+            },
+            handleCopyLayer (index)
+            {
+                let copyData = JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[index]));
+                let length = data.drawRecord[data.currentFrameIndex].layer.length;
+                copyData.layerId = uuid.v4();
+                copyData.layerName = `图层${length + 1}`;
+                data.drawRecord[data.currentFrameIndex].layer.unshift(copyData);
+            },
+            handleDoubleClickLayer (index, layerName)
+            {
+                data.currentEditLayer.index = index;
+                data.currentEditLayer.name = layerName;
+                
+            },
+            handleEditLayerName ()
+            {
+                data.drawRecord[data.currentFrameIndex].layer[data.currentEditLayer.index].layerName = data.currentEditLayer.name;
+                data.currentEditLayer = {
+                    index: -1,
+                    name:''
+                };
+            },
+            // 图层结束
+
+            // 帧开始
+            handleAddFrame ()
+            {
+                let layerArr = [] as any;
+                for (let i = 0; i < data.canvasHeight; i++) 
+                {
+                    for (let j = 0; j < data.canvasWidth; j++) 
+                    {
+                        layerArr.push([j, i, '#00000000']);
+                    }
+                }
+                let obj = {
+                    frameId:uuid.v1(),
+                    currentFrameImg:null as any,
+                    layer:[
+                        {
+                            layerId:uuid.v4(),
+                            layerName: '图层1',
+                            isRender:true, // 是否渲染
+                            layerData:layerArr // 绘画信息
+                        }
+                    ]
+                };
+                data.drawRecord.push(obj);
+                methods.handleChangeFrame(data.drawRecord.length - 1);
+                methods.handleFrameImg(data.ctx2);
+            },
+            handleChangeFrame (index)
+            {
+                data.currentFrameIndex = index;
+                methods.reDraw();
+
+            },
+            handleCopyFrame (index)
+            {
+                let copyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
+                copyData.frameId = uuid.v1();
+                data.drawRecord.push(copyData);
+            },
+            handleDeleteFrame (index)
+            {
+                data.drawRecord.splice(index, 1);
+                methods.handleChangeFrame(index - 1);
+
+            },
+            handleExportFrame (index, isDownload = true)
+            {
+                const imageData = data.drawRecord[index].layer;
+                data.realCanvas.width = data.canvasWidth;
+                data.realCanvas.height = data.canvasHeight;
+                console.log(imageData);
+                
+                let layerArr = [] as any;
+                for (let i = imageData.length - 1; i >= 0; i--)
+                {
+                    if (imageData[i].isRender)
+                    {
+                        for (let j = 0; j < imageData[i].layerData.length; j++)
+                        {
+                            layerArr.push(imageData[i].layerData[j]);
+                        }
+                    }
+                }
+                console.log(layerArr);
+                
+                for (let y = 0; y < data.canvasWidth; y++) 
+                {
+                    for (let x = 0; x < data.canvasHeight; x++) 
+                    {
+                        let color = '#00000000';
+                        for (let i = 0; i < layerArr.length; i++)
+                        {
+                            if (layerArr[i][0] === y && layerArr[i][1] === x && layerArr[i][2] !== '#00000000')
+                            {
+                                color = layerArr[i][2];
+                            }
+                        }
+                        
+                        // 在新的 canvas 上绘制缩小后的像素
+                        data.ctx3.fillStyle = color;
+                        data.ctx3.fillRect(y, x, 1, 1);
+                    }
+                }
+                if (isDownload) downloadImage(data.realCanvas, `frame${index}`);
+            },
+            // 帧结束
+            handleExport (type, filename)
+            {
+                // 根据不同类型导出
+                if (type === 1)
+                {
+                    // 精灵图不区分图层，相当于导出每一帧的精灵图
+                    const bigCanvas = document.createElement('canvas');
+                    bigCanvas.width = data.canvasWidth * data.drawRecord.length;
+                    bigCanvas.height = data.canvasHeight;
+                    const bigCtx:any = bigCanvas.getContext('2d');
+                    data.realCanvas.width = data.canvasWidth;
+                    data.realCanvas.height = data.canvasHeight;
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        methods.handleExportFrame(i, false);
+                        bigCtx.drawImage(data.realCanvas, i * data.canvasWidth, 0);
+                    }
+                    downloadImage(bigCanvas, filename);
+                }
             }
         };
         
@@ -1117,28 +1324,20 @@ export default defineComponent({
             {
                 e.returnValue = '1111';
             };
+            initTheme();
             methods.changeLanguage();
             methods.getMyColorList();
             data.canvas = document.getElementById('Canvas');
-            // let parentBox = document.querySelector('.pixelBox');
-            // data.canvas.width = parentBox?.clientWidth;
-            // data.canvas.height = parentBox?.clientHeight;
             data.bgCanvas = document.getElementById('PixelCanvas');
+            data.realCanvas = document.getElementById('RealCanvas');
             data.ctx1 = data.canvas.getContext('2d');
             data.ctx2 = data.bgCanvas.getContext('2d');
+            data.ctx3 = data.realCanvas.getContext('2d');
             methods.computeScale();
             methods.drawPixelArea();
             methods.initCanvasRecord('init');
             methods.startDrawing();
             methods.getNoticeData();
-            // data.scaleX = Math.max(1, (data.canvas.width / data.canvasWidth / 2));
-            // data.scaleY = Math.max(1, (data.canvas.height / data.canvasHeight / 2));
-            // if (data.canvasHeight === data.canvasWidth) data.scaleY = data.scaleX;
-
-            // console.log(data.canvas.width, data.canvas.height, data.scaleX, data.scaleY);
-            
-            // data.ctx2 = data.canvas.getContext('2d');
-            
         });
 
         return {

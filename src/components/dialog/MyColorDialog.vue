@@ -17,6 +17,7 @@
                         maxlength="10"
                         v-if="editGroupName.id===item.id"
                         @blur="handleSaveGroupName"
+                        @keyup.enter="handleSaveGroupName"
                         />
                         <p class="myColorLabel" v-else>{{ item.groupName }}</p>
                         <div class="flex-end" v-if="item.id!==1">

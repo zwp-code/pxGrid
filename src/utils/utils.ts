@@ -135,3 +135,26 @@ export function unique2DArray (arr)
     const uniqueArr = Array.from(uniqueSet).map((item:any) => JSON.parse(item));
     return removeNullFrom2DArray(uniqueArr);
 }
+
+export function generateIamge (width, height, imageData) 
+{
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context:any = canvas.getContext('2d');
+    context.putImageData(imageData, 0, 0);
+    const url = canvas.toDataURL();
+    return url;
+}
+
+
+export function downloadImage (canvas, name) 
+{
+    const dataURL = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = name || 'frame';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
