@@ -1,4 +1,6 @@
 import message from '@/utils/message';
+import JSZip from 'jszip';
+import FileSaver from 'file-saver';
 /**
  * 转16进制
  * @param obj
@@ -143,7 +145,7 @@ export function generateIamge (width, height, imageData)
     canvas.height = height;
     const context:any = canvas.getContext('2d');
     context.putImageData(imageData, 0, 0);
-    const url = canvas.toDataURL();
+    const url = canvas.toDataURL('image/png');
     return url;
 }
 
@@ -157,4 +159,17 @@ export function downloadImage (canvas, name)
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+export function exportImageForZip (filenamae, imgArr)
+{
+    const zip = new JSZip();
+    for (let i = 0; i < imgArr.length; i++)
+    {
+        zip.file(`image${i}.png`, imgArr[i].split(',')[1], { base64: true });
+    }
+    zip.generateAsync({ type: 'blob' }).then(function (content) 
+    {
+        FileSaver.saveAs(content, `${filenamae}.zip`);
+    });
 }

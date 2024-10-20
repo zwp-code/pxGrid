@@ -277,7 +277,7 @@ body,html{
 
 /* chrome & safari 浏览器 */
 .scrollbar::-webkit-scrollbar {  /* 滚动条整体部分 */
-    width:8px;
+    width:5px;
     margin: 2px 20px 2px 4px;
 }
 .scrollbar::-webkit-scrollbar-button { /* 滚动条两端的按钮 */
@@ -286,27 +286,29 @@ body,html{
     background-color: #ededed;
 }
 .scrollbar::-webkit-scrollbar:horizontal {
-    height:6px;
+    height:5px;
     margin-bottom:2px;
 }
 .scrollbar::-webkit-scrollbar-track {  /* 外层轨道 */
     border-radius: 0px;
 }
 .scrollbar::-webkit-scrollbar-track-piece {  /*内层轨道，滚动条中间部分 */
-    background-color: #ededed;
-    border-radius: 0px;
+    background-color: var(--el-bg-color-page);
+    border-radius: 10px;
 }
 .scrollbar::-webkit-scrollbar-thumb {  /* 滑块 */
-    width:8px;
+    width:5px;
     border-radius: 10px;
-    background: #bfbfbf;
+    background: #bfbfbf56;
+    // background: #bfbfbf;
 }
 .scrollbar::-webkit-scrollbar-corner { /* 边角 */
-    width: 8px;
-    background-color: #ededed;
+    width: 5px;
+    background-color: var(--el-bg-color-page);
 }
 .scrollbar::-webkit-scrollbar-thumb:hover { /* 鼠标移入滑块 */
-    background: #b2b2b2;
+    background: #b2b2b2af;
+    cursor: pointer;
 }
 
 

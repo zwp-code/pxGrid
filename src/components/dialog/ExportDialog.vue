@@ -21,7 +21,7 @@
             <span class="dialog-footer">
                 <el-button  @click="handleClose"
                 >{{ $t('message.cancel') }}</el-button>
-                <el-button type="primary" @click="handleConfirm"
+                <el-button type="primary" @click="handleConfirm" :loading="loading"
                 >{{ $t('message.confirm') }}</el-button>
             </span>
         </template>
@@ -35,6 +35,10 @@ export default defineComponent({
     components: {},
     props: {
         visible:{
+            type:Boolean,
+            default:false
+        },
+        loading:{
             type:Boolean,
             default:false
         }

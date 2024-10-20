@@ -145,10 +145,10 @@
                         </div>
                         
                     </div>
-                    <div class="pixelBox scrollbar">
+                    <div class="pixelBox scrollbar" v-loading="loading" element-loading-background="#00000000">
                         <canvas id="PixelCanvas" width="512" height="512"></canvas>
                         <canvas id="Canvas" width="512" height="512"></canvas>
-                        <canvas id="RealCanvas"></canvas>
+                        <canvas id="RealCanvas" v-show="false"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
                         <!-- <canvas id="BGCanvas" width="300" height="300"></canvas>
                         <canvas id="PixelCanvas" width="300" height="300"></canvas> -->
@@ -182,7 +182,7 @@
             </el-main>
             <el-aside>
                 <div class="flex-column-center full-h">
-                    <div style="flex: 50%;">
+                    <div style="flex: 50%;" class="full-w">
                         <h1>属性面板</h1>
                         <el-divider border-style="dashed" />
                         <div class="function-block function-block-between">
@@ -271,7 +271,7 @@
                         </div> -->
                         <div class="function-block-column">
                             <span class="function-label">画布像素</span>
-                            <div style="margin-top: 15px;" class="flex-between full-w">
+                            <div style="margin-top: 15px;" class="flex-start full-w">
                                 <el-input
                                 v-model="canvasWidth"
                                 style="max-width: 120px"
@@ -284,7 +284,7 @@
                                 </el-input>
                                 <el-input
                                 v-model="canvasHeight"
-                                style="max-width: 120px"
+                                style="max-width: 120px; margin-left: 10px;"
                                 type="number"
                                 :max="128"
                                 :min="6"
@@ -347,7 +347,10 @@
             </MyColorDialog>
             <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog>
             <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog>
-            <ExportDialog v-if="exportVisible" :visible="exportVisible" 
+            <ExportDialog 
+            v-if="exportVisible" 
+            :loading="exportLoaidng"
+            :visible="exportVisible" 
             @export="handleExport"
             @close="exportVisible=false"></ExportDialog>
         </teleport>

@@ -9,11 +9,12 @@ import DonateDialog from '@/components/dialog/DonateDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import fullScreen from '@/hooks/fullScreen';
-import { copyText, downloadImage, extractRgbaValues, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, exportImageForZip, extractRgbaValues, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { useToggle } from '@vueuse/shared';
 import { useDark } from '@vueuse/core';
 import { uuid } from 'vue-uuid';
+import Worker from '@/utils/worker.js?worker';
 export default defineComponent({
     name:'home',
     components: {
@@ -101,6 +102,9 @@ export default defineComponent({
             maxLayer:6,
             exportVisible:false,
             exportLoaidng:false,
+
+            loading:false,
+
             AnimationFrameId_1:null as any
         });
 
@@ -313,6 +317,7 @@ export default defineComponent({
                     }
                     data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = layerArr;
                     methods.reDraw();
+                    // methods.handleFrameImg(data.ctx1);
                     return;
                 }
                 data.currentTool = index;
@@ -383,35 +388,77 @@ export default defineComponent({
                 }
                 else if (type === 'scale')
                 {
-                    
+                    data.loading = true;
+                    const worker = new Worker();
                     // 每个帧的图层都要进行比例调整
-                    for (let i = 0; i < data.drawRecord.length; i++)
+                    let layerOriginArr = [] as any;
+                    for (let y = 0; y < data.canvasHeight; y++) 
                     {
-                        for (let v = 0; v < data.drawRecord[i].layer.length; v++)
+                        for (let x = 0; x < data.canvasWidth; x++) 
                         {
-                            let layerArr = [] as any;
-                            for (let y = 0; y < data.canvasHeight; y++) 
-                            {
-                                for (let x = 0; x < data.canvasWidth; x++) 
-                                {
-                                    layerArr.push([x, y, '#00000000']);
-                                }
-                            }
-                            for (let k = 0; k < layerArr.length; k++)
-                            {
-                                for (let j = 0; j < data.drawRecord[i].layer[v].layerData.length; j++)
-                                {
-                                    if (layerArr[k][0] === data.drawRecord[i].layer[v].layerData[j][0] && layerArr[i][1] === data.drawRecord[i].layer[v].layerData[j][1]) 
-                                    {
-                                        layerArr[k][2] = data.drawRecord[i].layer[v].layerData[j][2];
-                                        break;
-                                    }
-                                }
-                            }
-                            data.drawRecord[i].layer[v].layerData = layerArr;
+                            layerOriginArr.push([x, y, '#00000000']);
                         }
                     }
-                    methods.reDraw();
+                    worker.postMessage({originData:layerOriginArr, type:1, variables:JSON.parse(JSON.stringify(data.drawRecord))});
+                    worker.onmessage = (event) => 
+                    {
+                        data.drawRecord = event.data;
+                        data.loading = false;
+                        console.log(data.drawRecord);
+                        methods.reDraw();
+                    };
+                    // for (let i = 0; i < data.drawRecord.length; i++)
+                    // {
+                    //     for (let v = 0; v < data.drawRecord[i].layer.length; v++)
+                    //     {
+                    //         let layerArr = JSON.parse(JSON.stringify(layerOriginArr));
+                            
+                    //         for (let k = 0; k < layerArr.length; k += 4)
+                    //         {
+                    //             let index1 = data.drawRecord[i].layer[v].layerData.findIndex((value) => value[0] === layerArr[k][0] && value[1] === layerArr[k][1]);
+                    //             let index2 = data.drawRecord[i].layer[v].layerData.findIndex((value) => value[0] === layerArr[k + 1][0] && value[1] === layerArr[k + 1][1]);
+                    //             let index3 = data.drawRecord[i].layer[v].layerData.findIndex((value) => value[0] === layerArr[k + 2][0] && value[1] === layerArr[k + 2][1]);
+                    //             let index4 = data.drawRecord[i].layer[v].layerData.findIndex((value) => value[0] === layerArr[k + 3][0] && value[1] === layerArr[k + 3][1]);
+                    //             if (index1 >= 0)
+                    //             {
+                    //                 layerArr[k][2] = data.drawRecord[i].layer[v].layerData[index1][2];
+                    //             }
+                    //             if (index2 >= 0)
+                    //             {
+                    //                 layerArr[k + 1][2] = data.drawRecord[i].layer[v].layerData[index2][2];
+                    //             }
+                    //             if (index3 >= 0)
+                    //             {
+                    //                 layerArr[k + 2][2] = data.drawRecord[i].layer[v].layerData[index3][2];
+                    //             }
+                    //             if (index4 >= 0)
+                    //             {
+                    //                 layerArr[k + 3][2] = data.drawRecord[i].layer[v].layerData[index4][2];
+                    //             }
+                    //             // if (data.drawRecord[i].layer[v].layerData[k])
+                    //             // {
+                    //             //     if (layerArr[k][0] === data.drawRecord[i].layer[v].layerData[k][0] && layerArr[k][1] === data.drawRecord[i].layer[v].layerData[k][1]) 
+                    //             //     {
+                    //             //         layerArr[k][2] = data.drawRecord[i].layer[v].layerData[k][2];
+                    //             //         continue;
+                    //             //     }
+                    //             // }
+                    //             // for (let j = 0; j < data.drawRecord[i].layer[v].layerData.length; j++)
+                    //             // {
+                    //             //     if (layerArr[k][0] === data.drawRecord[i].layer[v].layerData[j][0] && layerArr[k][1] === data.drawRecord[i].layer[v].layerData[j][1]) 
+                    //             //     {
+                    //             //         layerArr[k][2] = data.drawRecord[i].layer[v].layerData[j][2];
+                    //             //         break;
+                    //             //     }
+                    //             // }
+                    //         }
+                    //         data.drawRecord[i].layer[v].layerData = layerArr;
+                    //     }
+                    // }
+                    // console.log(data.drawRecord);
+                    
+                    // methods.reDraw();
+                    // methods.initCanvasRecord('scale');
                 }
             },
             drawPixelArea ()
@@ -419,7 +466,7 @@ export default defineComponent({
                 // 绘制像素透明格子
                 data.drawAreaList = [];
                 data.ctx2.clearRect(0, 0, data.bgCanvas.width, data.bgCanvas.height);
-                data.ctx2.globalAlpha = 0.5;
+                data.ctx2.globalAlpha = 0.25;
                 for (let i = 0; i < data.canvasWidth; i++) 
                 {
                     for (let j = 0; j < data.canvasHeight; j++) 
@@ -463,27 +510,28 @@ export default defineComponent({
                 let realCoords = [] as any;
                 let centerX = data.canvas.width / 2;
                 let centerY = data.canvas.height / 2;
-                for (let i = 0; i < data.drawRecord.length; i++)
+                let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                for (let i = 0; i < currentLayerData.length; i++)
                 {
-                    if (data.drawRecord[i][0] > data.canvasWidth || data.drawRecord[i][1] > data.canvasHeight) return;
-                    let gridX = (data.drawRecord[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                    let gridY = (data.drawRecord[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                    realCoords.push([gridX, gridY, data.drawRecord[i][2]]);
+                    if (currentLayerData[i][0] > data.canvasWidth || currentLayerData[i][1] > data.canvasHeight) return;
+                    let gridX = (currentLayerData[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
+                    let gridY = (currentLayerData[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
+                    realCoords.push([gridX, gridY, currentLayerData[i][2]]);
                 }
                 if (transform === 'hReverse')
                 {
-                    for (let i = 0; i < data.drawRecord.length; i++)
+                    for (let i = 0; i < currentLayerData.length; i++)
                     {
-                        let newCol = (data.canvasWidth - 1) - data.drawRecord[i][0];
-                        data.drawRecord[i][0] = newCol;
+                        let newCol = (data.canvasWidth - 1) - currentLayerData[i][0];
+                        currentLayerData[i][0] = newCol;
                     }
                 }
                 else if (transform === 'vReverse')
                 {
-                    for (let i = 0; i < data.drawRecord.length; i++)
+                    for (let i = 0; i < currentLayerData.length; i++)
                     {
-                        let newRow = (data.canvasHeight - 1) - data.drawRecord[i][1];
-                        data.drawRecord[i][1] = newRow;
+                        let newRow = (data.canvasHeight - 1) - currentLayerData[i][1];
+                        currentLayerData[i][1] = newRow;
                     }
                 }
                 else if (transform === 'ssz')
@@ -500,8 +548,8 @@ export default defineComponent({
                         
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        data.drawRecord[i][0] = col;
-                        data.drawRecord[i][1] = row;
+                        currentLayerData[i][0] = col;
+                        currentLayerData[i][1] = row;
                     }
                 }
                 else if (transform === 'nsz')
@@ -518,8 +566,8 @@ export default defineComponent({
                         
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        data.drawRecord[i][0] = col;
-                        data.drawRecord[i][1] = row;
+                        currentLayerData[i][0] = col;
+                        currentLayerData[i][1] = row;
                     }
                 }
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
@@ -542,7 +590,7 @@ export default defineComponent({
                     data.brushSize = data.scale;
                     // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                     methods.drawPixelArea();
-                    methods.reDraw();
+                    methods.reDraw(false);
                 });
             },
 
@@ -575,16 +623,22 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 2)
                     {
-                        if (!data.drawRecord.length) return;
                         // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
                         // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         console.log(row, col);
-                        for (let i = 0; i < data.drawRecord.length; i++)
+                        let currentFrame = data.drawRecord[data.currentFrameIndex].layer;
+                        for (let i = currentFrame.length - 1; i >= 0; i--)
                         {
-                            if (data.drawRecord[i][0] === col && data.drawRecord[i][1] === row)
+                            for (let j = 0; j < currentFrame[i].layerData.length; j++)
                             {
-                                data.brushColor = data.drawRecord[i][2];
-                                break;
+                                if (currentFrame[i].layerData[j][0] === col && currentFrame[i].layerData[j][1] === row)
+                                {
+                                    if (currentFrame[i].layerData[j][2] !== '#00000000')
+                                    {
+                                        data.brushColor = currentFrame[i].layerData[j][2];
+                                        break;
+                                    }
+                                }
                             }
                         }
                         
@@ -625,9 +679,10 @@ export default defineComponent({
                 const isSameColor = (col, row, color) =>
                 {
                     let flag = false;
-                    for (let i = 0; i < data.drawRecord.length; i++)
+                    let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    for (let i = 0; i < currentLayerData.length; i++)
                     {
-                        if (data.drawRecord[i][0] === col && data.drawRecord[i][1] === row && data.drawRecord[i][2] === color)
+                        if (currentLayerData[i][0] === col && currentLayerData[i][1] === row && currentLayerData[i][2] === color)
                         {
                             flag = true;
                             break;
@@ -637,13 +692,12 @@ export default defineComponent({
                 };
                 const setColor = (col, row, color) => 
                 {
-                    for (let i = 0; i < data.drawRecord.length; i++)
+                    let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    for (let i = 0; i < currentLayerData.length; i++)
                     {
-                        if (data.drawRecord[i][0] === col && data.drawRecord[i][1] === row)
+                        if (currentLayerData[i][0] === col && currentLayerData[i][1] === row)
                         {
-                            console.log(color);
-                            
-                            data.drawRecord[i][2] = color;
+                            currentLayerData[i][2] = color;
                             break;
                         }
                     }
@@ -770,21 +824,24 @@ export default defineComponent({
                             methods.addShapeList(col, row);
                             if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
+                                data.ctx1.fillStyle = data.brushColor;
                                 let l = data.drawShapeList.length;
                                 let startX = data.drawShapeList[0][0];
                                 let startY = data.drawShapeList[0][1];
                                 let endX = data.drawShapeList[l - 1][0];
                                 let endY = data.drawShapeList[l - 1][1];
                                 let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
+                                console.log(arr);
+                                
                                 methods.reDraw();
                                 for (let i = 0; i < arr.length; i++)
                                 {
                                     if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
                                     let gridX = (arr[i][0] * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
                                     let gridY = (arr[i][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                                    data.ctx1.fillStyle = arr[i][2];
                                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                                 }
+                                
                             }
                             
                         }
@@ -895,7 +952,7 @@ export default defineComponent({
                 data.FrameTimer = setTimeout(() => 
                 {
                     methods.handleFrameImg(data.ctx1);
-                }, 1000);
+                }, 200);
                 
             },
 
@@ -914,9 +971,10 @@ export default defineComponent({
                 methods.reDraw();
             },
 
-            reDraw ()
+            reDraw (isRenderFrameImg = true)
             {
                 // 重新绘制内容
+                let count = 0;
                 data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 let arr = data.drawRecord[data.currentFrameIndex].layer;
                 for (let i = arr.length - 1; i >= 0; i--)
@@ -933,10 +991,15 @@ export default defineComponent({
                                 let gridY = (arr[i].layerData[v][1] * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
                                 data.ctx1.fillStyle = arr[i].layerData[v][2];
                                 data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                count++;
                             }
                         }
                     }
-                    
+                }
+                if (isRenderFrameImg)
+                {
+                    if (count > 0) methods.handleFrameImg(data.ctx1);
+                    else methods.handleFrameImg(data.ctx2);
                 }
                 
             },
@@ -1208,6 +1271,34 @@ export default defineComponent({
                     name:''
                 };
             },
+            handleExportLayer (frameIndex, layerIndex, isDownload = true)
+            {
+                const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
+                data.realCanvas.width = data.canvasWidth;
+                data.realCanvas.height = data.canvasHeight;
+                data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
+                console.log(imageData);
+                
+                for (let y = 0; y < data.canvasWidth; y++) 
+                {
+                    for (let x = 0; x < data.canvasHeight; x++) 
+                    {
+                        let color = '#00000000';
+                        for (let i = 0; i < imageData.length; i++)
+                        {
+                            if (imageData[i][0] === y && imageData[i][1] === x && imageData[i][2] !== '#00000000')
+                            {
+                                color = imageData[i][2];
+                            }
+                        }
+                        
+                        // 在新的 canvas 上绘制缩小后的像素
+                        data.ctx3.fillStyle = color;
+                        data.ctx3.fillRect(y, x, 1, 1);
+                    }
+                }
+                if (isDownload) downloadImage(data.realCanvas, `layer${layerIndex}`);
+            },
             // 图层结束
 
             // 帧开始
@@ -1240,6 +1331,7 @@ export default defineComponent({
             handleChangeFrame (index)
             {
                 data.currentFrameIndex = index;
+                data.currentLayerIndex = 0;
                 methods.reDraw();
 
             },
@@ -1260,6 +1352,7 @@ export default defineComponent({
                 const imageData = data.drawRecord[index].layer;
                 data.realCanvas.width = data.canvasWidth;
                 data.realCanvas.height = data.canvasHeight;
+                data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
                 console.log(imageData);
                 
                 let layerArr = [] as any;
@@ -1298,6 +1391,7 @@ export default defineComponent({
             // 帧结束
             handleExport (type, filename)
             {
+                data.exportLoaidng = true;
                 // 根据不同类型导出
                 if (type === 1)
                 {
@@ -1315,7 +1409,82 @@ export default defineComponent({
                     }
                     downloadImage(bigCanvas, filename);
                 }
+                else if (type === 2)
+                {
+                    let maxLayer = 0; // 最大图层
+                    let canavsData = [] as any; // 每个帧图层的image数据
+                    let canavsUrlData = [] as any;  // 合并后的image数据
+                    // 精灵图区分图层，每一个帧里的图层会单独导出为精灵图
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        canavsData[i] = [];
+                        let currentFrameLayerLength = data.drawRecord[i].layer.length; // 当前帧的图层长度
+                        if (maxLayer < currentFrameLayerLength)
+                        {
+                            maxLayer = currentFrameLayerLength;
+                        }
+                        let count = 0;
+                        for (let j = currentFrameLayerLength - 1; j >= 0; j--)
+                        {
+                            methods.handleExportLayer(i, j, false);
+                            canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth, data.canvasHeight);
+                            count++;
+                        }
+                    }
+                    for (let l = 0; l < maxLayer; l++)
+                    {
+                        const bigCanvas = document.createElement('canvas');
+                        bigCanvas.width = data.canvasWidth * data.drawRecord.length;
+                        bigCanvas.height = data.canvasHeight;
+                        const bigCtx:any = bigCanvas.getContext('2d');
+                        for (let i = 0; i < canavsData.length; i++)
+                        {
+                            if (canavsData[i][l])
+                            {
+                                let newCanvas = document.createElement('canvas');
+                                newCanvas.width = data.canvasWidth;
+                                newCanvas.height = data.canvasHeight;
+                                let newCtx:any = newCanvas.getContext('2d');
+                                newCtx.putImageData(canavsData[i][l], 0, 0);
+                                bigCtx.drawImage(newCanvas, i * data.canvasWidth, 0);
+                                continue;
+                            }
+                        }
+                        canavsUrlData.push(bigCanvas.toDataURL('image/png'));
+                    }
+                    exportImageForZip(`${filename}`, canavsUrlData);
+                }
+                else if (type === 3)
+                {
+                    // 单张图
+                    let canavsUrlData = [] as any;
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        methods.handleExportFrame(i, false);
+                        canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
+                    }
+                    exportImageForZip(`${filename}`, canavsUrlData);
+                }
+                else if (type === 4)
+                {
+                    let canavsUrlData = [] as any;  // 合并后的image数据
+                    // 精灵图区分图层，每一个帧里的图层会单独导出为精灵图
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        let currentFrameLayerLength = data.drawRecord[i].layer.length; // 当前帧的图层长度
+                        for (let j = currentFrameLayerLength - 1; j >= 0; j--)
+                        {
+                            methods.handleExportLayer(i, j, false);
+                            canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
+                        }
+                    }
+                    
+                    exportImageForZip(`${filename}`, canavsUrlData);
+                }
+                data.exportLoaidng = false;
             }
+
+
         };
         
         onMounted(() => 
