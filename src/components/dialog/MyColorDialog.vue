@@ -341,7 +341,7 @@ export default defineComponent({
             border-radius: 3px;
             width: 20px;
             height: 20px;
-            box-shadow: 0px 0px 4px 4px var(--el-shadow-aside);
+            box-shadow: 0px 0px 4px 4px var(--el-shadow-color);
             margin: 10px;
         }
     }
