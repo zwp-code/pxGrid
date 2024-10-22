@@ -201,6 +201,15 @@ body,html{
 
 .el-dialog.z-dialog {
     border-radius: 10px;
+    .el-dialog__header,
+    .el-dialog__body,
+    .el-dialog__footer {
+        pointer-events: auto !important;
+    }
+}
+
+:has(> .el-overlay-dialog .z-dialog) {
+    pointer-events: none !important;
 }
 
 // .el-dialog .el-dialog__body {

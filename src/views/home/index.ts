@@ -9,12 +9,13 @@ import DonateDialog from '@/components/dialog/DonateDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import fullScreen from '@/hooks/fullScreen';
-import { copyText, downloadImage, exportImageForZip, extractRgbaValues, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, exportImageForZip, extractRgbaValues, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { useToggle } from '@vueuse/shared';
 import { useDark } from '@vueuse/core';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
+import useDrag from '@/hooks/useDrag';
 export default defineComponent({
     name:'home',
     components: {
@@ -43,6 +44,7 @@ export default defineComponent({
             isDrawing:false,
             isErasering:false,
             isDrawShape:false,
+            isMoving:false,
             shapeFillColor:'#000000ff',
             brushColor:'#000000ff',
             brushSize:10,
@@ -84,7 +86,7 @@ export default defineComponent({
             lastX:0,
             lastY:0,
 
-            MyColorDialogVisible:false,
+            // MyColorDialogVisible:false,
             donateVisible:false,
             noticeVisible:false,
             notice:{
@@ -94,6 +96,9 @@ export default defineComponent({
 
             currentFrameIndex:0,
             currentLayerIndex:0,
+            currentFrameId:0,
+            currentLayerId:0,
+            currentFrameLayerVisible:true,
             currentEditLayer:{
                 index:-1,
                 name:''
@@ -116,6 +121,12 @@ export default defineComponent({
             canvasBeginPos:{
                 x:0,
                 y:0
+            },
+
+            moveData:{
+                x:0,
+                y:0,
+                list:[] as any
             },
 
             AnimationFrameId_1:null as any
@@ -272,6 +283,7 @@ export default defineComponent({
                     
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
+                editSpaceStore.setMyColorList(data.myColorList);
                 data.addMyColorVisible = false;
             },
             handleEditMyColor (value, id, index)
@@ -294,6 +306,7 @@ export default defineComponent({
                     }
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
+                editSpaceStore.setMyColorList(data.list);
             },
             changeLanguage ()
             {
@@ -333,6 +346,7 @@ export default defineComponent({
                     // methods.handleFrameImg(data.ctx1);
                     return;
                 }
+                if (index === 5) return;
                 data.currentTool = index;
             },
             handleChangeCanvasSize (e, key)
@@ -599,8 +613,6 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 2)
                     {
-                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         console.log(row, col);
                         let currentFrame = data.drawRecord[data.currentFrameIndex].layer;
                         for (let i = currentFrame.length - 1; i >= 0; i--)
@@ -623,8 +635,6 @@ export default defineComponent({
                     {
                         // 绘制形状
                         data.isDrawShape = true;
-                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         let gridX = (col * data.scale) + data.canvasBeginPos.x;
                         let gridY = (row * data.scale) + data.canvasBeginPos.y;
                         data.lastX = gridX + data.scale / 2;
@@ -635,14 +645,29 @@ export default defineComponent({
                     else if (data.currentTool === 4)
                     {
                         const targetColor = data.ctx1.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                         console.log(data.drawRecord);
                         let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
                         console.log(replacementColor);
                         
                         methods.fillChunk(col, row, rgbaToHex(targetColor), replacementColor);
 
+                    }
+                    else if (data.currentTool === 7)
+                    {
+                        data.isMoving = true;
+                        // 获取可移动的坐标数组和记录初始点击的行列号
+                        data.moveData.x = col;
+                        data.moveData.y = row;
+                        data.moveData.list = removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
+                        {
+                            if (item[2] !== '#00000000') 
+                            {
+                                return item;
+                            }
+                            return null;
+                        }));
+                        console.log(data.moveData);
+                        
                     }
                 }
             },
@@ -851,6 +876,32 @@ export default defineComponent({
                             }
                         }
                     }
+                    if (data.isMoving)
+                    {
+                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
+                        let difX = col - data.moveData.x;
+                        let difY = row - data.moveData.y;
+                        
+                        for (let i = 0; i < data.moveData.list.length; i++)
+                        {
+                            data.moveData.list[i][0] += difX;
+                            data.moveData.list[i][1] += difY;
+                        }
+                        
+                        console.log(data.moveData);
+                        data.moveData.x = col;
+                        data.moveData.y = row;
+                        data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                        for (let i = 0; i < data.moveData.list.length; i++)
+                        {
+                            if (data.moveData.list[i][0] >= data.canvasWidth || data.moveData.list[i][1] >= data.canvasHeight || data.moveData.list[i][0] < 0 || data.moveData.list[i][1] < 0) continue;
+                            let gridX = (data.moveData.list[i][0] * data.scale) + data.canvasBeginPos.x;
+                            let gridY = (data.moveData.list[i][1] * data.scale) + data.canvasBeginPos.y;
+                            data.ctx1.fillStyle = data.moveData.list[i][2];
+                            data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                        }
+                        
+                    }
                     
                 }
                 else
@@ -999,7 +1050,7 @@ export default defineComponent({
                     {
                         for (let v = 0; v < arr[i].layerData.length; v++)
                         {
-                            if (arr[i].layerData[v][0] > data.canvasWidth || arr[i].layerData[v][1] > data.canvasHeight) continue;
+                            if (arr[i].layerData[v][0] >= data.canvasWidth || arr[i].layerData[v][1] >= data.canvasHeight) continue;
                             if (arr[i].layerData[v][2] !== '#00000000') 
                             {
                                 let gridX = (arr[i].layerData[v][0] * data.scale) + beginPos.x;
@@ -1028,6 +1079,25 @@ export default defineComponent({
                     data.isDragging = false;
                     data.canvasBeginPos.x = data.drawAreaList[0][0];
                     data.canvasBeginPos.y = data.drawAreaList[0][1];
+                }
+                if (data.isMoving)
+                {
+                    let layerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    for (let i = 0; i < layerData.length; i++)
+                    {
+                        let findData = data.moveData.list.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
+                        if (findData)
+                        {
+                            layerData[i][2] = findData[2];
+                        }
+                        else
+                        {
+                            layerData[i][2] = '#00000000';
+                        }
+                    }
+                    data.moveData.list = [];
+                    data.isMoving = false;
+                    methods.reDraw();
                 }
                 methods.saveShapeData();
             },
@@ -1164,6 +1234,7 @@ export default defineComponent({
                     else if (data.currentDrawShape.toLowerCase().indexOf('circle') !== -1) data.canvas.classList.add('circle-cursor');
                 }
                 else if (data.currentTool === 4) data.canvas.classList.add('bucket-cursor');
+                else if (data.currentTool === 7) data.canvas.classList.add('move-cursor');
             },
             handleCopyColor ()
             {
@@ -1174,9 +1245,15 @@ export default defineComponent({
                 }
                 copyText(rgbaToHex(extractRgbaValues(data.brushColor)));
             },
-            handleSaveColor ()
+            handleSaveColor (isAuto = false)
             {
                 // 保存颜色
+                if (isAuto)
+                {
+                    data.myColor = data.brushColor;
+                    methods.handleAddColor();
+                    return;
+                }
                 data.addMyColorVisible = true;
                 data.myColor = data.brushColor;
 
@@ -1203,10 +1280,12 @@ export default defineComponent({
                 if (colorList)
                 {
                     data.myColorList = JSON.parse(colorList);
+                    editSpaceStore.setMyColorList(data.myColorList);
                 }
                 else
                 {
                     proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
+                    editSpaceStore.setMyColorList(data.myColorList);
                 }
             },
             handleLanguageCommand (command)
@@ -1262,6 +1341,16 @@ export default defineComponent({
             },
             handleChangeLayerVisible (index)
             {
+                if (index < 0)
+                {
+                    for (let i = 0; i < data.drawRecord[data.currentFrameIndex].layer.length; i++)
+                    {
+                        data.drawRecord[data.currentFrameIndex].layer[i].isRender = !data.currentFrameLayerVisible;
+                    }
+                    data.currentFrameLayerVisible = !data.currentFrameLayerVisible;
+                    methods.reDraw();
+                    return;
+                }
                 let flag = data.drawRecord[data.currentFrameIndex].layer[index].isRender;
                 data.drawRecord[data.currentFrameIndex].layer[index].isRender = !flag;
                 methods.reDraw();
@@ -1560,6 +1649,10 @@ export default defineComponent({
                 data.drawRecord = JSON.parse(JSON.stringify(data.historyRecord[data.currentHistoryIndex].record));
                 methods.reDraw(true, false);
             },
+            handleOpenMyColorDialog ()
+            {
+                proxy.$refs.MyColorDialog.handleOpen();
+            },
             addKeyBoardEvent ()
             {
                 document.addEventListener('keydown', function (event) 
@@ -1595,16 +1688,100 @@ export default defineComponent({
                         event.preventDefault();
                         methods.handleChangeTool(2);
                     }
-                    else if (event.altKey && event.key === 's') 
+                    else if (event.altKey && event.key === 'b') 
                     {
                         // 切换油漆桶
                         methods.handleChangeTool(4);
                     }
+                    else if (event.altKey && event.key === 'm') 
+                    {
+                        methods.handleChangeTool(7);
+                    }
+                    else if (event.altKey && event.key === 's')
+                    {
+                        methods.handleSaveColor(true);
+                    }
+                    else if (event.ctrlKey && event.key === 'c')
+                    {
+                        methods.handleCopyColor();
+                    }
                     else if (event.altKey && event.key === 'r') 
                     {
-                        // 清空当前画布
                         methods.handleChangeTool(6);
-                        
+                    }
+                    else if (event.altKey && event.key === 'c') 
+                    {
+                        proxy.$refs.MyColorDialog.handleOpen();
+                    }
+                    else if (event.altKey && event.key === 'h') 
+                    {
+                        methods.handleChangeTool(3);
+                        methods.drawShape('rect');
+                    }
+                    else if (event.altKey && event.key === 'j') 
+                    {
+                        methods.handleChangeTool(3);
+                        methods.drawShape('circle');
+                    }
+                    else if (event.altKey && event.key === 'k') 
+                    {
+                        methods.handleChangeTool(3);
+                        methods.drawShape('line');
+                    }
+                    else if (event.altKey && event.key === 'l') 
+                    {
+                        methods.handleChangeTool(3);
+                        methods.drawShape('fillRect');
+                    }
+                    else if (event.key === 'ArrowUp')
+                    {
+                        // 切换图层
+                        if (data.currentLayerIndex <= 0)
+                        {
+                            data.currentLayerIndex = 0;
+                        }
+                        else
+                        {
+                            data.currentLayerIndex--;
+                        }
+                    }
+                    else if (event.key === 'ArrowDown')
+                    {
+                        // 切换图层
+                        if (data.currentLayerIndex >= data.drawRecord[data.currentFrameIndex].layer.length - 1)
+                        {
+                            data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
+                        }
+                        else
+                        {
+                            data.currentLayerIndex++;
+                        }
+                    }
+                    else if (event.key === 'ArrowLeft')
+                    {
+                        // 切换帧
+                        if (data.currentFrameIndex <= 0)
+                        {
+                            data.currentFrameIndex = 0;
+                        }
+                        else
+                        {
+                            data.currentFrameIndex--;
+                        }
+                        methods.handleChangeFrame(data.currentFrameIndex);
+                    }
+                    else if (event.key === 'ArrowRight')
+                    {
+                        // 切换帧
+                        if (data.currentFrameIndex >= data.drawRecord.length - 1)
+                        {
+                            data.currentFrameIndex = data.drawRecord.length - 1;
+                        }
+                        else
+                        {
+                            data.currentFrameIndex++;
+                        }
+                        methods.handleChangeFrame(data.currentFrameIndex);
                     }
                     data.canvas.className = '';
                     methods.addCursorClass();
@@ -1633,6 +1810,38 @@ export default defineComponent({
                     methods.drawPixelArea();
                     methods.reDraw(false, false);
                 });
+            },
+            onDragLayerEnd (event, node)
+            {
+                let dom = proxy.$refs[node];
+                let currentNodes:any = Array.from(dom.children);
+                let newArr = [] as any;
+                let currentLayerData = data.drawRecord[data.currentFrameIndex].layer;
+                for (let i = 0; i < currentNodes.length; i++)
+                {
+                    let key = currentNodes[i].dataset.key;
+                    let layerData = currentLayerData.find((item) => item.layerId === key);
+                    newArr.push(layerData);
+                }
+                data.drawRecord[data.currentFrameIndex].layer = newArr;
+                methods.reDraw();
+                
+            },
+            onDragFrameEnd (event, node)
+            {
+                let dom = proxy.$refs[node];
+                let currentNodes:any = Array.from(dom.children);
+                let newArr = [] as any;
+                let currentFrameData = data.drawRecord;
+                for (let i = 0; i < currentNodes.length - 1; i++)
+                {
+                    let key = currentNodes[i].dataset.key;
+                    let frameData = currentFrameData.find((item) => item.frameId === key);
+                    newArr.push(frameData);
+                }
+                data.drawRecord = newArr;
+                methods.handleChangeFrame(data.currentFrameIndex);
+                
             }
         };
 
@@ -1664,8 +1873,6 @@ export default defineComponent({
             methods.computeScale();
             data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
             data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
-            console.log(data.canvasBeginPos.x, data.canvasBeginPos.y);
-            
             methods.drawPixelArea();
             methods.initCanvasRecord('init');
             methods.startDrawing();
@@ -1679,7 +1886,8 @@ export default defineComponent({
             ...methods,
             ...computedApi,
             copyText,
-            ...fullScreen()
+            ...fullScreen(),
+            ...useDrag()
         };
     }
 });

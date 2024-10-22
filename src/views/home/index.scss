@@ -157,6 +157,10 @@
     cursor: url('icon/bucket_cursor.png') -3 8, auto;
 }
 
+.move-cursor {
+    cursor: move;
+}
+
 .option-input {
     width: 150px;
     margin-bottom: 8px;
@@ -166,7 +170,7 @@
     .layer-item {
         height: 40px;
         background-color: var(--el-bg-color);
-        margin: 10px 10px 10px 0;
+        margin: 5px 10px 5px 0;
         padding: 5px;
         border-radius: 5px;
         font-size: 14px;

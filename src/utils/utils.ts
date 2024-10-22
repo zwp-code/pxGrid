@@ -123,6 +123,15 @@ export function getOrderedRectangleCoordinates (x0, y0, x1, y1)
     };
 }
 
+export function removeNullArray (arr) 
+{
+    return arr.filter((item) => 
+    {
+        return item !== null;
+    });
+}
+
+
 export function removeNullFrom2DArray (arr) 
 {
     return arr.filter((subArr) => 

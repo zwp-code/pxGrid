@@ -9,17 +9,17 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.1",
+    "@vueuse/core": "^9.2.0",
     "axios": "^1.2.0",
     "element-plus": "^2.4.3",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "pinia": "^2.0.17",
     "screenfull": "^5.1.0",
     "vue": "^3.2.25",
-    "vue-router": "^4.0.13",
-    "vue-uuid": "^2.0.2",
-    "file-saver": "^2.0.5",
-    "jszip": "^3.10.1",
     "vue-i18n": "^9.3.0-beta.16",
-    "@vueuse/core": "^9.2.0"
+    "vue-router": "^4.0.13",
+    "vue-uuid": "^2.0.2"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.17.0",

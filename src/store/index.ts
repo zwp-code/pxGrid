@@ -5,9 +5,14 @@ export const useEditSpaceStore = defineStore('editSpace', {
     {
         return {
             lang:'',
-            themeValue:false
+            themeValue:false,
+            myColorList:[] as any
         };
     },
     actions: {
+        setMyColorList (value)
+        {
+            this.myColorList = value;
+        }
     }
 });

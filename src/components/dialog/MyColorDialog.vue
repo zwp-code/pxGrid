@@ -2,11 +2,14 @@
     <el-dialog v-model="dialogVisible" 
     title="我的颜色"
     :width="500"
+    :modal="false"
+    :close-on-click-modal="false"
+    draggable="true"
     :before-close="handleClose"
     class="z-dialog" center>
         <div class="scrollbar body">
             <div class="content">
-                <div v-for="item in list" :key="item.id" class="flex-column-start myColorItem">
+                <div v-for="item in editSpaceStore.myColorList" :key="item.id" class="flex-column-start myColorItem">
 
                     <div class="flex-between full-w">
                         <el-input
@@ -54,7 +57,7 @@
                                     <el-color-picker v-model="myColor" show-alpha/>
                                     <el-select v-model="myColorGroup" placeholder="选择分组" style="width: 150px">
                                         <el-option
-                                            v-for="item in list"
+                                            v-for="item in editSpaceStore.myColorList"
                                             :key="item.id"
                                             :label="item.groupName"
                                             :value="item.id"
@@ -145,6 +148,7 @@
 <script lang="ts">
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance } from 'vue';
 import { copyText, getColumnsList } from '@/utils/utils';
+import { useEditSpaceStore } from '@/store';
 export default defineComponent({
     name: 'MyColorDialog',
     components: {},
@@ -158,8 +162,9 @@ export default defineComponent({
     setup (props, context) 
     {
         let { proxy }:any = getCurrentInstance();
+        let editSpaceStore = useEditSpaceStore();
         let data = reactive({
-            dialogVisible:props.visible,
+            dialogVisible:false,
             list:[] as any,
             myColor:'#ffffff',
             myColorGroup:1,
@@ -183,12 +188,16 @@ export default defineComponent({
             handleChangeColor (value)
             {
                 context.emit('select', value);
-                methods.handleClose();
+                // methods.handleClose();
+            },
+            handleOpen ()
+            {
+                data.dialogVisible = true;
             },
             handleClose ()
             {
                 data.dialogVisible = false;
-                context.emit('close');
+                // context.emit('close');
             },
             getData ()
             {
@@ -196,6 +205,9 @@ export default defineComponent({
                 if (colorList)
                 {
                     data.list = JSON.parse(colorList);
+                    editSpaceStore.setMyColorList(data.list);
+                    console.log(editSpaceStore.myColorList);
+                    
                 }
             },
             addColorGroup ()
@@ -246,6 +258,7 @@ export default defineComponent({
                     
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.list));
+                editSpaceStore.setMyColorList(data.list);
                 data.addMyColorVisible = 0;
                 data.editMyColorMask = null;
             },
@@ -272,6 +285,7 @@ export default defineComponent({
                     }
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.list));
+                editSpaceStore.setMyColorList(data.list);
                 data.editGroupName.id = 0;
                 data.editGroupName.label = '';
             },
@@ -285,6 +299,7 @@ export default defineComponent({
                     }
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.list));
+                editSpaceStore.setMyColorList(data.list);
             },
             handleDeleteGroup (id)
             {
@@ -296,18 +311,20 @@ export default defineComponent({
                     }
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.list));
+                editSpaceStore.setMyColorList(data.list);
             }
             
         };
 
         onMounted(() => 
         {
-            methods.getData();
+            // methods.getData();
         });
         return {
             ...toRefs(data),
             ...methods,
-            copyText
+            copyText,
+            editSpaceStore
         };
     }
 });

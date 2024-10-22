@@ -94,10 +94,10 @@
                                     </div>
                                     <template #dropdown>
                                     <el-dropdown-menu>
-                                        <el-dropdown-item @click="drawShape('rect')">矩 形</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('circle')">圆 形</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('line')">直 线</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('fillRect')">填充矩形</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('rect')">矩 形 [Alt + h]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('circle')">圆 形 [Alt + j]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('line')">直 线 [Alt + k]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('fillRect')">填充矩形 [Alt + l]</el-dropdown-item>
                                         <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                     </el-dropdown-menu>
                                     </template>
@@ -105,11 +105,20 @@
                                 
                             </el-tooltip>
                             <el-tooltip
-                                content="油漆桶 [Alt + s]"
+                                content="油漆桶 [Alt + b]"
                                 placement="right"
                             >
                                 <div class="pointer toolItem" @click="handleChangeTool(4)" :class="{ 'active': currentTool === 4 }">
                                     <img :src="requireIcon('bucket')"/>
+                                </div>
+                            </el-tooltip>
+                            <el-tooltip
+                                content="移动 [Alt + m]"
+                                placement="right"
+                            >
+                                <div class="pointer toolItem" @click="handleChangeTool(7)"
+                                :class="{ 'active': currentTool === 7 }">
+                                    <img :src="requireIcon('move')"/>
                                 </div>
                             </el-tooltip>
                         </div>
@@ -150,19 +159,28 @@
                         <canvas id="Canvas" width="512" height="512"></canvas>
                         <canvas id="RealCanvas" v-show="false"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
-                        <!-- <canvas id="BGCanvas" width="300" height="300"></canvas>
-                        <canvas id="PixelCanvas" width="300" height="300"></canvas> -->
                     </div>
                 </div>
                 <el-footer class="flex-start">
                     <div class="text-center">帧</div>
-                    <div class="flex-start frame-list scrollbar">
-                        <el-dropdown v-for="(item, index) in drawRecord" :key="item.frameId" trigger="contextmenu">
+                    <div 
+                    class="flex-start frame-list scrollbar" 
+                    @dragstart="onDragStart"
+                    @dragover="onDragOver($event, 'frameBox')"
+                    @dragend="onDragFrameEnd($event, 'frameBox')"
+                    ref="frameBox"
+                    id="frame-box">
+                        <el-dropdown 
+                        draggable="true"
+                        v-for="(item, index) in drawRecord"
+                        :data-key="item.frameId"
+                        data-node="LI"
+                        :key="item.frameId" trigger="contextmenu">
                             <div
                             @click="handleChangeFrame(index)"
                             class="frame-item pointer"
                             :class="{ 'active': currentFrameIndex === index }">
-                                <img :src="item.currentFrameImg" v-if="item.currentFrameImg">
+                                <img draggable="false" :src="item.currentFrameImg" v-if="item.currentFrameImg">
                             </div>
                             <template #dropdown>
                                 <el-dropdown-menu>
@@ -188,11 +206,19 @@
                         <div class="function-block function-block-between">
                             <div>
                                 <span class="function-label">画笔颜色</span>
-                                <el-color-picker v-model="brushColor" show-alpha/>
+                                <el-color-picker v-model="brushColor" show-alpha @active-change="(e) => brushColor = e"/>
                             </div>
                             <div>
-                                <el-link type="info" :underline="false" @click="handleSaveColor">保存</el-link>
-                                <el-link type="info" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
+                                <el-tooltip
+                                content="保存颜色 [Alt + s]"
+                                placement="top">
+                                    <el-link type="info" :underline="false" @click="handleSaveColor">保存</el-link>
+                                </el-tooltip>
+                                <el-tooltip
+                                content="复制颜色 [Ctrl + c]"
+                                placement="top">
+                                    <el-link type="info" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
+                                </el-tooltip>
                             </div>
                         </div>
                         <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0 && currentTool===3">
@@ -260,9 +286,14 @@
                                         </div>
                                     </el-popover>
                                 </div>
-                                <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" @click="MyColorDialogVisible=true">
-                                    <el-icon color="#808080"><MoreFilled /></el-icon>
-                                </div>
+                                <el-tooltip
+                                content="全部颜色 [Alt + c]"
+                                placement="bottom"
+                                >
+                                    <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" @click="handleOpenMyColorDialog">
+                                        <el-icon color="#808080"><MoreFilled /></el-icon>
+                                    </div>
+                                </el-tooltip>
                             </div>
                         </div>
                         <!-- <div class="function-block">
@@ -300,13 +331,29 @@
                         </div>
                     </div>
                     <div style="flex: 50%;margin-top: 10px;" class="full-w" v-if="drawRecord.length">
-                        <h1 class="flex-between">图层面板 <el-icon class="pointer" @click="handleAddLayer"><CirclePlusFilled /></el-icon></h1>
+                        <h1 class="flex-between">图层面板 
+                            <div class="flex-end">
+                                <el-icon style="margin-right: 15px;" class="pointer" @click="handleChangeLayerVisible(-1)" v-if="currentFrameLayerVisible"><View /></el-icon>
+                                <el-icon style="margin-right: 15px;" class="pointer" @click="handleChangeLayerVisible(-1)" v-else><Hide /></el-icon>
+                                <el-icon style="margin-right: 10px;" class="pointer" @click="handleAddLayer"><CirclePlus /></el-icon>
+                            </div>
+                        </h1>
                         <el-divider border-style="dashed" />
-                        <div class="scrollbar scrollY full-w layer-list" style="height: calc(100% - 71px);">
+                        <div 
+                        ref="layerBox"
+                        id="layer-box"
+                        class="scrollbar scrollY full-w layer-list"
+                        @dragstart="onDragStart"
+                        @dragover="onDragOver($event, 'layerBox')"
+                        @dragend="onDragLayerEnd($event, 'layerBox')"
+                        style="height: calc(100% - 71px);">
                             <el-dropdown
+                            draggable="true"
                             class="full-w"
-                            trigger="contextmenu" 
-                            v-for="(item, index) in drawRecord[currentFrameIndex].layer" 
+                            trigger="contextmenu"
+                            v-for="(item, index) in drawRecord[currentFrameIndex].layer"
+                            :data-key="item.layerId"
+                            data-node="LI"
                             :key="item.layerId" >
                                 <div
                                 class="layer-item flex-between pointer full-w" 
@@ -352,10 +399,8 @@
         </el-container>
         <teleport to="body">
             <MyColorDialog 
-            :visible="MyColorDialogVisible" 
-            v-if="MyColorDialogVisible"
-            @select="(color) => brushColor = color"
-            @close="MyColorDialogVisible=false">
+            ref="MyColorDialog"
+            @select="(color) => brushColor = color">
             </MyColorDialog>
             <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog>
             <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog>
