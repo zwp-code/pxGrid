@@ -6,9 +6,10 @@
     :close-on-click-modal="false"
     draggable="true"
     :before-close="handleClose"
+    @open="getData"
     class="z-dialog" center>
         <div class="scrollbar body">
-            <div class="content">
+            <div class="content" v-if="editSpaceStore.myColorList.length">
                 <div v-for="item in editSpaceStore.myColorList" :key="item.id" class="flex-column-start myColorItem">
 
                     <div class="flex-between full-w">
@@ -46,7 +47,7 @@
                                         <el-dropdown-menu>
                                         <el-dropdown-item @click="copyText(value)">复 制</el-dropdown-item>
                                         <el-dropdown-item @click="handleEditMyColor(value, item.id, index)">修 改</el-dropdown-item>
-                                        <el-dropdown-item @click="handleDeleteMyColor(value, item.id)">删 除</el-dropdown-item>
+                                        <el-dropdown-item @click="handleDeleteMyColor(index, item.id)">删 除</el-dropdown-item>
                                         </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
@@ -221,6 +222,7 @@ export default defineComponent({
                     });
                     data.isAddGroup = false;
                     data.myGroupName = '';
+                    data.myColorGroup = data.list.length;
                 }
             },
             handleAddColor ()
@@ -289,13 +291,13 @@ export default defineComponent({
                 data.editGroupName.id = 0;
                 data.editGroupName.label = '';
             },
-            handleDeleteMyColor (value, id)
+            handleDeleteMyColor (index, id)
             {
                 data.list.forEach((item) => 
                 {
                     if (item.id === id)
                     {
-                        item.list.splice(value, 1);
+                        item.list.splice(index, 1);
                     }
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.list));

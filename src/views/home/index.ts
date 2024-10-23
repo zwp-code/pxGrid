@@ -16,6 +16,7 @@ import { useDark } from '@vueuse/core';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
 import useDrag from '@/hooks/useDrag';
+import useFilter from '@/hooks/useFilter';
 export default defineComponent({
     name:'home',
     components: {
@@ -30,6 +31,7 @@ export default defineComponent({
     setup (props, context)
     {
         const { proxy }:any = getCurrentInstance();
+        const useFilterHooks = useFilter();
         const { locale: i18nLanguage } = useI18n();
         const editSpaceStore = useEditSpaceStore();
         const language = (navigator.language || 'zh').toLocaleLowerCase();
@@ -45,6 +47,8 @@ export default defineComponent({
             isErasering:false,
             isDrawShape:false,
             isMoving:false,
+            isSelecting:false,
+            isCopy:false,
             shapeFillColor:'#000000ff',
             brushColor:'#000000ff',
             brushSize:10,
@@ -112,6 +116,7 @@ export default defineComponent({
 
             loading:false,
             isSpace:false,
+            isShift:false,
             isDragging:false,
             dragData:{
                 x:0,
@@ -127,6 +132,14 @@ export default defineComponent({
                 x:0,
                 y:0,
                 list:[] as any
+            },
+
+            selectData:{
+                x:-1,
+                y:-1,
+                originList:[] as any, // 原始有像素的数据
+                selectList:[] as any, // 选择的数据
+                copyList:[] as any // 复制的数据
             },
 
             AnimationFrameId_1:null as any
@@ -246,6 +259,9 @@ export default defineComponent({
                         groupName:data.myGroupName,
                         list:[]
                     });
+                    data.isAddGroup = false;
+                    data.myGroupName = '';
+                    data.myColorGroup = data.myColorList.length;
                 }
             },
             handleAddColor ()
@@ -306,7 +322,7 @@ export default defineComponent({
                     }
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
-                editSpaceStore.setMyColorList(data.list);
+                editSpaceStore.setMyColorList(data.myColorList);
             },
             changeLanguage ()
             {
@@ -346,7 +362,6 @@ export default defineComponent({
                     // methods.handleFrameImg(data.ctx1);
                     return;
                 }
-                if (index === 5) return;
                 data.currentTool = index;
             },
             handleChangeCanvasSize (e, key)
@@ -654,27 +669,63 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 7)
                     {
+                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
                         data.isMoving = true;
                         // 获取可移动的坐标数组和记录初始点击的行列号
                         data.moveData.x = col;
                         data.moveData.y = row;
-                        data.moveData.list = removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
+                        data.moveData.list = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
                         {
                             if (item[2] !== '#00000000') 
                             {
                                 return item;
                             }
                             return null;
-                        }));
+                        }))));
                         console.log(data.moveData);
                         
+                    }
+                    else if (data.currentTool === 8)
+                    {
+                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
+                        data.isSelecting = true;
+                        // data.selectData.x = col;
+                        // data.selectData.y = row;
+                        data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
+                        {
+                            if (item[2] !== '#00000000') 
+                            {
+                                return item;
+                            }
+                            return null;
+                        }))));
+                        // let value = data.selectData.originList.find((item) => item[0] === col && item[1] === row);
+                        // if (value) 
+                        // {
+                        //     let flag = data.selectData.selectList.findIndex((item) => item[0] === col && item[1] === row); 
+                        //     console.log(flag);
+                        //     if (flag < 0) 
+                        //     {
+                        //         data.selectData.selectList.push([data.selectData.x, data.selectData.y, value[2]]);
+                        //         // methods.draw(event); 
+                        //     }
+                        //     else
+                        //     {
+                        //         let arr = data.selectData.selectList[flag];
+                        //         let gridX = (arr[0] * data.scale) + data.canvasBeginPos.x;
+                        //         let gridY = (arr[1] * data.scale) + data.canvasBeginPos.y;
+                        //         data.ctx1.fillStyle = arr[2];
+                        //         data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                        //         data.selectData.selectList.splice(flag, 1);
+                        //     }
+                        // }
                     }
                 }
             },
 
             fillChunk (x, y, targetColor, replacementColor)
             {
-                console.log(targetColor, replacementColor);
+                console.log(targetColor, replacementColor, data.drawRecord);
                 
                 const stack = [[x, y]];
                 const isSameColor = (col, row, color) =>
@@ -683,6 +734,7 @@ export default defineComponent({
                     let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                     for (let i = 0; i < currentLayerData.length; i++)
                     {
+                        
                         if (currentLayerData[i][0] === col && currentLayerData[i][1] === row && currentLayerData[i][2] === color)
                         {
                             flag = true;
@@ -736,7 +788,6 @@ export default defineComponent({
             },      
             draw (event) 
             {
-                
                 if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
                 {
                     const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
@@ -751,8 +802,15 @@ export default defineComponent({
                         methods.startDrag(gridX, gridY);
                         return;
                     }
-                    data.canvas.style.cursor = '';
-                    methods.addCursorClass();
+                    if (data.isShift && data.isMoving && data.isSelecting)
+                    {
+                        data.canvas.style.cursor = 'move';
+                    }
+                    else
+                    {
+                        data.canvas.style.cursor = '';
+                        methods.addCursorClass();
+                    }
                     data.gridInfo = `[${col}, ${row}]`;
                     if (data.isDrawing)
                     {
@@ -876,9 +934,9 @@ export default defineComponent({
                             }
                         }
                     }
-                    if (data.isMoving)
+                    if (data.isMoving && !data.isSelecting)
                     {
-                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
+                        // if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
                         let difX = col - data.moveData.x;
                         let difY = row - data.moveData.y;
                         
@@ -900,7 +958,82 @@ export default defineComponent({
                             data.ctx1.fillStyle = data.moveData.list[i][2];
                             data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                         }
-                        
+                    }
+                    if (data.isSelecting)
+                    {
+                        if (data.isMoving)
+                        {
+                            data.moveData.x = data.selectData.x;
+                            data.moveData.y = data.selectData.y;
+                            data.moveData.list = JSON.parse(JSON.stringify(data.selectData.selectList));
+                            let difX = col - data.moveData.x;
+                            let difY = row - data.moveData.y;
+                            for (let i = 0; i < data.moveData.list.length; i++)
+                            {
+                                data.moveData.list[i][0] += difX;
+                                data.moveData.list[i][1] += difY;
+                            }
+                            data.moveData.x = col;
+                            data.moveData.y = row;
+                            data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                            for (let i = 0; i < data.selectData.originList.length; i++)
+                            {
+                                if (data.selectData.originList[i][0] >= data.canvasWidth || data.selectData.originList[i][1] >= data.canvasHeight || data.selectData.originList[i][0] < 0 || data.selectData.originList[i][1] < 0) continue;
+                                if (!data.selectData.copyList.length)
+                                {
+                                    if (data.selectData.selectList.find((item) => data.selectData.originList[i][0] === item[0] && data.selectData.originList[i][1] === item[1])) continue;
+                                }
+                                let gridX = (data.selectData.originList[i][0] * data.scale) + data.canvasBeginPos.x;
+                                let gridY = (data.selectData.originList[i][1] * data.scale) + data.canvasBeginPos.y;
+                                data.ctx1.fillStyle = data.selectData.originList[i][2];
+                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                            }
+                            for (let i = 0; i < data.moveData.list.length; i++)
+                            {
+                                if (data.moveData.list[i][0] >= data.canvasWidth || data.moveData.list[i][1] >= data.canvasHeight || data.moveData.list[i][0] < 0 || data.moveData.list[i][1] < 0) continue;
+                                let gridX = (data.moveData.list[i][0] * data.scale) + data.canvasBeginPos.x;
+                                let gridY = (data.moveData.list[i][1] * data.scale) + data.canvasBeginPos.y;
+                                data.ctx1.fillStyle = data.moveData.list[i][2];
+                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                data.ctx1.fillStyle = 'rgba(173,216,230,0.5)';
+                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                            }
+                            return;
+                        }
+                        if (data.selectData.x === col && data.selectData.y === row) return;
+                        data.selectData.x = col;
+                        data.selectData.y = row;
+                        let value = data.selectData.originList.find((item) => item[0] === col && item[1] === row);
+                        if (value)
+                        {
+                            let flag = data.selectData.selectList.findIndex((v) =>
+                            {
+                                return v[0] === data.selectData.x && v[1] === data.selectData.y;
+                            }); 
+                            if (flag < 0) 
+                            {
+                                data.selectData.selectList.push([data.selectData.x, data.selectData.y, value[2]]);
+                                for (let i = 0; i < data.selectData.selectList.length; i++)
+                                {
+                                    if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
+                                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
+                                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
+                                    data.ctx1.fillStyle = data.selectData.selectList[i][2];
+                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                    data.ctx1.fillStyle = 'rgba(173,216,230,0.5)';
+                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                }
+                            }
+                            // else
+                            // {
+                            //     let arr = data.selectData.selectList[flag];
+                            //     let gridX = (arr[0] * data.scale) + data.canvasBeginPos.x;
+                            //     let gridY = (arr[1] * data.scale) + data.canvasBeginPos.y;
+                            //     data.ctx1.fillStyle = arr[2];
+                            //     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                            //     data.selectData.selectList.splice(flag, 1);
+                            // }
+                        }
                     }
                     
                 }
@@ -910,6 +1043,55 @@ export default defineComponent({
                     data.canvas.classList = '';
                 }
                 
+            },
+            handleSelect (value)
+            {
+                // if (value === 'move')
+                // {
+                //     if (data.selectData.selectList.length)
+                //     {
+                //         data.isMoving = true;
+                //         data.isShift = true;
+                //     }
+                // }
+                // else
+                // {
+                //     //
+                // }
+            },
+
+            handleCancelSelect ()
+            {
+                for (let i = 0; i < data.selectData.selectList.length; i++)
+                {
+                    if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
+                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
+                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
+                    data.ctx1.fillStyle = data.selectData.selectList[i][2];
+                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                }
+                data.selectData.selectList = [];
+                data.selectData.copyList = [];
+                data.isMoving = false;
+                data.isSelecting = false;
+            },
+
+            handleRemoveSelect ()
+            {
+                for (let i = 0; i < data.selectData.selectList.length; i++)
+                {
+                    if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
+                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
+                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
+                    data.ctx1.fillStyle = data.selectData.selectList[i][2];
+                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                    methods.removeDrawRecord([data.selectData.selectList[i][0], data.selectData.selectList[i][1]], false);
+                }
+                data.selectData.selectList = [];
+                data.selectData.copyList = [];
+                data.isMoving = false;
+                data.isSelecting = false;
+                methods.reDraw();
             },
 
             startDrag (targetX, targetY)
@@ -1021,7 +1203,7 @@ export default defineComponent({
                 
             },
 
-            removeDrawRecord (value)
+            removeDrawRecord (value, isRedraw = true)
             {
                 console.log(value);
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
@@ -1033,7 +1215,7 @@ export default defineComponent({
                         break;
                     }
                 }
-                methods.reDraw();
+                if (isRedraw) methods.reDraw();
             },
 
             reDraw (isRenderFrameImg = true, isAddHistory = true, beginPos = data.canvasBeginPos)
@@ -1062,6 +1244,7 @@ export default defineComponent({
                         }
                     }
                 }
+                methods.reDrawSelectData();
                 if (isRenderFrameImg)
                 {
                     if (count > 0) methods.handleFrameImg(data.ctx1, isAddHistory);
@@ -1080,7 +1263,7 @@ export default defineComponent({
                     data.canvasBeginPos.x = data.drawAreaList[0][0];
                     data.canvasBeginPos.y = data.drawAreaList[0][1];
                 }
-                if (data.isMoving)
+                if (data.isMoving && !data.isSelecting)
                 {
                     let layerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                     for (let i = 0; i < layerData.length; i++)
@@ -1098,6 +1281,36 @@ export default defineComponent({
                     data.moveData.list = [];
                     data.isMoving = false;
                     methods.reDraw();
+                    
+                }
+                if (data.isSelecting)
+                {
+                    if (!data.isMoving)
+                    {
+                        // 没有移动
+                        data.isSelecting = false;
+                        return;
+                    }
+                    // 有移动
+                    let layerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    for (let i = 0; i < layerData.length; i++)
+                    {
+                        let findData = data.selectData.selectList.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
+                        if (findData)
+                        {
+                            layerData[i][2] = data.selectData.copyList.length ? findData[2] : '#00000000';
+                        }
+                        let findData1 = data.moveData.list.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
+                        if (findData1)
+                        {
+                            layerData[i][2] = findData1[2];
+                        }
+                    }
+                    data.selectData.selectList = JSON.parse(JSON.stringify(data.moveData.list));
+                    data.selectData.copyList = [];
+                    data.isSelecting = false;
+                    data.isMoving = false;
+                    methods.reDraw();
                 }
                 methods.saveShapeData();
             },
@@ -1105,6 +1318,18 @@ export default defineComponent({
             {
                 methods.stop();
                 data.canvas.className = '';
+            },
+            reDrawSelectData ()
+            {
+                if (!data.selectData.selectList.length) return;
+                for (let i = 0; i < data.selectData.selectList.length; i++)
+                {
+                    if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
+                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
+                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
+                    data.ctx1.fillStyle = 'rgba(173,216,230,0.5)';
+                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                }
             },
             saveShapeData ()
             {
@@ -1235,6 +1460,7 @@ export default defineComponent({
                 }
                 else if (data.currentTool === 4) data.canvas.classList.add('bucket-cursor');
                 else if (data.currentTool === 7) data.canvas.classList.add('move-cursor');
+                else if (data.currentTool === 8) data.canvas.classList.add('select-cursor');
             },
             handleCopyColor ()
             {
@@ -1277,7 +1503,9 @@ export default defineComponent({
             getMyColorList ()
             {
                 let colorList = proxy.$utils.cache.mycolor.get();
-                if (colorList)
+                console.log(colorList);
+                
+                if (colorList && JSON.parse(colorList).length)
                 {
                     data.myColorList = JSON.parse(colorList);
                     editSpaceStore.setMyColorList(data.myColorList);
@@ -1663,7 +1891,19 @@ export default defineComponent({
                         data.canvas.style.cursor = 'grabbing';
                         return;
                     }
-                    if (event.altKey && event.key === 'z') 
+                    if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
+                    {
+                        data.isShift = true;
+                        data.isMoving = true;
+                        data.canvas.style.cursor = 'move';
+                        return;
+                    }
+                    if (event.altKey && event.key === 'c' && data.selectData.selectList.length)
+                    {
+                        data.selectData.copyList = JSON.parse(JSON.stringify(data.selectData.selectList));
+                        console.log('复制成功');
+                    }
+                    else if (event.altKey && event.key === 'z') 
                     {
                         methods.handleRevoke();
                     } 
@@ -1709,7 +1949,11 @@ export default defineComponent({
                     {
                         methods.handleChangeTool(6);
                     }
-                    else if (event.altKey && event.key === 'c') 
+                    else if (event.altKey && event.key === 'v') 
+                    {
+                        methods.handleChangeTool(8);
+                    }
+                    else if (event.altKey && event.key === 'g') 
                     {
                         proxy.$refs.MyColorDialog.handleOpen();
                     }
@@ -1733,6 +1977,16 @@ export default defineComponent({
                         methods.handleChangeTool(3);
                         methods.drawShape('fillRect');
                     }
+                    else if (event.altKey && event.key === 'n') 
+                    {
+                        methods.handleCancelSelect();
+                    }
+                    else if (event.altKey && event.key === 'd') 
+                    {
+                        event.preventDefault();
+                        
+                    }
+                    
                     else if (event.key === 'ArrowUp')
                     {
                         // 切换图层
@@ -1792,6 +2046,12 @@ export default defineComponent({
                     if (event.key === ' ')
                     {
                         data.isSpace = false;
+                        data.canvas.style.cursor = '';
+                    }
+                    if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
+                    {
+                        data.isShift = false;
+                        data.isMoving = false;
                         data.canvas.style.cursor = '';
                     }
                 });
@@ -1887,7 +2147,8 @@ export default defineComponent({
             ...computedApi,
             copyText,
             ...fullScreen(),
-            ...useDrag()
+            ...useDrag(),
+            ...useFilterHooks
         };
     }
 });

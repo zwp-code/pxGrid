@@ -121,24 +121,63 @@
                                     <img :src="requireIcon('move')"/>
                                 </div>
                             </el-tooltip>
+                            <el-tooltip
+                                content="选择 [Alt + v]"
+                                placement="right"
+                            >
+                                <el-dropdown placement="bottom-start" trigger="click">
+                                    <div class="pointer toolItem" @click="handleChangeTool(8)"
+                                    :class="{ 'active': currentTool === 8 }">
+                                        <img :src="requireIcon('select')"/>
+                                    </div>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="handleSelect('copy')" disabled>取消选择 [Alt + n]</el-dropdown-item>
+                                            <el-dropdown-item @click="handleSelect('move')" disabled>移 动 [Shift]</el-dropdown-item>
+                                            <el-dropdown-item @click="handleSelect('copy')" disabled>复 制 [Alt + c]</el-dropdown-item>
+                                            <el-dropdown-item @click="handleSelect('copy')" disabled>删 除 [Alt + d]</el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                                
+                            </el-tooltip>
                         </div>
                         <div class="flex-column-end">
                             <el-tooltip
                                 content="变换"
                                 placement="right"
                             >
-                                <el-dropdown placement="bottom-start" trigger="click">
-                                    <div class="pointer toolItem" @click="handleChangeTool(5)" :class="{ 'active': currentTool === 5 }">
+                                <el-dropdown placement="top-start" trigger="click">
+                                    <div class="pointer toolItem">
                                         <img :src="requireTransformImg"/>
                                     </div>
                                     <template #dropdown>
-                                    <el-dropdown-menu>
-                                        <el-dropdown-item @click="drawTransform('hReverse')">水平翻转</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('ssz')">顺时针旋转</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('nsz')">逆时针旋转</el-dropdown-item>
-                                        <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
-                                    </el-dropdown-menu>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="drawTransform('hReverse')">水平翻转</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('ssz')">顺时针旋转</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('nsz')">逆时针旋转</el-dropdown-item>
+                                            <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                                
+                            </el-tooltip>
+                            <el-tooltip
+                                content="滤镜"
+                                placement="right"
+                            >
+                                <el-dropdown placement="top-start" trigger="click">
+                                    <div class="pointer toolItem">
+                                        <img :src="requireIcon('filter')"/>
+                                    </div>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="handleFilter(1, drawRecord[currentFrameIndex].layer[currentLayerIndex].layerData, reDraw)">黑 白</el-dropdown-item>
+                                            <el-dropdown-item @click="handleFilter(2, drawRecord[currentFrameIndex].layer[currentLayerIndex].layerData, reDraw)">反 相</el-dropdown-item>
+                                            <el-dropdown-item @click="handleFilter(3, drawRecord[currentFrameIndex].layer[currentLayerIndex].layerData, reDraw)">BGRA</el-dropdown-item>
+                                            <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
+                                        </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
                                 
@@ -159,6 +198,10 @@
                         <canvas id="Canvas" width="512" height="512"></canvas>
                         <canvas id="RealCanvas" v-show="false"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
+                        <div class="cancelSelect">
+                            <el-button type="primary" v-if="selectData.selectList.length" @click="handleRemoveSelect">删 除</el-button>
+                            <el-button type="primary" v-if="selectData.selectList.length" @click="handleCancelSelect">取消选择</el-button>
+                        </div>
                     </div>
                 </div>
                 <el-footer class="flex-start">
@@ -287,7 +330,7 @@
                                     </el-popover>
                                 </div>
                                 <el-tooltip
-                                content="全部颜色 [Alt + c]"
+                                content="全部颜色 [Alt + g]"
                                 placement="bottom"
                                 >
                                     <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" @click="handleOpenMyColorDialog">

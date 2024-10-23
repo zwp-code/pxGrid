@@ -60,6 +60,13 @@
         right: 50%;
         transform: translate(50%, 0);
     }
+
+    .cancelSelect {
+        position: absolute;
+        bottom: 50px;
+        right: 50%;
+        transform: translate(50%, 0);
+    }
 }
 
 .el-main {
@@ -155,6 +162,10 @@
 
 .bucket-cursor {
     cursor: url('icon/bucket_cursor.png') -3 8, auto;
+}
+
+.select-cursor {
+    cursor: url('icon/select_cursor.png') -3 10, auto;
 }
 
 .move-cursor {
