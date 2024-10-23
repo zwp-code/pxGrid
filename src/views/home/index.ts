@@ -1050,7 +1050,7 @@ export default defineComponent({
                     {
                         for (let v = 0; v < arr[i].layerData.length; v++)
                         {
-                            if (arr[i].layerData[v][0] >= data.canvasWidth || arr[i].layerData[v][1] >= data.canvasHeight) continue;
+                            if (arr[i].layerData[v][0] >= data.canvasWidth || arr[i].layerData[v][1] >= data.canvasHeight || arr[i].layerData[v][0] < 0 || arr[i].layerData[v][1] < 0) continue;
                             if (arr[i].layerData[v][2] !== '#00000000') 
                             {
                                 let gridX = (arr[i].layerData[v][0] * data.scale) + beginPos.x;
