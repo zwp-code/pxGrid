@@ -3,7 +3,9 @@
         <el-container class="full-h flex-warp">
             <el-main class="flex-column-center" style="display: flex;padding: 0;">
                 <el-header class="flex-between">
-                    <h1>像素格子</h1>
+                    <div>
+                        <h1 class="isShowWebTitle">像素格子</h1>
+                    </div>
                     <div class="flex-end">
                         <el-tooltip
                         content="撤销 [Alt + z]"
@@ -15,6 +17,13 @@
                         content="恢复 [Alt + x]"
                         placement="bottom">
                             <el-icon style="margin-right: 25px;" @click="handleRecover"><Right /></el-icon>
+                        </el-tooltip>
+
+                        <el-tooltip
+                        :content="!previewLoading ? '预览动画' : '正在加载'"
+                        placement="bottom">
+                            <el-icon style="margin-right: 25px;" @click="handleOpenPreviewDialog" v-if="!previewLoading"><VideoPlay /></el-icon>
+                            <el-icon style="margin-right: 25px;" class="is-loading" v-else><Loading /></el-icon>
                         </el-tooltip>
 
                         <el-tooltip
@@ -227,9 +236,13 @@
                             </div>
                             <template #dropdown>
                                 <el-dropdown-menu>
-                                  <el-dropdown-item @click="handleCopyFrame(index)">复 制</el-dropdown-item>
-                                  <el-dropdown-item @click="handleExportFrame(index)">导 出</el-dropdown-item>
-                                  <el-dropdown-item @click="handleDeleteFrame(index)" v-if="index!==0">删 除</el-dropdown-item>
+                                    <el-dropdown-item @click="handleCopyFrame(index, 'copy')">复 制</el-dropdown-item>
+                                    <!-- <el-dropdown-item @click="handleExportFrame(index)">导出为帧数据</el-dropdown-item> -->
+                                    <el-dropdown-item @click="handleDeleteFrame(index)" v-if="index!==0">删 除</el-dropdown-item>
+                                    <el-dropdown-item @click="handleCopyFrame(index, 'copyData')">复制帧数据</el-dropdown-item>
+                                    <el-dropdown-item @click="handleCopyFrame(index, 'pasteData')">粘贴帧数据</el-dropdown-item>
+                                    <el-dropdown-item @click="handleExportFrame(index)">导出为图片</el-dropdown-item>
+                                  
                                 </el-dropdown-menu>
                             </template>
                         </el-dropdown>
@@ -242,8 +255,8 @@
                 </el-footer>
             </el-main>
             <el-aside>
-                <div class="flex-column-center full-h">
-                    <div style="flex: 50%;" class="full-w">
+                <div class="full-h flex-warp flex flex-column">
+                    <div style="flex:1" class="full-w">
                         <h1>属性面板</h1>
                         <el-divider border-style="dashed" />
                         <div class="function-block function-block-between">
@@ -255,7 +268,7 @@
                                 <el-tooltip
                                 content="保存颜色 [Alt + s]"
                                 placement="top">
-                                    <el-link type="info" :underline="false" @click="handleSaveColor">保存</el-link>
+                                    <el-link type="info" :underline="false" @click="handleSaveColor(false)">保存</el-link>
                                 </el-tooltip>
                                 <el-tooltip
                                 content="复制颜色 [Ctrl + c]"
@@ -350,7 +363,7 @@
                                 v-model="canvasWidth"
                                 style="max-width: 120px"
                                 type="number"
-                                :max="128"
+                                :max="70"
                                 :min="6"
                                 @change="(e) => handleChangeCanvasSize(e, 'canvasWidth')"
                                 >
@@ -360,7 +373,7 @@
                                 v-model="canvasHeight"
                                 style="max-width: 120px; margin-left: 10px;"
                                 type="number"
-                                :max="128"
+                                :max="70"
                                 :min="6"
                                 @change="(e) => handleChangeCanvasSize(e, 'canvasHeight')"
                                 >
@@ -368,12 +381,13 @@
                                 </el-input>
                             </div>
                             <div style="margin-top: 10px;">
-                                <el-checkbox v-model="isCheckedRatio" label="保持纵横比" @change="handleChangeRatio" />
+                                <el-checkbox v-model="isCheckedRatio" label="保持横纵比" @change="handleChangeRatio" />
+                                <el-checkbox v-model="isShowReferenceLine" label="参考线" />
                             </div>
                             
                         </div>
                     </div>
-                    <div style="flex: 50%;margin-top: 10px;" class="full-w" v-if="drawRecord.length">
+                    <div style="flex: 1;margin-top: 10px;" class="full-w scrollHidden" v-if="drawRecord.length">
                         <h1 class="flex-between">图层面板 
                             <div class="flex-end">
                                 <el-icon style="margin-right: 15px;" class="pointer" @click="handleChangeLayerVisible(-1)" v-if="currentFrameLayerVisible"><View /></el-icon>
@@ -429,7 +443,7 @@
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
-                                      <el-dropdown-item @click="handleExportLayer(currentFrameIndex, index)">导 出</el-dropdown-item>
+                                      <el-dropdown-item @click="handleExportLayer(currentFrameIndex, index)">导出为图片</el-dropdown-item>
                                       
                                     </el-dropdown-menu>
                                 </template>
@@ -453,6 +467,9 @@
             :visible="exportVisible" 
             @export="handleExport"
             @close="exportVisible=false"></ExportDialog>
+            <PreviewAnimDialog 
+            ref="PreviewAnimDialog">
+            </PreviewAnimDialog>
         </teleport>
         
     </div>

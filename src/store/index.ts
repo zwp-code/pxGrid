@@ -6,7 +6,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
         return {
             lang:'',
             themeValue:false,
-            myColorList:[] as any
+            myColorList:[] as any,
+            frameCopyData:null as any
         };
     },
     actions: {

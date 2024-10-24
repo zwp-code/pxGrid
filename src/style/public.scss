@@ -5,6 +5,32 @@
     src: url('../../public/font/font.ttf') format('truetype'); /* 根据实际文件类型调整 */
 }
 
+@media only screen and (min-width: 320px){
+    html {
+        font-size: 76% !important;
+    }
+}
+@media only screen and (min-width: 500px){
+    .isShowWebTitle {
+        display: block !important;
+    }
+}
+@media only screen and (min-width: 640px){
+    html {
+        font-size: 85% !important;
+    }
+}
+@media only screen and (min-width: 750px){
+    html {
+        font-size: 90% !important;
+    }
+}
+@media only screen and (min-width: 1242px){
+    html {
+        font-size: 105% !important;
+    }
+}
+
 * {
     padding: 0;
     margin: 0;
@@ -74,6 +100,10 @@ body,html{
     overflow-x: hidden;
 }
 
+.isShowWebTitle {
+    display: none;
+}
+
 .scrollY {
     overflow-y: auto;
 }
@@ -132,6 +162,10 @@ body,html{
     hyphens: auto;
 }
 
+.flex {
+    display: flex;
+}
+
 .flex-center {
     display: flex;
     justify-content: center;
@@ -180,6 +214,9 @@ body,html{
 }
 .flex-nowarp {
     flex-wrap: wrap;
+}
+.flex-column {
+    flex-direction: column;
 }
 .full-w {
     width: 100%;
@@ -321,23 +358,3 @@ body,html{
 }
 
 
-@media only screen and (min-width: 320px){
-    html {
-        font-size: 76% !important;
-    }
-}
-@media only screen and (min-width: 640px){
-    html {
-        font-size: 85% !important;
-    }
-}
-@media only screen and (min-width: 750px){
-    html {
-        font-size: 90% !important;
-    }
-}
-@media only screen and (min-width: 1242px){
-    html {
-        font-size: 105% !important;
-    }
-}

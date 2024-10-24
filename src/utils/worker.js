@@ -21,23 +21,16 @@ addEventListener('message', (e) =>
                     {
                         layerArr[k][2] = dataTable[i].layer[v].layerData[index1][2];
                     }
-                    // if (index2 >= 0)
-                    // {
-                    //     layerArr[k + 1][2] = dataTable[i].layer[v].layerData[index2][2];
-                    // }
-                    // if (index3 >= 0)
-                    // {
-                    //     layerArr[k + 2][2] = dataTable[i].layer[v].layerData[index3][2];
-                    // }
-                    // if (index4 >= 0)
-                    // {
-                    //     layerArr[k + 3][2] = dataTable[i].layer[v].layerData[index4][2];
-                    // }
                 }
                 dataTable[i].layer[v].layerData = layerArr;
             }
         }
         return postMessage(dataTable);
+    }
+    else if (data.type === 2)
+    {
+        // 导出图层
+        
     }
 });
 export default {};
