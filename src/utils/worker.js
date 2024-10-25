@@ -1,3 +1,5 @@
+import { rgbaToHex } from '@/utils/utils';
+
 addEventListener('message', (e) => 
 {
     const { data } = e;
@@ -29,8 +31,21 @@ addEventListener('message', (e) =>
     }
     else if (data.type === 2)
     {
-        // 导出图层
-        
+        // 导入图层 图片转换为像素数据
+        let dataTable = data.variables;
+        let transformTable = data.currentLayerData;
+        for (let i = 0; i < dataTable.length; i += 4)
+        {
+            let rgba = [];
+            rgba[0] = dataTable[i];
+            rgba[1] = dataTable[i + 1];
+            rgba[2] = dataTable[i + 2];
+            rgba[3] = dataTable[i + 3];
+            let index = i / 4;
+            transformTable[index][2] = rgbaToHex(rgba);
+        }
+        return postMessage(transformTable);
+
     }
 });
 export default {};

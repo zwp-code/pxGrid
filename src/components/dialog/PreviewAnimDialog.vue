@@ -73,11 +73,11 @@ export default defineComponent({
                 // methods.computeScale();
                 data.spirit = new Spirit({
                     position: {
-                        x: data.canvas.width / 2 - (data.imgData.width * 4 / data.imgData.frame) / 2,
-                        y: data.canvas.height / 2 - data.imgData.height * 4 / 2
+                        x: data.canvas.width / 2 - (data.imgData.width) / 2,
+                        y: data.canvas.height / 2 - data.imgData.height  / 2
                     },
                     image: data.imgData.imgUrl,
-                    scale:4,
+                    scale:1,
                     frames: {
                         max: data.imgData.frame,
                         hold: 10,

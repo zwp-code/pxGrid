@@ -131,7 +131,7 @@
                                 </div>
                             </el-tooltip>
                             <el-tooltip
-                                content="选择 [Alt + v]"
+                                content="选择 [Alt + e]"
                                 placement="right"
                             >
                                 <el-dropdown placement="bottom-start" trigger="click">
@@ -141,10 +141,11 @@
                                     </div>
                                     <template #dropdown>
                                         <el-dropdown-menu>
-                                            <el-dropdown-item @click="handleSelect('copy')" disabled>取消选择 [Alt + n]</el-dropdown-item>
-                                            <el-dropdown-item @click="handleSelect('move')" disabled>移 动 [Shift]</el-dropdown-item>
-                                            <el-dropdown-item @click="handleSelect('copy')" disabled>复 制 [Alt + c]</el-dropdown-item>
-                                            <el-dropdown-item @click="handleSelect('copy')" disabled>删 除 [Alt + d]</el-dropdown-item>
+                                            <el-dropdown-item @click="handleCancelSelect" :disabled="!selectData.selectList.length">取消选择 [Alt + n]</el-dropdown-item>
+                                            <el-dropdown-item @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))" :disabled="!selectData.selectList.length">复 制 [Alt + c]</el-dropdown-item>
+                                            <!-- <el-dropdown-item @click="handleSelect('copy')" disabled>粘 贴 [Alt + v]</el-dropdown-item> -->
+                                            <el-dropdown-item @click="handleRemoveSelect" :disabled="!selectData.selectList.length">删 除 [Alt + d]</el-dropdown-item>
+                                            <el-dropdown-item @click="handleSelect('move')" disabled>移 动 [Shift + 鼠标左键]</el-dropdown-item>
                                         </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
@@ -207,9 +208,11 @@
                         <canvas id="Canvas" width="512" height="512"></canvas>
                         <canvas id="RealCanvas" v-show="false"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
-                        <div class="cancelSelect">
-                            <el-button type="primary" v-if="selectData.selectList.length" @click="handleRemoveSelect">删 除</el-button>
-                            <el-button type="primary" v-if="selectData.selectList.length" @click="handleCancelSelect">取消选择</el-button>
+                        <div class="cancelSelect" v-if="selectData.selectList.length">
+                            <el-button type="primary" @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))">复 制</el-button>
+                            <!-- <el-button type="primary" @click="handleRemoveSelect">粘 贴</el-button> -->
+                            <el-button type="primary" @click="handleRemoveSelect">删 除</el-button>
+                            <el-button type="primary" @click="handleCancelSelect">取消选择</el-button>
                         </div>
                     </div>
                 </div>
@@ -443,8 +446,8 @@
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
+                                        <el-dropdown-item @click="handleImportLayer(currentFrameIndex, index)">导入图片</el-dropdown-item>
                                       <el-dropdown-item @click="handleExportLayer(currentFrameIndex, index)">导出为图片</el-dropdown-item>
-                                      
                                     </el-dropdown-menu>
                                 </template>
                             </el-dropdown>

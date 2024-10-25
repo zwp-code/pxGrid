@@ -38,6 +38,7 @@ export default defineComponent({
         const editSpaceStore = useEditSpaceStore();
         const language = (navigator.language || 'zh').toLocaleLowerCase();
         let data = reactive({
+            emptyColor:'#00000000',
             locale:en,
             bgCanvas:null as any,
             canvas:null as any,
@@ -145,6 +146,7 @@ export default defineComponent({
                 copyList:[] as any // 复制的数据
             },
             previewLoading:false,
+            selectActiveColor:'#3c8bfb8f',
             
 
             AnimationFrameId_1:null as any
@@ -359,7 +361,7 @@ export default defineComponent({
                     {
                         for (let j = 0; j < data.canvasWidth; j++) 
                         {
-                            layerArr.push([j, i, '#00000000']);
+                            layerArr.push([j, i, data.emptyColor]);
                         }
                     }
                     data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = layerArr;
@@ -417,7 +419,7 @@ export default defineComponent({
                     {
                         for (let j = 0; j < data.canvasWidth; j++) 
                         {
-                            layerArr.push([j, i, '#00000000']);
+                            layerArr.push([j, i, data.emptyColor]);
                         }
                     }
                     data.drawRecord.push({
@@ -444,7 +446,7 @@ export default defineComponent({
                     {
                         for (let x = 0; x < data.canvasWidth; x++) 
                         {
-                            layerOriginArr.push([x, y, '#00000000']);
+                            layerOriginArr.push([x, y, data.emptyColor]);
                         }
                     }
                     worker.postMessage({originData:layerOriginArr, type:1, variables:JSON.parse(JSON.stringify(data.drawRecord))});
@@ -484,11 +486,11 @@ export default defineComponent({
                         }
                         let px = data.scale;
                         let py = data.scale;
-                        let originX = i * px + beginX;
-                        let originY = j * py + beginY;
+                        let originX = j * px + beginX;
+                        let originY = i * py + beginY;
                         data.ctx2.fillRect(originX, originY, px, py);
                         data.drawAreaList.push([originX, originY]);
-                        // data.drawRecord.push([i, j, '#00000000']);
+                        // data.drawRecord.push([i, j, data.emptyColor]);
                         
                     }
                 }
@@ -525,8 +527,8 @@ export default defineComponent({
             {
                 data.currentDrawTransform = transform;
                 let realCoords = [] as any;
-                let centerX = data.canvas.width / 2;
-                let centerY = data.canvas.height / 2;
+                let centerX = data.canvasBeginPos.x + data.canvasWidth * data.scale / 2;
+                let centerY = data.canvasBeginPos.y + data.canvasHeight * data.scale / 2;
                 let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                 for (let i = 0; i < currentLayerData.length; i++)
                 {
@@ -537,36 +539,79 @@ export default defineComponent({
                 }
                 if (transform === 'hReverse')
                 {
-                    for (let i = 0; i < currentLayerData.length; i++)
+                    for (let i = 0; i < realCoords.length; i++)
                     {
-                        let newCol = (data.canvasWidth - 1) - currentLayerData[i][0];
-                        currentLayerData[i][0] = newCol;
+                        if (realCoords[i][2] === data.emptyColor) continue;
+                        let beginX = realCoords[i][0];
+                        let beginY = realCoords[i][1];
+                        let endX = centerX + (centerX - realCoords[i][0] - data.scale);
+                        let endY = beginY;
+                        const beginRow = Math.floor((beginY - data.drawAreaList[0][1]) / data.scale);
+                        const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
+                        const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
+                        const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
+                        let brginIndex = beginCol + beginRow * data.canvasWidth;
+                        let endIndex = col + row * data.canvasWidth;
+                        currentLayerData[brginIndex][2] = data.emptyColor;
+                        currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
                 else if (transform === 'vReverse')
                 {
-                    for (let i = 0; i < currentLayerData.length; i++)
+                    for (let i = 0; i < realCoords.length; i++)
                     {
-                        let newRow = (data.canvasHeight - 1) - currentLayerData[i][1];
-                        currentLayerData[i][1] = newRow;
+                        // let newRow = (data.canvasHeight - 1) - currentLayerData[i][1];
+                        // currentLayerData[i][1] = newRow;
+                        if (realCoords[i][2] === data.emptyColor) continue;
+                        let beginX = realCoords[i][0];
+                        let beginY = realCoords[i][1];
+                        let endX = beginX;
+                        let endY = centerY + (centerY - realCoords[i][1] - data.scale);
+                        const beginRow = Math.floor((beginY - data.drawAreaList[0][1]) / data.scale);
+                        const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
+                        const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
+                        const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
+                        let brginIndex = beginCol + beginRow * data.canvasWidth;
+                        let endIndex = col + row * data.canvasWidth;
+                        currentLayerData[brginIndex][2] = data.emptyColor;
+                        currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
                 else if (transform === 'ssz')
                 {
                     for (let i = 0; i < realCoords.length; i++)
                     {
-                        let relativeX = realCoords[i][0] - centerX;
-                        let relativeY = realCoords[i][1] - centerY;
+                        if (realCoords[i][2] === data.emptyColor) continue;
+                        // let relativeX = realCoords[i][0] - centerX;
+                        // let relativeY = realCoords[i][1] - centerY;
+                        // let rotateX = -relativeY;
+                        // let rotateY = relativeX;
+                        // let endX = rotateX + centerX - data.scale;
+                        // let endY = rotateY + centerY;
+                        console.log(centerX, centerY);
+                        
+                        let circleX = realCoords[i][0] + data.scale / 2;
+                        let circleY = realCoords[i][1] + data.scale / 2;
+                        let relativeX = circleX - centerX;
+                        let relativeY = circleY - centerY;
                         let rotateX = -relativeY;
                         let rotateY = relativeX;
-                        let endX = rotateX + centerX - data.scale;
+                        let endX = rotateX + centerX;
                         let endY = rotateY + centerY;
-                        console.log(relativeX, relativeY, endX, endY);
+
+                        // console.log(relativeX, relativeY, endX, endY);
                         
+                        const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        currentLayerData[i][0] = col;
-                        currentLayerData[i][1] = row;
+                        let endIndex = col + row * data.canvasWidth;
+                        console.log(col, row);
+                        
+                        let brginIndex = beginCol + beginRow * data.canvasWidth;
+                        
+                        currentLayerData[brginIndex][2] = data.emptyColor;
+                        currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
                 else if (transform === 'nsz')
@@ -579,12 +624,16 @@ export default defineComponent({
                         let rotateY = -relativeX;
                         let endX = rotateX + centerX;
                         let endY = rotateY + centerY - data.scale;
-                        console.log(relativeX, relativeY, endX, endY);
-                        
+
+                        const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        currentLayerData[i][0] = col;
-                        currentLayerData[i][1] = row;
+                        let endIndex = col + row * data.canvasWidth;
+                        let brginIndex = beginCol + beginRow * data.canvasWidth;
+                        
+                        currentLayerData[brginIndex][2] = data.emptyColor;
+                        currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
@@ -632,6 +681,10 @@ export default defineComponent({
                     }
                     if (data.currentTool === 0) 
                     {
+                        if (data.selectData.selectList.length)
+                        {
+                            return proxy.$message.warning('请先取消选中区域');
+                        }
                         data.isDrawing = true;
                         methods.draw(event);
                         // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
@@ -645,6 +698,10 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 1) 
                     {
+                        if (data.selectData.selectList.length)
+                        {
+                            return proxy.$message.warning('请先取消选中区域');
+                        }
                         data.isErasering = true;
                         methods.removeDrawRecord([col, row]);
                     }
@@ -652,24 +709,43 @@ export default defineComponent({
                     {
                         console.log(row, col);
                         let currentFrame = data.drawRecord[data.currentFrameIndex].layer;
-                        for (let i = currentFrame.length - 1; i >= 0; i--)
+                        // for (let i = currentFrame.length - 1; i >= 0; i--)
+                        let index = col + row * data.canvasWidth;
+                        for (let i = 0; i < currentFrame.length; i++)
                         {
-                            for (let j = 0; j < currentFrame[i].layerData.length; j++)
+                            if (currentFrame[i].isRender)
                             {
-                                if (currentFrame[i].layerData[j][0] === col && currentFrame[i].layerData[j][1] === row)
+                                if (currentFrame[i].layerData[index][2] !== data.emptyColor) 
                                 {
-                                    if (currentFrame[i].layerData[j][2] !== '#00000000')
-                                    {
-                                        data.brushColor = currentFrame[i].layerData[j][2];
-                                        break;
-                                    }
+                                    data.brushColor = currentFrame[i].layerData[index][2];
+                                    break;
+                                }
+                                else
+                                {
+                                    continue;
                                 }
                             }
+                            // for (let j = 0; j < currentFrame[i].layerData.length; j++)
+                            // {
+                                
+                            //     if (currentFrame[i].layerData[j][0] === col && currentFrame[i].layerData[j][1] === row)
+                            //     {
+                            //         if (currentFrame[i].layerData[j][2] !== data.emptyColor)
+                            //         {
+                            //             data.brushColor = currentFrame[i].layerData[j][2];
+                            //             break;
+                            //         }
+                            //     }
+                            // }
                         }
                         
                     }
                     else if (data.currentTool === 3)
                     {
+                        if (data.selectData.selectList.length)
+                        {
+                            return proxy.$message.warning('请先取消选中区域');
+                        }
                         // 绘制形状
                         data.isDrawShape = true;
                         let gridX = (col * data.scale) + data.canvasBeginPos.x;
@@ -681,6 +757,10 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 4)
                     {
+                        if (data.selectData.selectList.length)
+                        {
+                            return proxy.$message.warning('请先取消选中区域');
+                        }
                         const targetColor = data.ctx1.getImageData(event.offsetX, event.offsetY, 1, 1).data;
                         console.log(data.drawRecord);
                         let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
@@ -691,6 +771,10 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 7)
                     {
+                        if (data.selectData.selectList.length)
+                        {
+                            return proxy.$message.warning('请先取消选中区域');
+                        }
                         if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
                         data.isMoving = true;
                         // 获取可移动的坐标数组和记录初始点击的行列号
@@ -698,7 +782,7 @@ export default defineComponent({
                         data.moveData.y = row;
                         data.moveData.list = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
                         {
-                            if (item[2] !== '#00000000') 
+                            if (item[2] !== data.emptyColor) 
                             {
                                 return item;
                             }
@@ -716,12 +800,13 @@ export default defineComponent({
                         data.selectData.y = row;
                         data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
                         {
-                            if (item[2] !== '#00000000') 
+                            if (item[2] !== data.emptyColor) 
                             {
                                 return item;
                             }
                             return null;
                         }))));
+                        methods.draw(event); 
                         // let value = data.selectData.originList.find((item) => item[0] === col && item[1] === row);
                         // if (value) 
                         // {
@@ -756,27 +841,40 @@ export default defineComponent({
                 {
                     let flag = false;
                     let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                    for (let i = 0; i < currentLayerData.length; i++)
-                    {
+                    // for (let i = 0; i < currentLayerData.length; i++)
+                    // {
                         
-                        if (currentLayerData[i][0] === col && currentLayerData[i][1] === row && currentLayerData[i][2] === color)
-                        {
-                            flag = true;
-                            break;
-                        }
+                    //     if (currentLayerData[i][0] === col && currentLayerData[i][1] === row && currentLayerData[i][2] === color)
+                    //     {
+                    //         flag = true;
+                    //         break;
+                    //     }
+                    // }
+                    if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
+                    {
+                        let index = col + row * data.canvasWidth;
+                        console.log(col, row, index);
+                        
+                        if (currentLayerData[index][2] === color) flag = true;
                     }
+                    
                     return flag;
                 };
                 const setColor = (col, row, color) => 
                 {
                     let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                    for (let i = 0; i < currentLayerData.length; i++)
+                    // for (let i = 0; i < currentLayerData.length; i++)
+                    // {
+                    //     if (currentLayerData[i][0] === col && currentLayerData[i][1] === row)
+                    //     {
+                    //         currentLayerData[i][2] = color;
+                    //         break;
+                    //     }
+                    // }
+                    if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
-                        if (currentLayerData[i][0] === col && currentLayerData[i][1] === row)
-                        {
-                            currentLayerData[i][2] = color;
-                            break;
-                        }
+                        let index = col + row * data.canvasWidth;
+                        currentLayerData[index][2] = color;
                     }
                 };
                 while (stack.length > 0) 
@@ -1025,8 +1123,15 @@ export default defineComponent({
                                 let gridY = (data.moveData.list[i][1] * data.scale) + data.canvasBeginPos.y;
                                 data.ctx1.fillStyle = data.moveData.list[i][2];
                                 data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
-                                data.ctx1.fillStyle = 'rgba(173,216,230,0.5)';
+                                data.ctx1.fillStyle = data.selectActiveColor;
                                 data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                const centerX = gridX + data.scale / 2;
+                                const centerY = gridY + data.scale / 2;
+                                // 绘制圆点
+                                data.ctx1.beginPath();
+                                data.ctx1.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+                                data.ctx1.fillStyle = '#3c8bfbff';
+                                data.ctx1.fill();
                             }
                             return;
                         }
@@ -1050,8 +1155,15 @@ export default defineComponent({
                                     let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
                                     data.ctx1.fillStyle = data.selectData.selectList[i][2];
                                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
-                                    data.ctx1.fillStyle = 'rgba(173,216,230,0.5)';
+                                    data.ctx1.fillStyle = data.selectActiveColor;
                                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                    const centerX = gridX + data.scale / 2;
+                                    const centerY = gridY + data.scale / 2;
+                                    // 绘制圆点
+                                    data.ctx1.beginPath();
+                                    data.ctx1.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+                                    data.ctx1.fillStyle = '#3c8bfbff';
+                                    data.ctx1.fill();
                                 }
                             }
                             // else
@@ -1092,18 +1204,19 @@ export default defineComponent({
 
             handleCancelSelect ()
             {
-                for (let i = 0; i < data.selectData.selectList.length; i++)
-                {
-                    if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
-                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
-                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
-                    data.ctx1.fillStyle = data.selectData.selectList[i][2];
-                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
-                }
+                // for (let i = 0; i < data.selectData.selectList.length; i++)
+                // {
+                //     if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
+                //     let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
+                //     let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
+                //     data.ctx1.fillStyle = data.selectData.selectList[i][2];
+                //     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                // }
                 data.selectData.selectList = [];
                 data.selectData.copyList = [];
                 data.isMoving = false;
                 data.isSelecting = false;
+                methods.reDraw(true, false);
             },
 
             handleRemoveSelect ()
@@ -1139,6 +1252,7 @@ export default defineComponent({
                     
                     methods.drawPixelArea(beginX, beginY);
                     methods.reDraw(false, false, { x:beginX, y:beginY });
+                    // methods.reDrawSelectData({ x:beginX, y:beginY });
                 }
                 
             },
@@ -1235,16 +1349,20 @@ export default defineComponent({
 
             removeDrawRecord (value, isRedraw = true)
             {
-                console.log(value);
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                for (let v = 0; v < arr.length; v++)
-                {
-                    if (arr[v][0] === value[0] && arr[v][1] === value[1])
-                    {
-                        arr[v][2] = '#00000000';
-                        break;
-                    }
-                }
+                console.log(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData);
+                
+                let index = value[0] + value[1] * data.canvasHeight;
+                if (arr[index][2] === data.emptyColor) return;
+                arr[index][2] = data.emptyColor;
+                // for (let v = 0; v < arr.length; v++)
+                // {
+                //     if (arr[v][0] === value[0] && arr[v][1] === value[1])
+                //     {
+                //         arr[v][2] = data.emptyColor;
+                //         break;
+                //     }
+                // }
                 if (isRedraw) methods.reDraw();
             },
 
@@ -1263,7 +1381,7 @@ export default defineComponent({
                         for (let v = 0; v < arr[i].layerData.length; v++)
                         {
                             if (arr[i].layerData[v][0] >= data.canvasWidth || arr[i].layerData[v][1] >= data.canvasHeight || arr[i].layerData[v][0] < 0 || arr[i].layerData[v][1] < 0) continue;
-                            if (arr[i].layerData[v][2] !== '#00000000') 
+                            if (arr[i].layerData[v][2] !== data.emptyColor) 
                             {
                                 let gridX = (arr[i].layerData[v][0] * data.scale) + beginPos.x;
                                 let gridY = (arr[i].layerData[v][1] * data.scale) + beginPos.y;
@@ -1272,9 +1390,10 @@ export default defineComponent({
                                 count++;
                             }
                         }
+                        methods.reDrawSelectData(beginPos);
                     }
                 }
-                methods.reDrawSelectData();
+                // methods.reDrawSelectData(beginPos);
                 if (isRenderFrameImg)
                 {
                     if (count > 0) methods.handleFrameImg(data.ctx1, isAddHistory);
@@ -1305,7 +1424,7 @@ export default defineComponent({
                         }
                         else
                         {
-                            layerData[i][2] = '#00000000';
+                            layerData[i][2] = data.emptyColor;
                         }
                     }
                     data.moveData.list = [];
@@ -1328,7 +1447,7 @@ export default defineComponent({
                         let findData = data.selectData.selectList.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
                         if (findData)
                         {
-                            layerData[i][2] = data.selectData.copyList.length ? findData[2] : '#00000000';
+                            layerData[i][2] = data.selectData.copyList.length ? findData[2] : data.emptyColor;
                         }
                         let findData1 = data.moveData.list.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
                         if (findData1)
@@ -1349,16 +1468,23 @@ export default defineComponent({
                 methods.stop();
                 data.canvas.className = '';
             },
-            reDrawSelectData ()
+            reDrawSelectData (beginPos = data.canvasBeginPos)
             {
                 if (!data.selectData.selectList.length) return;
                 for (let i = 0; i < data.selectData.selectList.length; i++)
                 {
                     if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
-                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
-                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
-                    data.ctx1.fillStyle = 'rgba(173,216,230,0.5)';
+                    let gridX = (data.selectData.selectList[i][0] * data.scale) + beginPos.x;
+                    let gridY = (data.selectData.selectList[i][1] * data.scale) + beginPos.y;
+                    data.ctx1.fillStyle = data.selectActiveColor;
                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                    const centerX = gridX + data.scale / 2;
+                    const centerY = gridY + data.scale / 2;
+                    // 绘制圆点
+                    data.ctx1.beginPath();
+                    data.ctx1.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+                    data.ctx1.fillStyle = '#3c8bfbff';
+                    data.ctx1.fill();
                 }
             },
             saveShapeData ()
@@ -1523,8 +1649,8 @@ export default defineComponent({
             },
             computeScale ()
             {
-                if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2));
-                else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2));
+                if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2) * 2);
+                else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
                 data.scale = Math.round(data.scale);
                 console.log(data.scale);
                 data.brushSize = data.scale;
@@ -1579,7 +1705,7 @@ export default defineComponent({
                 {
                     for (let j = 0; j < data.canvasWidth; j++) 
                     {
-                        layerArr.push([j, i, '#00000000']);
+                        layerArr.push([j, i, data.emptyColor]);
                     }
                 }
                 let length = data.drawRecord[data.currentFrameIndex].layer.length;
@@ -1661,10 +1787,10 @@ export default defineComponent({
                 //     {
                 //         for (let x = 0; x < data.canvasWidth; x++) 
                 //         {
-                //             let color = '#00000000';
+                //             let color = data.emptyColor;
                 //             // for (let i = 0; i < imageData.length; i++)
                 //             // {
-                //             //     if (imageData[i][0] === y && imageData[i][1] === x && imageData[i][2] !== '#00000000')
+                //             //     if (imageData[i][0] === y && imageData[i][1] === x && imageData[i][2] !== data.emptyColor)
                 //             //     {
                 //             //         color = imageData[i][2];
                 //             //         break;
@@ -1692,6 +1818,70 @@ export default defineComponent({
                 if (isDownload) downloadImage(data.realCanvas, `layer${layerIndex + 1}`);
                 
             },
+            handleImportLayer ()
+            {
+                // 导入图片资源，需要保证图片大小与画布大小一致
+                const input:any = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/png';
+                input.addEventListener('change', function () 
+                {
+                    const file = input.files[0];
+                    if (file) 
+                    {
+                        // const reader = new FileReader();
+                        // reader.onload = function (e) 
+                        // {
+                        //     console.log(file, e);
+                        // };
+                        // reader.readAsDataURL(file);
+                        data.loading = true;
+                        const img = new Image();
+                        const url = URL.createObjectURL(file);
+                        img.src = url;
+                        img.onload = function () 
+                        {
+                            console.log('图片宽度:', img.width);
+                            console.log('图片高度:', img.height);
+                            if (img.width > data.canvasWidth || img.height > data.canvasHeight)
+                            {
+                                data.loading = false;
+                                URL.revokeObjectURL(url);
+                                return proxy.$message.warning('导入图片尺寸须小于画布大小');
+                            }
+                            methods.handleTransfromPngToPixel(img, url);
+                        };
+                    }
+                });
+                document.body.appendChild(input);
+                input.click();
+                document.body.removeChild(input);
+            },
+            handleTransfromPngToPixel (img, url)
+            {
+                const imgCanvas = document.createElement('canvas');
+                imgCanvas.width = data.canvasWidth;
+                imgCanvas.height = data.canvasHeight;
+                const imgCtx:any = imgCanvas.getContext('2d');
+                imgCtx.drawImage(img, 0, 0);
+                const imageData = imgCtx.getImageData(0, 0, imgCanvas.width, imgCanvas.height);
+                console.log(imageData);
+                
+                // 图片转换为像素数据
+                const worker = new Worker();
+                worker.postMessage({
+                    type:2, 
+                    variables:imageData.data, 
+                    currentLayerData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData))
+                });
+                worker.onmessage = (event) => 
+                {
+                    URL.revokeObjectURL(url);
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = event.data;
+                    data.loading = false;
+                    methods.reDraw();
+                };
+            },
             // 图层结束
 
             // 帧开始
@@ -1703,7 +1893,7 @@ export default defineComponent({
                 {
                     for (let j = 0; j < data.canvasWidth; j++) 
                     {
-                        layerArr.push([j, i, '#00000000']);
+                        layerArr.push([j, i, data.emptyColor]);
                     }
                 }
                 let obj = {
@@ -1724,6 +1914,7 @@ export default defineComponent({
             },
             handleChangeFrame (index)
             {
+                data.selectData.selectList = [];
                 data.currentFrameIndex = index;
                 data.currentLayerIndex = 0;
                 methods.reDraw(true, false);
@@ -1748,6 +1939,7 @@ export default defineComponent({
                         data.drawRecord[index].currentFrameImg = pasteData.currentFrameImg;
                         data.drawRecord[index].layer = pasteData.layer;
                     }
+                    methods.reDraw(true, true);
 
                 }
                 else if (type === 'copy')
@@ -1767,11 +1959,11 @@ export default defineComponent({
                 methods.handleAddHistory();
 
             },
-            handleExportFrame (index, isDownload = true)
+            handleExportFrame (index, isDownload = true, scale = 1)
             {
                 const imageData = data.drawRecord[index].layer;
-                data.realCanvas.width = data.canvasWidth;
-                data.realCanvas.height = data.canvasHeight;
+                data.realCanvas.width = data.canvasWidth * scale;
+                data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
                 console.log(imageData);
                 
@@ -1795,13 +1987,13 @@ export default defineComponent({
                         
                         // 在新的 canvas 上绘制缩小后的像素
                         data.ctx3.fillStyle = color;
-                        data.ctx3.fillRect(x, y, 1, 1);
+                        data.ctx3.fillRect(x * scale, y * scale, scale, scale);
                     }
                 }
                 if (isDownload) downloadImage(data.realCanvas, `frame${index + 1}`);
             },
             // 帧结束
-            handleExport (type, filename, isBack = false)
+            handleExport (type, filename, isBack = false, scale = 1)
             {
                 if (!isBack) data.exportLoaidng = true;
                 // 根据不同类型导出
@@ -1809,15 +2001,15 @@ export default defineComponent({
                 {
                     // 精灵图不区分图层，相当于导出每一帧的精灵图
                     const bigCanvas = document.createElement('canvas');
-                    bigCanvas.width = data.canvasWidth * data.drawRecord.length;
-                    bigCanvas.height = data.canvasHeight;
+                    bigCanvas.width = data.canvasWidth * scale * data.drawRecord.length;
+                    bigCanvas.height = data.canvasHeight * scale;
                     const bigCtx:any = bigCanvas.getContext('2d');
-                    data.realCanvas.width = data.canvasWidth;
-                    data.realCanvas.height = data.canvasHeight;
+                    data.realCanvas.width = data.canvasWidth * scale;
+                    data.realCanvas.height = data.canvasHeight * scale;
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
-                        methods.handleExportFrame(i, false);
-                        bigCtx.drawImage(data.realCanvas, i * data.canvasWidth, 0);
+                        methods.handleExportFrame(i, false, scale);
+                        bigCtx.drawImage(data.realCanvas, i * data.canvasWidth * scale, 0);
                     }
                     if (isBack) return bigCanvas.toDataURL('image/png');
                     downloadImage(bigCanvas, filename);
@@ -1948,11 +2140,13 @@ export default defineComponent({
             handleOpenPreviewDialog ()
             {
                 data.previewLoading = true;
-                const imgUrl = methods.handleExport(1, '', true);
+                let scale = 6; // 放大倍数
+                // methods.handleExport(1, '1111', false, scale);
+                const imgUrl = methods.handleExport(1, '', true, scale);
                 proxy.$refs.PreviewAnimDialog.handleOpen({
                     imgUrl, 
-                    width:data.canvasWidth, 
-                    height:data.canvasHeight,
+                    width:data.canvasWidth * scale, 
+                    height:data.canvasHeight * scale,
                     frame:data.drawRecord.length
                 });
                 data.previewLoading = false;
@@ -2028,7 +2222,8 @@ export default defineComponent({
                     }
                     else if (event.altKey && event.key === 'v') 
                     {
-                        methods.handleChangeTool(8);
+                        // methods.handleChangeTool(8);
+
                     }
                     else if (event.altKey && event.key === 'g') 
                     {
@@ -2061,7 +2256,13 @@ export default defineComponent({
                     else if (event.altKey && event.key === 'd') 
                     {
                         event.preventDefault();
-                        
+                        methods.handleRemoveSelect();
+                        // methods.handleChangeTool(8);
+                    }
+                    else if (event.altKey && event.key === 'e') 
+                    {
+                        event.preventDefault();
+                        methods.handleChangeTool(8);
                     }
                     
                     else if (event.key === 'ArrowUp')
