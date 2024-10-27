@@ -165,8 +165,8 @@
                                         <el-dropdown-menu>
                                             <el-dropdown-item @click="drawTransform('hReverse')">水平翻转</el-dropdown-item>
                                             <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转</el-dropdown-item>
-                                            <el-dropdown-item @click="drawTransform('ssz')">顺时针旋转</el-dropdown-item>
-                                            <el-dropdown-item @click="drawTransform('nsz')">逆时针旋转</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('ssz')" :disabled="canvasWidth!==canvasHeight">顺时针旋转90度</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('nsz')" :disabled="canvasWidth!==canvasHeight">逆时针旋转90度</el-dropdown-item>
                                             <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                         </el-dropdown-menu>
                                     </template>
@@ -183,9 +183,9 @@
                                     </div>
                                     <template #dropdown>
                                         <el-dropdown-menu>
-                                            <el-dropdown-item @click="handleFilter(1, drawRecord[currentFrameIndex].layer[currentLayerIndex].layerData, reDraw)">黑 白</el-dropdown-item>
-                                            <el-dropdown-item @click="handleFilter(2, drawRecord[currentFrameIndex].layer[currentLayerIndex].layerData, reDraw)">反 相</el-dropdown-item>
-                                            <el-dropdown-item @click="handleFilter(3, drawRecord[currentFrameIndex].layer[currentLayerIndex].layerData, reDraw)">BGRA</el-dropdown-item>
+                                            <el-dropdown-item @click="handleFilter(1)">黑 白</el-dropdown-item>
+                                            <el-dropdown-item @click="handleFilter(2)">反 相</el-dropdown-item>
+                                            <el-dropdown-item @click="handleFilter(3)">BGRA</el-dropdown-item>
                                             <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                         </el-dropdown-menu>
                                     </template>
@@ -209,10 +209,30 @@
                         <canvas id="RealCanvas" v-show="false"></canvas>
                         <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
                         <div class="cancelSelect" v-if="selectData.selectList.length">
-                            <el-button type="primary" @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))">复 制</el-button>
-                            <!-- <el-button type="primary" @click="handleRemoveSelect">粘 贴</el-button> -->
+                            <!-- <el-dropdown placement="top">
+                                <el-button type="primary" @click="handleRemoveSelect">旋 转</el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                      <el-dropdown-item>45度</el-dropdown-item>
+                                      <el-dropdown-item>90度</el-dropdown-item>
+                                      <el-dropdown-item>180度</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown> -->
+                            <el-button type="primary" @click="handleCopySelectData">复 制</el-button>
                             <el-button type="primary" @click="handleRemoveSelect">删 除</el-button>
                             <el-button type="primary" @click="handleCancelSelect">取消选择</el-button>
+                        </div>
+                        <div class="colorSelector" v-if="colorStatList.length">
+                            <div class="back-icon" @click="handleExpand">
+                                <el-icon><Fold /></el-icon>
+                            </div>
+                            <div class="color-body scrollbar flex full-layout">
+                                <div class="colorItem" v-for="item in colorStatList"
+                                :key="item"
+                                :style="{backgroundColor:item}">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

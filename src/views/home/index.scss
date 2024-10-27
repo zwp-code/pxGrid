@@ -67,6 +67,54 @@
         right: 50%;
         transform: translate(50%, 0);
     }
+
+    .colorSelector {
+        position: absolute;
+        top: 0;
+        right: 0;
+        transition: all .5s;
+        transform: translateX(100%);
+        width: 80px;
+        max-width: 80px;
+        height: 100%;
+        background: var(--el-drawer-bg);
+
+        .back-icon {
+            position: absolute;
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+            width: 30px;
+            top: 20%;
+            left: -30px;
+            background-color: var(--el-drawer-bg);
+            cursor: pointer;
+    
+            i {
+                transition: all .3s;
+                color:#fff;
+            }
+        }
+
+        .color-body {
+            height: 100%;
+            overflow-y: auto;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+
+            .colorItem {
+                width: 60px;
+                height: 30px;
+                border-radius: 10px;
+                margin: 10px 0 0 0;
+                cursor: pointer;
+            }
+        }
+    }
 }
 
 .el-main {

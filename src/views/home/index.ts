@@ -147,7 +147,10 @@ export default defineComponent({
             },
             previewLoading:false,
             selectActiveColor:'#3c8bfb8f',
-            
+            isExpandColorSelector:false,
+            colorStatList:[] as any,
+
+            worker:null as any,
 
             AnimationFrameId_1:null as any
         });
@@ -365,6 +368,7 @@ export default defineComponent({
                         }
                     }
                     data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = layerArr;
+                    methods.handleCancelSelect();
                     methods.reDraw();
                     // methods.handleFrameImg(data.ctx1);
                     return;
@@ -378,6 +382,7 @@ export default defineComponent({
                     data[key] = e < 6 ? 6 : e > 70 ? 70 : data[key];
                     proxy.$message.warning('画布不能小于6或大于70像素');
                 }
+                data[key] = Number(e);
                 if (data.isCheckedRatio)
                 {
                     // 如果选择了保持横纵比
@@ -390,6 +395,8 @@ export default defineComponent({
                         data.canvasWidth = parseInt(data[key] / data.widthHeightRatio);
                     }
                 }
+                console.log(data.canvasHeight, data.canvasWidth);
+                
                 methods.computeScale();
                 methods.drawPixelArea();
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
@@ -439,7 +446,7 @@ export default defineComponent({
                 else if (type === 'scale')
                 {
                     data.loading = true;
-                    const worker = new Worker();
+                    // const worker = new Worker();
                     // 每个帧的图层都要进行比例调整
                     let layerOriginArr = [] as any;
                     for (let y = 0; y < data.canvasHeight; y++) 
@@ -449,8 +456,8 @@ export default defineComponent({
                             layerOriginArr.push([x, y, data.emptyColor]);
                         }
                     }
-                    worker.postMessage({originData:layerOriginArr, type:1, variables:JSON.parse(JSON.stringify(data.drawRecord))});
-                    worker.onmessage = (event) => 
+                    data.worker.postMessage({originData:layerOriginArr, type:1, variables:JSON.parse(JSON.stringify(data.drawRecord))});
+                    data.worker.onmessage = (event) => 
                     {
                         data.drawRecord = event.data;
                         data.loading = false;
@@ -529,18 +536,35 @@ export default defineComponent({
                 let realCoords = [] as any;
                 let centerX = data.canvasBeginPos.x + data.canvasWidth * data.scale / 2;
                 let centerY = data.canvasBeginPos.y + data.canvasHeight * data.scale / 2;
-                let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                for (let i = 0; i < currentLayerData.length; i++)
+                let currentLayerData1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                let currentLayerData2 = JSON.parse(JSON.stringify(currentLayerData1));
+                if (data.selectData.selectList.length)
                 {
-                    if (currentLayerData[i][0] > data.canvasWidth || currentLayerData[i][1] > data.canvasHeight) return;
-                    let gridX = (currentLayerData[i][0] * data.scale) + data.canvasBeginPos.x;
-                    let gridY = (currentLayerData[i][1] * data.scale) + data.canvasBeginPos.y;
-                    realCoords.push([gridX, gridY, currentLayerData[i][2]]);
+                    let currentSelectData = data.selectData.selectList;
+                    for (let i = 0; i < currentSelectData.length; i++)
+                    {
+                        if (currentSelectData[i][0] > data.canvasWidth || currentSelectData[i][1] > data.canvasHeight) return;
+                        let gridX = (currentSelectData[i][0] * data.scale) + data.canvasBeginPos.x;
+                        let gridY = (currentSelectData[i][1] * data.scale) + data.canvasBeginPos.y;
+                        realCoords.push([gridX, gridY, currentSelectData[i][2]]);
+                    }
+                }
+                else
+                {
+                    for (let i = 0; i < currentLayerData2.length; i++)
+                    {
+                        if (currentLayerData2[i][0] > data.canvasWidth || currentLayerData2[i][1] > data.canvasHeight) return;
+                        let gridX = (currentLayerData2[i][0] * data.scale) + data.canvasBeginPos.x;
+                        let gridY = (currentLayerData2[i][1] * data.scale) + data.canvasBeginPos.y;
+                        realCoords.push([gridX, gridY, currentLayerData2[i][2]]);
+                    }
                 }
                 if (transform === 'hReverse')
                 {
                     for (let i = 0; i < realCoords.length; i++)
                     {
+                        // let newCol = (data.canvasWidth - 1) - currentLayerData[i][0];
+                        // currentLayerData[i][0] = newCol;
                         if (realCoords[i][2] === data.emptyColor) continue;
                         let beginX = realCoords[i][0];
                         let beginY = realCoords[i][1];
@@ -550,10 +574,23 @@ export default defineComponent({
                         const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        let brginIndex = beginCol + beginRow * data.canvasWidth;
+                        let beginIndex = beginCol + beginRow * data.canvasWidth;
                         let endIndex = col + row * data.canvasWidth;
-                        currentLayerData[brginIndex][2] = data.emptyColor;
-                        currentLayerData[endIndex][2] = realCoords[i][2];
+                        if (currentLayerData1[endIndex][2] === data.emptyColor)
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
+                        }
+                        else
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
+                        }
+                        if (data.selectData.selectList.length)
+                        {
+                            data.selectData.selectList[i][0] = col;
+                            data.selectData.selectList[i][1] = row;
+                        }
                     }
                 }
                 else if (transform === 'vReverse')
@@ -571,10 +608,25 @@ export default defineComponent({
                         const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        let brginIndex = beginCol + beginRow * data.canvasWidth;
+                        let beginIndex = beginCol + beginRow * data.canvasWidth;
                         let endIndex = col + row * data.canvasWidth;
-                        currentLayerData[brginIndex][2] = data.emptyColor;
-                        currentLayerData[endIndex][2] = realCoords[i][2];
+                        if (currentLayerData1[endIndex][2] === data.emptyColor)
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
+                        }
+                        else
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
+                        }
+                        if (data.selectData.selectList.length)
+                        {
+                            data.selectData.selectList[i][0] = col;
+                            data.selectData.selectList[i][1] = row;
+                        }
+                        // currentLayerData[beginIndex][2] = data.emptyColor;
+                        // currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
                 else if (transform === 'ssz')
@@ -582,22 +634,21 @@ export default defineComponent({
                     for (let i = 0; i < realCoords.length; i++)
                     {
                         if (realCoords[i][2] === data.emptyColor) continue;
-                        // let relativeX = realCoords[i][0] - centerX;
-                        // let relativeY = realCoords[i][1] - centerY;
-                        // let rotateX = -relativeY;
-                        // let rotateY = relativeX;
-                        // let endX = rotateX + centerX - data.scale;
-                        // let endY = rotateY + centerY;
-                        console.log(centerX, centerY);
-                        
-                        let circleX = realCoords[i][0] + data.scale / 2;
-                        let circleY = realCoords[i][1] + data.scale / 2;
-                        let relativeX = circleX - centerX;
-                        let relativeY = circleY - centerY;
+                        let relativeX = realCoords[i][0] - centerX;
+                        let relativeY = realCoords[i][1] - centerY;
                         let rotateX = -relativeY;
                         let rotateY = relativeX;
-                        let endX = rotateX + centerX;
+                        let endX = rotateX + centerX - data.scale;
                         let endY = rotateY + centerY;
+                        
+                        // let circleX = realCoords[i][0] + data.scale / 2;
+                        // let circleY = realCoords[i][1] + data.scale / 2;
+                        // let relativeX = circleX - centerX;
+                        // let relativeY = circleY - centerY;
+                        // let rotateX = -relativeY;
+                        // let rotateY = relativeX;
+                        // let endX = rotateX + centerX;
+                        // let endY = rotateY + centerY;
 
                         // console.log(relativeX, relativeY, endX, endY);
                         
@@ -605,19 +656,34 @@ export default defineComponent({
                         const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
+                        // currentLayerData[i][0] = col;
+                        // currentLayerData[i][1] = row;
                         let endIndex = col + row * data.canvasWidth;
-                        console.log(col, row);
-                        
-                        let brginIndex = beginCol + beginRow * data.canvasWidth;
-                        
-                        currentLayerData[brginIndex][2] = data.emptyColor;
-                        currentLayerData[endIndex][2] = realCoords[i][2];
+                        let beginIndex = beginCol + beginRow * data.canvasWidth;
+                        if (currentLayerData1[endIndex][2] === data.emptyColor)
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
+                        }
+                        else
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
+                        }
+                        if (data.selectData.selectList.length)
+                        {
+                            data.selectData.selectList[i][0] = col;
+                            data.selectData.selectList[i][1] = row;
+                        }
+                        // currentLayerData[beginIndex][2] = data.emptyColor;
+                        // currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
                 else if (transform === 'nsz')
                 {
                     for (let i = 0; i < realCoords.length; i++)
                     {
+                        if (realCoords[i][2] === data.emptyColor) continue;
                         let relativeX = realCoords[i][0] - centerX;
                         let relativeY = realCoords[i][1] - centerY;
                         let rotateX = relativeY;
@@ -629,13 +695,43 @@ export default defineComponent({
                         const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
+                        // currentLayerData[i][0] = col;
+                        // currentLayerData[i][1] = row;
                         let endIndex = col + row * data.canvasWidth;
-                        let brginIndex = beginCol + beginRow * data.canvasWidth;
-                        
-                        currentLayerData[brginIndex][2] = data.emptyColor;
-                        currentLayerData[endIndex][2] = realCoords[i][2];
+                        let beginIndex = beginCol + beginRow * data.canvasWidth;
+                        if (currentLayerData1[endIndex][2] === data.emptyColor)
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
+                        }
+                        else
+                        {
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
+                        }
+                        if (data.selectData.selectList.length)
+                        {
+                            data.selectData.selectList[i][0] = col;
+                            data.selectData.selectList[i][1] = row;
+                        }
+                        // currentLayerData[beginIndex][2] = data.emptyColor;
+                        // currentLayerData[endIndex][2] = realCoords[i][2];
                     }
                 }
+                // let newArr:any = [];
+                // for (let i = 0; i < data.canvasHeight; i++) 
+                // {
+                //     let arr:any = [];
+                //     for (let j = 0; j < data.canvasWidth; j++) 
+                //     {
+                //         arr.unshift(currentLayerData[j + i * data.canvasHeight]);
+                //     }
+                //     newArr = [...newArr, ...arr];
+                // }
+                data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = currentLayerData2;
+
+                // console.log(newArr);
+                
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.reDraw();
             },
@@ -1315,6 +1411,15 @@ export default defineComponent({
                 const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
                 const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
                 data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
+                // 处理当前帧的颜色统计
+                data.worker.postMessage({
+                    type:3,
+                    currentFrameData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer))
+                });
+                data.worker.onmessage = (event) => 
+                {
+                    data.colorStatList = event.data;
+                };
                 if (isAddHistory) methods.handleAddHistory();
             },
             addDrawRecord (value)
@@ -1868,13 +1973,13 @@ export default defineComponent({
                 console.log(imageData);
                 
                 // 图片转换为像素数据
-                const worker = new Worker();
-                worker.postMessage({
+                // const worker = new Worker();
+                data.worker.postMessage({
                     type:2, 
                     variables:imageData.data, 
                     currentLayerData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData))
                 });
-                worker.onmessage = (event) => 
+                data.worker.onmessage = (event) => 
                 {
                     URL.revokeObjectURL(url);
                     data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = event.data;
@@ -2171,7 +2276,7 @@ export default defineComponent({
                     }
                     if (event.altKey && event.key === 'c' && data.selectData.selectList.length)
                     {
-                        data.selectData.copyList = JSON.parse(JSON.stringify(data.selectData.selectList));
+                        methods.handleCopySelectData();
                         console.log('复制成功');
                     }
                     else if (event.altKey && event.key === 'z') 
@@ -2380,6 +2485,33 @@ export default defineComponent({
                 data.drawRecord = newArr;
                 methods.handleChangeFrame(data.currentFrameIndex);
                 
+            },
+            handleCopySelectData ()
+            {
+                data.selectData.copyList = JSON.parse(JSON.stringify(data.selectData.selectList));
+                proxy.$message.success('复制成功');
+            },
+            handleFilter (value)
+            {
+                useFilterHooks.handleFilter(value, data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData, data.selectData, data.canvasWidth, data.canvasHeight, methods.reDraw);
+            },
+            handleExpand ()
+            {
+                data.isExpandColorSelector = !data.isExpandColorSelector;
+                let dom = document.querySelector('.colorSelector') as HTMLDivElement;
+                let dom1:any = document.querySelector('.back-icon');
+                if (data.isExpandColorSelector)
+                {
+                    // 展开
+                    dom.style.transform = 'translateX(0)';
+                    dom1.children[0].style.transform = 'rotate(180deg)';
+                }
+                else
+                {
+                    // 折叠
+                    dom.style.transform = 'translateX(100%)';
+                    dom1.children[0].style.transform = 'rotate(0deg)';
+                }
             }
         };
 
@@ -2395,6 +2527,7 @@ export default defineComponent({
             {
                 e.returnValue = '1111';
             };
+            data.worker = new Worker();
             initTheme();
             methods.changeLanguage();
             methods.getMyColorList();
@@ -2426,8 +2559,7 @@ export default defineComponent({
             ...computedApi,
             copyText,
             ...fullScreen(),
-            ...useDrag(),
-            ...useFilterHooks
+            ...useDrag()
         };
     }
 });

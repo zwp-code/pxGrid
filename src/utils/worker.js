@@ -41,11 +41,34 @@ addEventListener('message', (e) =>
             rgba[1] = dataTable[i + 1];
             rgba[2] = dataTable[i + 2];
             rgba[3] = dataTable[i + 3];
-            let index = i / 4;
-            transformTable[index][2] = rgbaToHex(rgba);
+            let hexStr = rgbaToHex(rgba);
+            if (hexStr !== '#00000000') 
+            {
+                let index = i / 4;
+                transformTable[index][2] = hexStr;
+            }
         }
         return postMessage(transformTable);
 
+    }
+    else if (data.type === 3)
+    {
+        // 统计当前帧的颜色
+        let dataTable = data.currentFrameData;
+        let colorStatList = [];
+        for (let i = 0; i < dataTable.length; i++)
+        {
+            for (let j = 0; j < dataTable[i].layerData.length; j++)
+            {
+                let color = dataTable[i].layerData[j][2];
+                if (color === '#00000000') continue;
+                if (!colorStatList.includes(color))
+                {
+                    colorStatList.push(color);
+                }
+            }
+        }
+        return postMessage(colorStatList);
     }
 });
 export default {};

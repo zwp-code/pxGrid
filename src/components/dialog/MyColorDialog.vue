@@ -198,6 +198,8 @@ export default defineComponent({
             handleClose ()
             {
                 data.dialogVisible = false;
+                data.addMyColorVisible = 0;
+                data.editMyColorMask = null;
                 // context.emit('close');
             },
             getData ()

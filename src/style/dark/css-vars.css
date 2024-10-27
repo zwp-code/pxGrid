@@ -29,6 +29,7 @@ html.dark {
     --el-shadow-aside:#191919;
     --el-shadow-nav:#191919;
     --el-shadow-color:#292929;
+    --el-drawer-bg:#353434db;
 }
 
 html.light {
@@ -60,6 +61,7 @@ html.light {
     --el-shadow-aside:#d9d9d9;
     --el-shadow-nav:#dfdfdf;
     --el-shadow-color:#d9d9d9;
+    --el-drawer-bg:#bfbfbfc9;
 }
 
 html {
@@ -91,4 +93,5 @@ html {
     --el-shadow-aside:#d9d9d9;
     --el-shadow-nav:#dfdfdf;
     --el-shadow-color:#d9d9d9;
+    --el-drawer-bg:#bfbfbfc9;
 }
