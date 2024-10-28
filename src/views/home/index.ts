@@ -18,6 +18,7 @@ import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
 import useDrag from '@/hooks/useDrag';
 import useFilter from '@/hooks/useFilter';
+import FileSaver from 'file-saver';
 export default defineComponent({
     name:'home',
     components: {
@@ -147,11 +148,11 @@ export default defineComponent({
             },
             previewLoading:false,
             selectActiveColor:'#3c8bfb8f',
-            isExpandColorSelector:false,
+            isExpandColorSelector:true,
             colorStatList:[] as any,
 
             worker:null as any,
-
+            isExportProject:false,
             AnimationFrameId_1:null as any
         });
 
@@ -853,14 +854,17 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 4)
                     {
+                        let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
                         if (data.selectData.selectList.length)
                         {
-                            return proxy.$message.warning('请先取消选中区域');
+                            // let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
+                            methods.handleReplaceColor(replacementColor);
+                            return;
                         }
                         const targetColor = data.ctx1.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-                        console.log(data.drawRecord);
-                        let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
-                        console.log(replacementColor);
+                        // console.log(data.drawRecord);
+                        // let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
+                        // console.log(replacementColor);
                         
                         methods.fillChunk(col, row, rgbaToHex(targetColor), replacementColor);
 
@@ -926,6 +930,19 @@ export default defineComponent({
                         // }
                     }
                 }
+            },
+            handleReplaceColor (replacementColor)
+            {
+                // 替换颜色
+                for (let i = 0; i < data.selectData.selectList.length; i++)
+                {
+                    data.selectData.selectList[i][2] = replacementColor;
+                    let col = data.selectData.selectList[i][0];
+                    let row = data.selectData.selectList[i][1];
+                    let index = col + row * data.canvasHeight;
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData[index][2] = replacementColor;
+                }
+                methods.reDraw();
             },
 
             fillChunk (x, y, targetColor, replacementColor)
@@ -1065,7 +1082,7 @@ export default defineComponent({
                                 let gridY = (row * data.scale) + data.canvasBeginPos.y;
                                 let rectWidth = (gridX + data.scale / 2 - data.lastX);
                                 let rectHeight = (gridY + data.scale / 2 - data.lastY);
-                                methods.reDraw();
+                                methods.reDraw(false, false);
                                 data.ctx1.beginPath();
                                 if (gridY + data.scale / 2 === data.lastY && gridX + data.scale / 2 !== data.lastX)
                                 {
@@ -1121,9 +1138,8 @@ export default defineComponent({
                                 let endX = data.drawShapeList[l - 1][0];
                                 let endY = data.drawShapeList[l - 1][1];
                                 let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
-                                console.log(arr);
-                                
-                                methods.reDraw();
+                                // console.log(arr);
+                                methods.reDraw(false);
                                 for (let i = 0; i < arr.length; i++)
                                 {
                                     if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
@@ -1138,18 +1154,31 @@ export default defineComponent({
                         else if (data.currentDrawShape === 'line')
                         {
                             methods.addShapeList(col, row);
+                            // if (gridX + data.scale / 2 === data.lastX || gridY +  data.scale / 2 === data.lastY)
+                            // {
                             if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                let gridX = (col * data.scale) + data.canvasBeginPos.x;
-                                let gridY = (row * data.scale) + data.canvasBeginPos.y;
-                                if (gridX + data.scale / 2 === data.lastX || gridY +  data.scale / 2 === data.lastY)
+                                data.ctx1.fillStyle = data.brushColor;
+                                // let gridX = (col * data.scale) + data.canvasBeginPos.x;
+                                // let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                                let l = data.drawShapeList.length;
+                                let startX = data.drawShapeList[0][0];
+                                let startY = data.drawShapeList[0][1];
+                                let endX = data.drawShapeList[l - 1][0];
+                                let endY = data.drawShapeList[l - 1][1];
+                                let arr = methods.drawLine(startX, startY, endX, endY);
+                                // console.log(arr);
+                                methods.reDraw(false);
+                                for (let i = 0; i < arr.length; i++)
                                 {
-                                    data.ctx1.beginPath();
-                                    data.ctx1.moveTo(data.lastX, data.lastY);
-                                    data.ctx1.lineTo(gridX + data.scale / 2, gridY +  data.scale / 2);
-                                    data.ctx1.stroke();
+                                    if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
+                                    let gridX = (arr[i][0] * data.scale) + data.canvasBeginPos.x;
+                                    let gridY = (arr[i][1] * data.scale) + data.canvasBeginPos.y;
+                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                                 }
                             }
+                            // }
+                            
                         }
                     }
                     if (data.isMoving && !data.isSelecting)
@@ -1167,7 +1196,8 @@ export default defineComponent({
                         console.log(data.moveData);
                         data.moveData.x = col;
                         data.moveData.y = row;
-                        data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                        // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                        methods.reDraw(false, false, data.canvasBeginPos, false);
                         for (let i = 0; i < data.moveData.list.length; i++)
                         {
                             if (data.moveData.list[i][0] >= data.canvasWidth || data.moveData.list[i][1] >= data.canvasHeight || data.moveData.list[i][0] < 0 || data.moveData.list[i][1] < 0) continue;
@@ -1404,6 +1434,226 @@ export default defineComponent({
 
             },
 
+            drawLine (x1, y1, x2, y2)
+            {
+                const dx = Math.abs(x2 - x1);
+                const sx = x1 < x2 ? 1 : -1;
+                const dy = -Math.abs(y2 - y1);
+                const sy = y1 < y2 ? 1 : -1;
+                let e2, er = dx + dy,
+                    end = false;
+                let arr:any = [];
+                while (!end) 
+                {
+                    if (x1 >= 0 && x1 <= data.canvasWidth && y1 >= 0 && y1 <= data.canvasHeight) 
+                    {
+                        arr.push([x1, y1]);
+                    }
+                    if (x1 === x2 && y1 === y2) 
+                    {
+                        end = true;
+                    } 
+                    else 
+                    {
+                        e2 = 2 * er;
+                        if (e2 > dy) 
+                        {
+                            er += dy;
+                            x1 += sx;
+                        }
+                        if (e2 < dx) 
+                        {
+                            er += dx;
+                            y1 += sy;
+                        }
+                    }
+                }
+                console.log(arr);
+                return unique2DArray(arr);
+                
+            },
+
+            drawRect (x1, y1, x2, y2)
+            {
+                let xl = Math.abs(x1 - x2);
+                let yl = Math.abs(y1 - y2);
+                let arr = [] as any;
+                if (yl <= 1)
+                {
+                    // 中间不为空
+                    for (let i = 0; i < (yl + 1); i++)
+                    {
+                        for (let j = 0; j < (xl + 1); j++)
+                        {
+                            let htx, hty;
+                            if (x1 > x2)
+                            {
+                                htx = x1 - j;
+                                hty = y1 - i;
+                                arr.push([htx, hty]);
+                            }
+                            else
+                            {
+                                htx = x1 + j;
+                                hty = y1 + i;
+                                arr.push([htx, hty]);
+                            }
+                        }
+                        
+                    }
+                }
+                else 
+                {
+                    // 中间为空
+                    for (let i = 0; i <= xl; i++)
+                    {
+                        let htx, hty, hbx, hby;
+                        if (x1 > x2)
+                        {
+                            htx = x1 - i;
+                            hty = y1;
+                            arr.push([htx, hty]);
+                            hbx = x2 + i;
+                            hby = y2;
+                            arr.push([hbx, hby]);
+                        }
+                        else
+                        {
+                            htx = x1 + i;
+                            hty = y1;
+                            arr.push([htx, hty]);
+                            hbx = x2 - i;
+                            hby = y2;
+                            arr.push([hbx, hby]);
+                        }
+                    }
+                    for (let i = 0; i <= yl; i++)
+                    {
+                        let htx, hty, hbx, hby;
+                        if (y1 > y2)
+                        {
+                            htx = x1;
+                            hty = y1 - i;
+                            arr.push([htx, hty]);
+                            hbx = x2;
+                            hby = y2 + i;
+                            arr.push([hbx, hby]);
+                        }
+                        else
+                        {
+                            htx = x1;
+                            hty = y1 + i;
+                            arr.push([htx, hty]);
+                            hbx = x2;
+                            hby = y2 - i;
+                            arr.push([hbx, hby]);
+                        }
+                    }
+
+                }
+                return unique2DArray(arr);
+            },
+
+            drawFillRect (x1, y1, x2, y2)
+            {
+                let xl = Math.abs(x1 - x2);
+                let yl = Math.abs(y1 - y2);
+                let arr = [] as any;
+                if (yl <= 1)
+                {
+                    // 中间不为空
+                    for (let i = 0; i < (yl + 1); i++)
+                    {
+                        for (let j = 0; j < (xl + 1); j++)
+                        {
+                            let htx, hty;
+                            if (x1 > x2)
+                            {
+                                htx = x1 - j;
+                                hty = y1 - i;
+                                arr.push([htx, hty, data.brushColor]);
+                            }
+                            else
+                            {
+                                htx = x1 + j;
+                                hty = y1 + i;
+                                arr.push([htx, hty, data.brushColor]);
+                            }
+                        }
+                        
+                    }
+                }
+                else 
+                {
+                    for (let i = 0; i < (yl + 1); i++)
+                    {
+                        for (let j = 0; j < (xl + 1); j++)
+                        {
+                            let htx, hty;
+                            if (x1 > x2)
+                            {
+                                htx = x1 - j;
+                                hty = y1 - i;
+                                arr.push([htx, hty, data.shapeFillColor]);
+                            }
+                            else
+                            {
+                                htx = x1 + j;
+                                hty = y1 + i;
+                                arr.push([htx, hty, data.shapeFillColor]);
+                            }
+                        }
+                    }
+                    // 中间为空
+                    for (let i = 0; i <= xl; i++)
+                    {
+                        let htx, hty, hbx, hby;
+                        if (x1 > x2)
+                        {
+                            htx = x1 - i;
+                            hty = y1;
+                            arr.push([htx, hty, data.brushColor]);
+                            hbx = x2 + i;
+                            hby = y2;
+                            arr.push([hbx, hby, data.brushColor]);
+                        }
+                        else
+                        {
+                            htx = x1 + i;
+                            hty = y1;
+                            arr.push([htx, hty, data.brushColor]);
+                            hbx = x2 - i;
+                            hby = y2;
+                            arr.push([hbx, hby, data.brushColor]);
+                        }
+                    }
+                    for (let i = 0; i <= yl; i++)
+                    {
+                        let htx, hty, hbx, hby;
+                        if (y1 > y2)
+                        {
+                            htx = x1;
+                            hty = y1 - i;
+                            arr.push([htx, hty, data.brushColor]);
+                            hbx = x2;
+                            hby = y2 + i;
+                            arr.push([hbx, hby, data.brushColor]);
+                        }
+                        else
+                        {
+                            htx = x1;
+                            hty = y1 + i;
+                            arr.push([htx, hty, data.brushColor]);
+                            hbx = x2;
+                            hby = y2 - i;
+                            arr.push([hbx, hby, data.brushColor]);
+                        }
+                    }
+
+                }
+                return unique2DArray(arr);
+            },
+
             handleFrameImg (ctx, isAddHistory = true)
             {
                 let beginX = data.drawAreaList[0][0];
@@ -1422,7 +1672,7 @@ export default defineComponent({
                 };
                 if (isAddHistory) methods.handleAddHistory();
             },
-            addDrawRecord (value)
+            addDrawRecord (value, isUpdate = true)
             {
                 console.log(value);
                 if (!isHexColor(value[2])) 
@@ -1443,12 +1693,15 @@ export default defineComponent({
                     }
                 }
                 console.log(data.drawRecord);
-                // 更新帧图片
-                data.FrameTimer && clearTimeout(data.FrameTimer);
-                data.FrameTimer = setTimeout(() => 
+                if (isUpdate)
                 {
-                    methods.handleFrameImg(data.ctx1);
-                }, 200);
+                    // 更新帧图片
+                    data.FrameTimer && clearTimeout(data.FrameTimer);
+                    data.FrameTimer = setTimeout(() => 
+                    {
+                        methods.handleFrameImg(data.ctx1);
+                    }, 200);
+                }
                 
             },
 
@@ -1471,16 +1724,18 @@ export default defineComponent({
                 if (isRedraw) methods.reDraw();
             },
 
-            reDraw (isRenderFrameImg = true, isAddHistory = true, beginPos = data.canvasBeginPos)
+            reDraw (isRenderFrameImg = true, isAddHistory = true, beginPos = data.canvasBeginPos, isSelfRender = true)
             {
                 // 重新绘制内容
                 let count = 0;
                 data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 if (data.drawRecord.length - 1 < data.currentFrameIndex) data.currentFrameIndex = data.drawRecord.length - 1;
                 let arr = data.drawRecord[data.currentFrameIndex].layer;
+                let currentLayerId = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId;
                 for (let i = arr.length - 1; i >= 0; i--)
                 {
                     // 从最后一项开始绘制
+                    if (!isSelfRender && arr[i].layerId === currentLayerId) continue;
                     if (arr[i].isRender)
                     {
                         for (let v = 0; v < arr[i].layerData.length; v++)
@@ -1594,119 +1849,67 @@ export default defineComponent({
             },
             saveShapeData ()
             {
-                if (data.isDrawShape && data.currentDrawShape === 'circle' && data.drawShapeList.length)
+                
+                if (data.isDrawShape && data.drawShapeList.length)
                 {
-                    let l = data.drawShapeList.length;
-                    let startX = data.drawShapeList[0][0];
-                    let startY = data.drawShapeList[0][1];
-                    let endX = data.drawShapeList[l - 1][0];
-                    let endY = data.drawShapeList[l - 1][1];
-                    let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
-                    for (let i = 0; i < arr.length; i++)
+                    if (data.currentDrawShape === 'circle')
                     {
-                        methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor]);
+                        let l = data.drawShapeList.length;
+                        let startX = data.drawShapeList[0][0];
+                        let startY = data.drawShapeList[0][1];
+                        let endX = data.drawShapeList[l - 1][0];
+                        let endY = data.drawShapeList[l - 1][1];
+                        let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
+                        for (let i = 0; i < arr.length; i++)
+                        {
+                            methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                        }
                     }
+                    else if (data.currentDrawShape === 'rect')
+                    {
+                        let l = data.drawShapeList.length;
+                        let startX = data.drawShapeList[0][0];
+                        let startY = data.drawShapeList[0][1];
+                        let endX = data.drawShapeList[l - 1][0];
+                        let endY = data.drawShapeList[l - 1][1];
+                        let arr = methods.drawRect(startX, startY, endX, endY);
+                        for (let i = 0; i < arr.length; i++)
+                        {
+                            methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                        }
+                        
+                    }
+                    else if (data.currentDrawShape === 'fillRect')
+                    {
+                        let l = data.drawShapeList.length;
+                        let startX = data.drawShapeList[0][0];
+                        let startY = data.drawShapeList[0][1];
+                        let endX = data.drawShapeList[l - 1][0];
+                        let endY = data.drawShapeList[l - 1][1];
+                        let arr = methods.drawFillRect(startX, startY, endX, endY);
+                        for (let i = 0; i < arr.length; i++)
+                        {
+                            methods.addDrawRecord([arr[i][0], arr[i][1], arr[i][2]], false);
+                        }
+                       
+                    }
+                    else if (data.currentDrawShape === 'line')
+                    {
+                        let l = data.drawShapeList.length;
+                        let startX = data.drawShapeList[0][0];
+                        let startY = data.drawShapeList[0][1];
+                        let endX = data.drawShapeList[l - 1][0];
+                        let endY = data.drawShapeList[l - 1][1];
+                        let arr = methods.drawLine(startX, startY, endX, endY);
+                        for (let i = 0; i < arr.length; i++)
+                        {
+                            methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                        }
+                    }
+                    methods.reDraw();
+                    data.drawShapeList = [];
+                    data.isDrawShape = false;
                 }
-                else if (data.isDrawShape && data.currentDrawShape === 'rect' && data.drawShapeList.length)
-                {
-                    let xl = Math.abs(data.drawShapeList[0][0] - data.drawShapeList[data.drawShapeList.length - 1][0]);
-                    let yl = Math.abs(data.drawShapeList[0][1] - data.drawShapeList[data.drawShapeList.length - 1][1]);
-                    if (xl === 0 || yl === 0)
-                    {
-                        for (let i = 0; i < data.drawShapeList.length; i++)
-                        {
-                            methods.addDrawRecord([data.drawShapeList[i][0], data.drawShapeList[i][1], data.brushColor]);
-                        }
-                        data.drawShapeList = [];
-                        data.isDrawShape = false;
-                    }
-                    else
-                    {
-                        for (let i = 0; i <= xl; i++)
-                        {
-                            let htx, hty, hbx, hby;
-                            if (data.drawShapeList[0][0] > data.drawShapeList[data.drawShapeList.length - 1][0])
-                            {
-                                htx = data.drawShapeList[0][0] - i;
-                                hty = data.drawShapeList[0][1];
-                                methods.addDrawRecord([htx, hty, data.brushColor]);
-                                hbx = data.drawShapeList[data.drawShapeList.length - 1][0] + i;
-                                hby = data.drawShapeList[data.drawShapeList.length - 1][1];
-                                methods.addDrawRecord([hbx, hby, data.brushColor]);
-                            }
-                            else
-                            {
-                                htx = data.drawShapeList[0][0] + i;
-                                hty = data.drawShapeList[0][1];
-                                methods.addDrawRecord([htx, hty, data.brushColor]);
-                                hbx = data.drawShapeList[data.drawShapeList.length - 1][0] - i;
-                                hby = data.drawShapeList[data.drawShapeList.length - 1][1];
-                                methods.addDrawRecord([hbx, hby, data.brushColor]);
-                            }
-                        }
-                        for (let i = 0; i <= yl; i++)
-                        {
-                            let htx, hty, hbx, hby;
-                            if (data.drawShapeList[0][1] > data.drawShapeList[data.drawShapeList.length - 1][1])
-                            {
-                                htx = data.drawShapeList[0][0];
-                                hty = data.drawShapeList[0][1] - i;
-                                methods.addDrawRecord([htx, hty, data.brushColor]);
-                                hbx = data.drawShapeList[data.drawShapeList.length - 1][0];
-                                hby = data.drawShapeList[data.drawShapeList.length - 1][1] + i;
-                                methods.addDrawRecord([hbx, hby, data.brushColor]);
-                            }
-                            else
-                            {
-                                htx = data.drawShapeList[0][0];
-                                hty = data.drawShapeList[0][1] + i;
-                                methods.addDrawRecord([htx, hty, data.brushColor]);
-                                hbx = data.drawShapeList[data.drawShapeList.length - 1][0];
-                                hby = data.drawShapeList[data.drawShapeList.length - 1][1] - i;
-                                methods.addDrawRecord([hbx, hby, data.brushColor]);
-                            }
-                        }
-                    }
-                    
-                }
-                else if (data.isDrawShape && data.currentDrawShape === 'fillRect' && data.drawShapeList.length)
-                {
-                    let xl = Math.abs(data.drawShapeList[0][0] - data.drawShapeList[data.drawShapeList.length - 1][0]);
-                    let yl = Math.abs(data.drawShapeList[0][1] - data.drawShapeList[data.drawShapeList.length - 1][1]);
-                    if (xl === 0 || yl === 0)
-                    {
-                        for (let i = 0; i < data.drawShapeList.length; i++)
-                        {
-                            methods.addDrawRecord([data.drawShapeList[i][0], data.drawShapeList[i][1], data.brushColor]);
-                        }
-                    }
-                    else
-                    {
-                        for (let i = 0; i < (yl + 1); i++)
-                        {
-                            for (let y = 0; y < (xl + 1); y++)
-                            {
-                                let htx, hty;
-                                if (data.drawShapeList[0][0] > data.drawShapeList[data.drawShapeList.length - 1][0])
-                                {
-                                    htx = data.drawShapeList[0][0] - y;
-                                    hty = data.drawShapeList[0][1] - i;
-                                    methods.addDrawRecord([htx, hty, data.brushColor]);
-                                }
-                                else
-                                {
-                                    htx = data.drawShapeList[0][0] + y;
-                                    hty = data.drawShapeList[0][1] + i;
-                                    methods.addDrawRecord([htx, hty, data.brushColor]);
-                                }
-                            }
-                            
-                        }
-                    }
-                    // methods.handleAddHistory();
-                }
-                data.drawShapeList = [];
-                data.isDrawShape = false;
             },
             addCursorClass ()
             {
@@ -2097,10 +2300,89 @@ export default defineComponent({
                 }
                 if (isDownload) downloadImage(data.realCanvas, `frame${index + 1}`);
             },
+            handleExportProject (filename)
+            {
+                // 导出项目为json文件
+                let fileData = {
+                    projectId:uuid.v1(),
+                    width:data.canvasWidth,
+                    height:data.canvasHeight,
+                    data:null
+                };
+                let projectValue = JSON.parse(JSON.stringify(data.drawRecord));
+                for (let i = 0; i < projectValue.length; i++)
+                {
+                    projectValue[i].currentFrameImg = '';
+                    for (let j = 0; j < projectValue[i].layer.length; j++)
+                    {
+                        for (let k = 0; k < projectValue[i].layer[j].layerData.length; k++)
+                        {
+                            if (projectValue[i].layer[j].layerData[k][2] === '#00000000')
+                            {
+                                projectValue[i].layer[j].layerData[k][2] = '#';
+                            }
+                        }
+                    }
+                }
+                fileData.data = projectValue;
+                const d = JSON.stringify(fileData);
+                const blob = new Blob([d], {type: ''});
+                FileSaver.saveAs(blob, `${filename}.json`);
+                proxy.$message.success('导出成功');
+                data.exportLoaidng = false;
+            },
+            handleImportProject ()
+            {
+                const input:any = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.addEventListener('change', function () 
+                {
+                    const file = input.files[0];
+                    if (file) 
+                    {
+                        data.loading = true;
+                        const reader = new FileReader();
+                        reader.onload = function (e:any) 
+                        {
+                            console.log(e.target.result);
+                            
+                            const jsonData = JSON.parse(e.target.result);
+                            data.worker.postMessage({
+                                type:4, 
+                                variables:jsonData.data
+                            });
+                            data.canvasWidth = jsonData.width;
+                            data.canvasHeight = jsonData.height;
+                            data.historyRecord = [];
+                            methods.computeScale();
+                            data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                            data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                            methods.drawPixelArea();
+                            data.worker.onmessage = (event) => 
+                            {
+                                data.drawRecord = event.data;
+                                methods.reDraw();
+                                data.loading = false;
+                            };
+                        };
+                        reader.readAsText(file);
+                        
+                    }
+                });
+                document.body.appendChild(input);
+                input.click();
+                document.body.removeChild(input);
+            },
             // 帧结束
             handleExport (type, filename, isBack = false, scale = 1)
             {
                 if (!isBack) data.exportLoaidng = true;
+                if (data.isExportProject)
+                {
+                    methods.handleExportProject(filename);
+                    return;
+                }
                 // 根据不同类型导出
                 if (type === 1)
                 {
@@ -2208,7 +2490,7 @@ export default defineComponent({
                     console.log(1111);
                     
                 }
-                // console.log(JSON.parse(JSON.stringify(data.historyRecord)));
+                console.log(JSON.parse(JSON.stringify(data.historyRecord)));
                 
                 data.historyRecord.push({
                     hid:uuid.v1(),
@@ -2224,7 +2506,11 @@ export default defineComponent({
             {
                 // 撤销操作
                 data.currentHistoryIndex = data.currentHistoryIndex - 1;
-                if (data.currentHistoryIndex <= 0) data.currentHistoryIndex = 0;
+                if (data.currentHistoryIndex <= 0) 
+                {
+                    data.currentHistoryIndex = 0;
+                    proxy.$message.warning('暂无更多记录');
+                }
                 console.log(data.currentHistoryIndex);
                 
                 data.drawRecord = JSON.parse(JSON.stringify(data.historyRecord[data.currentHistoryIndex].record));
@@ -2234,7 +2520,11 @@ export default defineComponent({
             {
                 // 恢复操作
                 data.currentHistoryIndex = data.currentHistoryIndex + 1;
-                if (data.currentHistoryIndex >= data.historyRecord.length - 1) data.currentHistoryIndex = data.historyRecord.length - 1;
+                if (data.currentHistoryIndex >= data.historyRecord.length - 1) 
+                {
+                    data.currentHistoryIndex = data.historyRecord.length - 1;
+                    proxy.$message.warning('暂无更多记录');
+                }
                 data.drawRecord = JSON.parse(JSON.stringify(data.historyRecord[data.currentHistoryIndex].record));
                 methods.reDraw(true, false);
             },
@@ -2504,13 +2794,13 @@ export default defineComponent({
                 {
                     // 展开
                     dom.style.transform = 'translateX(0)';
-                    dom1.children[0].style.transform = 'rotate(180deg)';
+                    dom1.children[0].style.transform = 'rotate(0deg)';
                 }
                 else
                 {
                     // 折叠
                     dom.style.transform = 'translateX(100%)';
-                    dom1.children[0].style.transform = 'rotate(0deg)';
+                    dom1.children[0].style.transform = 'rotate(180deg)';
                 }
             }
         };

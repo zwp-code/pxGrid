@@ -26,11 +26,22 @@
                             <el-icon style="margin-right: 25px;" class="is-loading" v-else><Loading /></el-icon>
                         </el-tooltip>
 
-                        <el-tooltip
+                        <!-- <el-tooltip
                         content="导出"
                         placement="bottom">
                             <el-icon style="margin-right: 25px;" @click="exportVisible=true"><Files /></el-icon>
-                        </el-tooltip>
+                        </el-tooltip> -->
+                        <el-dropdown placement="bottom" trigger="click">
+                            <!-- <el-icon style="margin-right: 25px;"><Files /></el-icon> -->
+                            <el-icon style="margin-right: 25px;"><FolderOpened /></el-icon>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item @click="handleImportProject">导入项目</el-dropdown-item>
+                                    <el-dropdown-item @click="exportVisible=true;isExportProject=true">导出项目</el-dropdown-item>
+                                    <el-dropdown-item @click="exportVisible=true;isExportProject=false">导出图像</el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
 
                         <el-tooltip
                         :content="checkTheme ? '夜间模式' : '白天模式'"
@@ -102,13 +113,13 @@
                                         <img :src="requireShapeImg"/>
                                     </div>
                                     <template #dropdown>
-                                    <el-dropdown-menu>
-                                        <el-dropdown-item @click="drawShape('rect')">矩 形 [Alt + h]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('circle')">圆 形 [Alt + j]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('line')">直 线 [Alt + k]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('fillRect')">填充矩形 [Alt + l]</el-dropdown-item>
-                                        <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
-                                    </el-dropdown-menu>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="drawShape('rect')">矩 形 [Alt + h]</el-dropdown-item>
+                                            <el-dropdown-item @click="drawShape('circle')">圆 形 [Alt + j]</el-dropdown-item>
+                                            <el-dropdown-item @click="drawShape('line')">直 线 [Alt + k]</el-dropdown-item>
+                                            <el-dropdown-item @click="drawShape('fillRect')">填充矩形 [Alt + l]</el-dropdown-item>
+                                            <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
+                                        </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
                                 
@@ -223,13 +234,14 @@
                             <el-button type="primary" @click="handleRemoveSelect">删 除</el-button>
                             <el-button type="primary" @click="handleCancelSelect">取消选择</el-button>
                         </div>
-                        <div class="colorSelector" v-if="colorStatList.length">
+                        <div class="colorSelector scrollbar" v-if="colorStatList.length">
                             <div class="back-icon" @click="handleExpand">
-                                <el-icon><Fold /></el-icon>
+                                <el-icon><Expand /></el-icon>
                             </div>
                             <div class="color-body scrollbar flex full-layout">
                                 <div class="colorItem" v-for="item in colorStatList"
                                 :key="item"
+                                @click="brushColor=item"
                                 :style="{backgroundColor:item}">
                                 </div>
                             </div>
@@ -487,7 +499,8 @@
             <ExportDialog 
             v-if="exportVisible" 
             :loading="exportLoaidng"
-            :visible="exportVisible" 
+            :visible="exportVisible"
+            :isExportProject="isExportProject"
             @export="handleExport"
             @close="exportVisible=false"></ExportDialog>
             <PreviewAnimDialog 

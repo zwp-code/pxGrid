@@ -1,4 +1,4 @@
-import { rgbaToHex } from '@/utils/utils';
+import { rgbaToHex, unique2DArray } from '@/utils/utils';
 
 addEventListener('message', (e) => 
 {
@@ -69,6 +69,25 @@ addEventListener('message', (e) =>
             }
         }
         return postMessage(colorStatList);
+    }
+    else if (data.type === 4)
+    {
+        // 导入项目
+        let dataTable = data.variables;
+        for (let i = 0; i < dataTable.length; i++)
+        {
+            for (let j = 0; j < dataTable[i].layer.length; j++)
+            {
+                for (let k = 0; k < dataTable[i].layer[j].layerData.length; k++)
+                {
+                    if (dataTable[i].layer[j].layerData[k][2] === '#')
+                    {
+                        dataTable[i].layer[j].layerData[k][2] = '#00000000';
+                    }
+                }
+            }
+        }
+        return postMessage(dataTable);
     }
 });
 export default {};

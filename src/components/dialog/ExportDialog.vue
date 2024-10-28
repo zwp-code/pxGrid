@@ -8,11 +8,11 @@
                 <p>文件名称</p>
                 <el-input v-model="fileName" placeholder="请输入文件名称" />
             </div>
-            <div>
+            <div v-if="!isExportProject">
                 <el-checkbox v-model="checked1" label="精灵图（不区分图层）" @change="handleChange($evnet, 1)"/>
                 <el-checkbox v-model="checked2" label="精灵图（区分图层）" @change="handleChange($evnet, 2)"/>
             </div>
-            <div>
+            <div v-if="!isExportProject">
                 <el-checkbox v-model="checked3" label="单张图（不区分图层）" @change="handleChange($evnet, 3)"/>
                 <el-checkbox v-model="checked4" label="单张图（区分图层）" @change="handleChange($evnet, 4)"/>
             </div>
@@ -39,6 +39,10 @@ export default defineComponent({
             default:false
         },
         loading:{
+            type:Boolean,
+            default:false
+        },
+        isExportProject:{
             type:Boolean,
             default:false
         }
