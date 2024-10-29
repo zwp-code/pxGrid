@@ -68,15 +68,7 @@ export default defineComponent({
             drawRecord:[] as any, // 绘画信息 包括帧和图层信息
             drawShapeList:[] as any,
             gridInfo:'[]',
-            myColorList:[
-                {
-                    id:1,
-                    groupName:'常用颜色',
-                    list:[
-                        '#000000', '#ffffff'
-                    ]
-                }
-            ],
+            myColorList:proxy.$config.colorList,
             myColor:'#ffffff',
             myColorGroup:1,
             isAddGroup:false,
@@ -2003,6 +1995,19 @@ export default defineComponent({
                         console.error(err);
                     });
             },
+            getColorModules ()
+            {
+                axios.get(`${import.meta.env.VITE_APP_API_URL}json/color.json`)
+                    .then((res) => 
+                    {
+                        editSpaceStore.colorModules = res.data;
+                    })
+                    .catch((err) => 
+                    {
+                        // proxy.$message.error(err);
+                        console.error(err);
+                    });
+            },
             // 图层开始
             handleAddLayer ()
             {
@@ -2490,14 +2495,13 @@ export default defineComponent({
                     console.log(1111);
                     
                 }
-                console.log(JSON.parse(JSON.stringify(data.historyRecord)));
                 
                 data.historyRecord.push({
                     hid:uuid.v1(),
                     record:JSON.parse(JSON.stringify(data.drawRecord))
                 });
 
-                // console.log(JSON.parse(JSON.stringify(data.historyRecord)));
+                console.log(data.historyRecord);
                 
                 data.currentHistoryIndex = data.historyRecord.length - 1;
                 if (data.currentHistoryIndex < 0) data.currentHistoryIndex = 0;
@@ -2506,10 +2510,10 @@ export default defineComponent({
             {
                 // 撤销操作
                 data.currentHistoryIndex = data.currentHistoryIndex - 1;
+                if (data.currentHistoryIndex < 0) proxy.$message.warning('暂无更多记录');
                 if (data.currentHistoryIndex <= 0) 
                 {
                     data.currentHistoryIndex = 0;
-                    proxy.$message.warning('暂无更多记录');
                 }
                 console.log(data.currentHistoryIndex);
                 
@@ -2520,10 +2524,10 @@ export default defineComponent({
             {
                 // 恢复操作
                 data.currentHistoryIndex = data.currentHistoryIndex + 1;
+                if (data.currentHistoryIndex > data.historyRecord.length - 1) proxy.$message.warning('暂无更多记录');
                 if (data.currentHistoryIndex >= data.historyRecord.length - 1) 
                 {
                     data.currentHistoryIndex = data.historyRecord.length - 1;
-                    proxy.$message.warning('暂无更多记录');
                 }
                 data.drawRecord = JSON.parse(JSON.stringify(data.historyRecord[data.currentHistoryIndex].record));
                 methods.reDraw(true, false);
@@ -2659,7 +2663,30 @@ export default defineComponent({
                         event.preventDefault();
                         methods.handleChangeTool(8);
                     }
-                    
+                    else if (event.ctrlKey && event.key === 'h')
+                    {
+                        // 水平翻转
+                        event.preventDefault();
+                        methods.drawTransform('hReverse');
+                    }
+                    else if (event.ctrlKey && event.key === 'v')
+                    {
+                        // 水平翻转
+                        event.preventDefault();
+                        methods.drawTransform('vReverse');
+                    }
+                    else if (event.ctrlKey && event.key === 'a')
+                    {
+                        // 水平翻转
+                        event.preventDefault();
+                        methods.drawTransform('nsz');
+                    }
+                    else if (event.ctrlKey && event.key === 'd')
+                    {
+                        // 水平翻转
+                        event.preventDefault();
+                        methods.drawTransform('ssz');
+                    }
                     else if (event.key === 'ArrowUp')
                     {
                         // 切换图层
@@ -2839,6 +2866,7 @@ export default defineComponent({
             methods.initCanvasRecord('init');
             methods.startDrawing();
             methods.getNoticeData();
+            methods.getColorModules();
             methods.addKeyBoardEvent();
             methods.handleResizeWindow();
         });

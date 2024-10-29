@@ -174,10 +174,10 @@
                                     </div>
                                     <template #dropdown>
                                         <el-dropdown-menu>
-                                            <el-dropdown-item @click="drawTransform('hReverse')">水平翻转</el-dropdown-item>
-                                            <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转</el-dropdown-item>
-                                            <el-dropdown-item @click="drawTransform('ssz')" :disabled="canvasWidth!==canvasHeight">顺时针旋转90度</el-dropdown-item>
-                                            <el-dropdown-item @click="drawTransform('nsz')" :disabled="canvasWidth!==canvasHeight">逆时针旋转90度</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('hReverse')">水平翻转 [Ctrl + h]</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转 [Ctrl + v]</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('ssz')" :disabled="canvasWidth!==canvasHeight">顺时针旋转90度 [Ctrl + d]</el-dropdown-item>
+                                            <el-dropdown-item @click="drawTransform('nsz')" :disabled="canvasWidth!==canvasHeight">逆时针旋转90度 [Ctrl + a]</el-dropdown-item>
                                             <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                         </el-dropdown-menu>
                                     </template>
@@ -234,11 +234,11 @@
                             <el-button type="primary" @click="handleRemoveSelect">删 除</el-button>
                             <el-button type="primary" @click="handleCancelSelect">取消选择</el-button>
                         </div>
-                        <div class="colorSelector scrollbar" v-if="colorStatList.length">
+                        <div class="colorSelector" v-if="colorStatList.length">
                             <div class="back-icon" @click="handleExpand">
                                 <el-icon><Expand /></el-icon>
                             </div>
-                            <div class="color-body scrollbar flex full-layout">
+                            <div class="color-body scrollbar full-layout">
                                 <div class="colorItem" v-for="item in colorStatList"
                                 :key="item"
                                 @click="brushColor=item"
