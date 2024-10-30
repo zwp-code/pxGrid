@@ -8,9 +8,9 @@
                 <el-image
                 :src="require('@/assets/wxDonate.png')"
                 fit="contain" />
-                <p>（赞助备注了名称才会在下面列表展示喔！）</p>
+                <p>（赞助备注了名称才会在列表展示喔！）</p>
             </div>
-            <div>
+            <div v-if="false">
                 <h3>赞助者</h3>
                 <div class="flex-warp flex-start thanks-box">
                     <div v-for="item in thanks" :key="item.id">
@@ -67,7 +67,7 @@ export default defineComponent({
 
         onMounted(() => 
         {
-            methods.getData();
+            // methods.getData();
         });
         return {
             ...toRefs(data),

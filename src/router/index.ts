@@ -1,22 +1,59 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
 import cache from '@/utils/cache';
-// import { Menu, UserFilled, BellFilled, Histogram, Tools, Avatar, TrendCharts, UploadFilled} from '@element-plus/icons-vue';
 
 let router:any = null;
 // const allowRoutes: = ['/login', '/price', '/home'];
 const routes:RouteRecordRaw[] = [
     {
-        path:'/',
-        redirect:'/home',
-        component:() => import('@/views/home/index.vue')
+        path:'/home',
+        redirect:'/',
+        component:() => import('@/views/index.vue')
     },
     {
-        path:'/home',
+        path:'/',
         name:'home',
-        component:() => import('@/views/home/index.vue'),
-        meta:
-        { title:'首页', keepAlive:true }
+        redirect:'about',
+        component:() => import('@/views/index.vue'),
+        meta:{ title:'home', keepAlive:true },
+        children:[
+            {
+                path:'about',
+                name:'about',
+                meta:{ title:'about', icon:'Compass' },
+                component:() => import('@/views/about/index.vue')
+            },
+            {
+                path:'project',
+                name:'project',
+                meta:{ title:'project', icon:'Files' },
+                component:() => import('@/views/project/index.vue')
+            },
+            {
+                path:'module',
+                name:'module',
+                meta:{ title:'moduleShop', icon:'House' },
+                component:() => import('@/views/module/index.vue')
+            },
+            {
+                path:'work/:projectId',
+                name:'work',
+                meta:{ title:'工作台' },
+                component:() => import('@/views/work/index.vue')
+            }
+        ]
     }
+    // {
+    //     path:'/',
+    //     redirect:'/home',
+    //     component:() => import('@/views/home/index.vue')
+    // },
+    // {
+    //     path:'/home',
+    //     name:'home',
+    //     component:() => import('@/views/home/index.vue'),
+    //     meta:
+    //     { title:'首页', keepAlive:true }
+    // }
     // {
     //     path:'/login',
     //     name:'login',
@@ -34,7 +71,33 @@ type Route = RouteLocationNormalized;
 // 全局前置路由守卫
 router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
 {
-    next();
+    if (to.path.includes('project'))
+    {
+        let id = cache.currentProjectId.get();
+        if (id && id !== 0)
+        {
+            next(`/work/${editSpaceStore.currentProjectId}`);
+        }
+        else
+        {
+            next();
+        }
+    }
+    else
+    {
+        next();
+    }
+    // if (to.path === 'work')
+    // {
+    //     if (to.query.id)
+    //     {
+
+    //     }
+    // }
+    // else
+    // {
+    //     next();
+    // }
     // let token = cache.token.get();
     // if (token)
     // {
@@ -71,7 +134,7 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
 // 全局后置路由守卫
 router.afterEach((to:Route) =>
 {
-    // document.title = to.meta.title + '- 编程星球' || '编程 星球';
+    document.title = '像素格子';
 });
 
 export default router;

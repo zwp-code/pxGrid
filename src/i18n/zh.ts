@@ -1,10 +1,30 @@
 export default {
     message:{
+        'webTitle': '像素格子',
         'donate':'赞 助',
+        'language':'语 言',
+        'zh':'中文',
         'close':'关 闭',
         'cancel':'取 消',
         'confirm':'确 认',
         'save':'保 存',
-        'export':'导 出'
+        'export':'导 出',
+        'fullscreen': '全 屏',
+        'about':'关 于',
+        'project':'项 目',
+        'moduleShop':'创意工坊',
+        'update':'更 新',
+        'link':'链 接',
+        'mineProject':'我的项目',
+        'newProject':'新建项目',
+        'editProject':'编辑项目',
+        'importProject':'导入项目',
+        'open':'打 开',
+        'delete':'删 除',
+        'edit':'编 辑',
+        'exportLoading':'正在导出',
+        'saveSucceeded':'保存成功',
+        'saveFailed':'保存失败'
+
     }
 };

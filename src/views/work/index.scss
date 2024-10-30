@@ -6,7 +6,7 @@
     height: 100%;
     background-color: var(--el-bg-color-second);
     box-shadow: 1px 0px 4px 4px var(--el-shadow-aside);
-    padding: 15px 5px;
+    padding: 15px 5px 15px 10px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -278,6 +278,18 @@
 
     .active {
         border: 2px solid var(--el-color-primary);
+    }
+}
+
+.back {
+    h1 {
+        margin-left: 15px;
+    }
+    i {
+        cursor: pointer;
+        &:hover {
+            color: var(--el-color-primary);
+        }
     }
 }
 

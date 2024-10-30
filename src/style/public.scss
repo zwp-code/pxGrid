@@ -79,6 +79,10 @@ body,html{
     font-family: 'PixelFont', sans-serif;
 }
 
+.relative {
+    position: relative;
+}
+
 .gs-filter {
     background-color: hsla(0,0%,100%,.25);
     -webkit-backdrop-filter: blur(20px);
@@ -178,6 +182,12 @@ body,html{
     align-items: center;
 }
 
+.flex-start-cv {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
 .flex-end {
     display: flex;
     justify-content: flex-end;
@@ -188,6 +198,12 @@ body,html{
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.flex-around {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
 }
 
 .flex-column-center {
@@ -227,6 +243,11 @@ body,html{
 }
 
 // element plus 自定义样式
+.el-button,
+.el-input,
+.el-select {
+    font-family: $fontFamily_1 !important;
+}
 
 .z-popover {
     z-index: 2101 !important;

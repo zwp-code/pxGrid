@@ -1,31 +1,21 @@
-import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch } from 'vue';
-import { ElConfigProvider } from 'element-plus';
-import { useI18n } from 'vue-i18n';
-import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
-import en from 'element-plus/dist/locale/en.mjs';
+import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch, onDeactivated, onActivated } from 'vue';
 import MyColorDialog from '@/components/dialog/MyColorDialog.vue';
 import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
-import NoticeDialog from '@/components/dialog/NoticeDialog.vue';
-import DonateDialog from '@/components/dialog/DonateDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import fullScreen from '@/hooks/fullScreen';
-import { copyText, downloadImage, exportImageForZip, extractRgbaValues, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
-import { useToggle } from '@vueuse/shared';
-import { useDark } from '@vueuse/core';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
 import useDrag from '@/hooks/useDrag';
 import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
+import { ElMessageBox } from 'element-plus';
+import useDB from '@/hooks/useDB';
 export default defineComponent({
-    name:'home',
+    name:'work',
     components: {
-        ElConfigProvider,
         MyColorDialog,
-        DonateDialog,
-        NoticeDialog,
         ExportDialog,
         PreviewAnimDialog
     },
@@ -35,12 +25,19 @@ export default defineComponent({
     {
         const { proxy }:any = getCurrentInstance();
         const useFilterHooks = useFilter();
-        const { locale: i18nLanguage } = useI18n();
+        const useDBHooks = useDB();
         const editSpaceStore = useEditSpaceStore();
-        const language = (navigator.language || 'zh').toLocaleLowerCase();
         let data = reactive({
+            projectData:{
+                projectName:'',
+                projectId:'',
+                updateAt:'',
+                createAt:'',
+                desc:'',
+                width:'',
+                height:''
+            } as any,
             emptyColor:'#00000000',
-            locale:en,
             bgCanvas:null as any,
             canvas:null as any,
             realCanvas:null as any,
@@ -145,54 +142,14 @@ export default defineComponent({
 
             worker:null as any,
             isExportProject:false,
-            AnimationFrameId_1:null as any
+            AnimationFrameId_1:null as any,
+            zIndex:{
+                max:13,
+                min:8
+            },
+            isSaveProject:false
         });
 
-        const isDark = useDark({
-            // 存储到localStorage/sessionStorage中的Key 根据自己的需求更改
-            storageKey: 'px-theme',
-            // 暗黑class名字
-            valueDark: 'dark'
-        });
-
-        const isLight = useDark({
-            // 存储到localStorage/sessionStorage中的Key 根据自己的需求更改
-            storageKey: 'px-theme',
-            // 高亮class名字
-            valueLight: 'light'
-        });
-
-        const theme = useDark({
-            // 存储到localStorage/sessionStorage中的Key 根据自己的需求更改
-            storageKey: 'px-theme',
-            // 暗黑class名字
-            valueDark: 'dark',
-            valueLight: 'light'
-        });
-        const toggleDark = useToggle(theme);
-
-        const initTheme = () => 
-        {
-            let useThemeKey = window.localStorage.getItem('px-theme');
-            if (useThemeKey)
-            {
-                if (useThemeKey === 'light' || useThemeKey === 'auto')
-                {
-                    useToggle(isLight);
-                    editSpaceStore.themeValue = false;
-                }
-                else
-                {
-                    useToggle(isDark);
-                    editSpaceStore.themeValue = true;
-                }
-            }
-            else
-            {
-                useToggle(isLight);
-                editSpaceStore.themeValue = false;
-            }
-        };
 
         const computedApi = {
             requireIcon: computed(() => 
@@ -244,14 +201,75 @@ export default defineComponent({
             checkTheme: computed(() => 
             {
                 return editSpaceStore.themeValue;
+            }),
+            checkzIndex: computed(() =>  
+            {
+                let style = {
+                    zIndex:0
+                };
+                if (editSpaceStore.isFullWork)
+                {
+                    style.zIndex = data.zIndex.max;
+                }
+                else
+                {
+                    style.zIndex = data.zIndex.min;
+                }
+                return style;
             })
         };
         
         let methods = {
-            changeTheme ()
+            handleSaveProject ()
             {
-                toggleDark();
-                editSpaceStore.themeValue = !editSpaceStore.themeValue;
+                // 保存到indexdb
+                data.loading = true;
+                data.isSaveProject = true;
+                data.projectData.updateAt = formatTime();
+                data.projectData.height = data.canvasHeight;
+                data.projectData.width = data.canvasWidth;
+                data.projectData.data = methods.compressDrawRecordData();
+                useDBHooks.updateDB({id:data.projectData.projectId, data:data.projectData}).then((res) => 
+                {
+                    editSpaceStore.saveProject(data.projectData);
+                    proxy.$message.success(proxy.$t('message.saveSucceeded'));
+                    data.loading = false;
+                }).catch((err) => 
+                {
+                    console.log(err);
+                    proxy.$message.error(proxy.$t('message.saveFailed'));
+                    data.loading = false;
+                });
+            },
+            handleBack ()
+            {
+                if (data.isSaveProject)
+                {
+                    editSpaceStore.saveProjectId(0);
+                    return proxy.$router.replace('/project');
+                }
+                ElMessageBox.confirm(
+                    '项目未保存，是否离开该页面？',
+                    '提 示',
+                    {
+                        confirmButtonText: '确 认',
+                        cancelButtonText: '取 消',
+                        type: 'warning'
+                    }
+                )
+                    .then(() => 
+                    {
+                        editSpaceStore.saveProjectId(0);
+                        proxy.$router.replace('/project');
+                    })
+                    .catch(() => 
+                    {
+                        //
+                    });
+            },
+            handleScreenFull ()
+            {
+                editSpaceStore.isFullWork = !editSpaceStore.isFullWork;
             },
             addColorGroup ()
             {
@@ -326,24 +344,6 @@ export default defineComponent({
                 });
                 proxy.$utils.cache.mycolor.set(JSON.stringify(data.myColorList));
                 editSpaceStore.setMyColorList(data.myColorList);
-            },
-            changeLanguage ()
-            {
-                if (localStorage.getItem('px-lang'))
-                {
-                    data.locale = localStorage.getItem('px-lang') === 'zh' ? zhCn : en;
-                }
-                else if (language.split('-')[0])
-                {
-                    data.locale = language.split('-')[0] === 'zh' ? zhCn : en;
-                }
-                else 
-                {
-                    data.locale = zhCn;
-                }
-                editSpaceStore.lang = localStorage.getItem('px-lang') || language.split('-')[0] || 'zh';
-                localStorage.setItem('px-lang', editSpaceStore.lang);
-                
             },
             handleChangeTool (index)
             {
@@ -728,25 +728,26 @@ export default defineComponent({
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.reDraw();
             },
+            handleWheelEvent (event)
+            {
+                event.preventDefault();
+                console.log(event);
+                const delta = event.deltaY > 0 ? -0.5 : 0.5;
+                data.scale += delta;
+                data.scale = Math.max(1, data.scale);
+                console.log(data.scale);
+                data.brushSize = data.scale;
+                // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                methods.drawPixelArea();
+                methods.reDraw(false);
+            },
             startDrawing () 
             {
                 data.canvas.addEventListener('mousedown', methods.start);
                 data.canvas.addEventListener('mousemove', methods.draw);
                 data.canvas.addEventListener('mouseup', methods.stop);
                 data.canvas.addEventListener('mouseout', methods.leave);
-                data.canvas.addEventListener('wheel', function (event) 
-                {
-                    event.preventDefault();
-                    console.log(event);
-                    const delta = event.deltaY > 0 ? -0.5 : 0.5;
-                    data.scale += delta;
-                    data.scale = Math.max(1, data.scale);
-                    console.log(data.scale);
-                    data.brushSize = data.scale;
-                    // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                    methods.drawPixelArea();
-                    methods.reDraw(false);
-                });
+                data.canvas.addEventListener('wheel', methods.handleWheelEvent);
             },
 
             
@@ -1972,42 +1973,19 @@ export default defineComponent({
                     editSpaceStore.setMyColorList(data.myColorList);
                 }
             },
-            handleLanguageCommand (command)
-            {
-                i18nLanguage.value = command;
-                proxy.$utils.cache.lang.set(command);
-                editSpaceStore.lang = command;
-            },
-            getNoticeData ()
-            {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/notice.json`)
-                    .then((res) => 
-                    {
-                        if (res.data.length > 0)
-                        {
-                            data.noticeVisible = true;
-                            data.notice = proxy.$utils.cache.lang.get() === 'zh' ? res.data[0] : res.data[1];
-                        }
-                    })
-                    .catch((err) => 
-                    {
-                        // proxy.$message.error(err);
-                        console.error(err);
-                    });
-            },
-            getColorModules ()
-            {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/color.json`)
-                    .then((res) => 
-                    {
-                        editSpaceStore.colorModules = res.data;
-                    })
-                    .catch((err) => 
-                    {
-                        // proxy.$message.error(err);
-                        console.error(err);
-                    });
-            },
+            // getColorModules ()
+            // {
+            //     axios.get(`${import.meta.env.VITE_APP_API_URL}json/color.json`)
+            //         .then((res) => 
+            //         {
+            //             editSpaceStore.colorModules = res.data;
+            //         })
+            //         .catch((err) => 
+            //         {
+            //             // proxy.$message.error(err);
+            //             console.error(err);
+            //         });
+            // },
             // 图层开始
             handleAddLayer ()
             {
@@ -2308,31 +2286,39 @@ export default defineComponent({
                 }
                 if (isDownload) downloadImage(data.realCanvas, `frame${index + 1}`);
             },
-            handleExportProject (filename)
+            compressDrawRecordData ()
             {
-                // 导出项目为json文件
-                let fileData = {
-                    projectId:uuid.v1(),
-                    width:data.canvasWidth,
-                    height:data.canvasHeight,
-                    data:null
-                };
-                let projectValue = JSON.parse(JSON.stringify(data.drawRecord));
-                for (let i = 0; i < projectValue.length; i++)
+                let compressValue = JSON.parse(JSON.stringify(data.drawRecord));
+                for (let i = 0; i < compressValue.length; i++)
                 {
-                    projectValue[i].currentFrameImg = '';
-                    for (let j = 0; j < projectValue[i].layer.length; j++)
+                    compressValue[i].currentFrameImg = '';
+                    for (let j = 0; j < compressValue[i].layer.length; j++)
                     {
-                        for (let k = 0; k < projectValue[i].layer[j].layerData.length; k++)
+                        for (let k = 0; k < compressValue[i].layer[j].layerData.length; k++)
                         {
-                            if (projectValue[i].layer[j].layerData[k][2] === '#00000000')
+                            if (compressValue[i].layer[j].layerData[k][2] === '#00000000')
                             {
-                                projectValue[i].layer[j].layerData[k][2] = '#';
+                                compressValue[i].layer[j].layerData[k][2] = '#';
                             }
                         }
                     }
                 }
-                fileData.data = projectValue;
+                return compressValue;
+            },
+            handleExportProject (filename)
+            {
+                // 导出项目为json文件
+                let fileData = {
+                    ...data.projectData,
+                    // projectId:data.projectData.projectId,
+                    // projectName:data.projectData.projectName,
+                    width:data.canvasWidth,
+                    height:data.canvasHeight,
+                    data:null
+                };
+                console.log(fileData);
+                
+                fileData.data = methods.compressDrawRecordData();
                 const d = JSON.stringify(fileData);
                 const blob = new Blob([d], {type: ''});
                 FileSaver.saveAs(blob, `${filename}.json`);
@@ -2360,6 +2346,11 @@ export default defineComponent({
                                 type:4, 
                                 variables:jsonData.data
                             });
+                            data.projectData.projectId = jsonData.projectId;
+                            data.projectData.projectName = jsonData.projectName;
+                            data.projectData.updateAt = jsonData.updateAt;
+                            data.projectData.createAt = jsonData.createAt;
+                            data.projectData.desc = jsonData.desc;
                             data.canvasWidth = jsonData.width;
                             data.canvasHeight = jsonData.height;
                             data.historyRecord = [];
@@ -2553,226 +2544,228 @@ export default defineComponent({
                 });
                 data.previewLoading = false;
             },
+            handlekeyBoardEvent (event)
+            {
+                if (event.key === ' ')
+                {
+                    event.preventDefault();
+                    data.isSpace = true;
+                    data.canvas.style.cursor = 'grabbing';
+                    return;
+                }
+                if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
+                {
+                    data.isShift = true;
+                    data.isMoving = true;
+                    data.canvas.style.cursor = 'move';
+                    return;
+                }
+                if (event.altKey && event.key === 'c' && data.selectData.selectList.length)
+                {
+                    methods.handleCopySelectData();
+                    console.log('复制成功');
+                }
+                else if (event.altKey && event.key === 'z') 
+                {
+                    methods.handleRevoke();
+                } 
+                else if (event.altKey && event.key === 'x') 
+                {
+                    methods.handleRecover();
+                }
+                else if (event.altKey && event.key === 'q') 
+                {
+                    // 切换画笔
+                    methods.handleChangeTool(0);
+
+                }
+                else if (event.altKey && event.key === 'w') 
+                {
+                    // 切换橡皮
+                    methods.handleChangeTool(1);
+                }
+                else if (event.altKey && event.key === 'a') 
+                {
+                    // 切换吸管工具
+                    event.preventDefault();
+                    methods.handleChangeTool(2);
+                }
+                else if (event.altKey && event.key === 'b') 
+                {
+                    // 切换油漆桶
+                    methods.handleChangeTool(4);
+                }
+                else if (event.altKey && event.key === 'm') 
+                {
+                    methods.handleChangeTool(7);
+                }
+                else if (event.altKey && event.key === 's')
+                {
+                    methods.handleSaveColor(true);
+                }
+                else if (event.ctrlKey && event.key === 'c')
+                {
+                    methods.handleCopyColor();
+                }
+                else if (event.altKey && event.key === 'r') 
+                {
+                    methods.handleChangeTool(6);
+                }
+                else if (event.altKey && event.key === 'v') 
+                {
+                    // methods.handleChangeTool(8);
+
+                }
+                else if (event.altKey && event.key === 'g') 
+                {
+                    proxy.$refs.MyColorDialog.handleOpen();
+                }
+                else if (event.altKey && event.key === 'h') 
+                {
+                    methods.handleChangeTool(3);
+                    methods.drawShape('rect');
+                }
+                else if (event.altKey && event.key === 'j') 
+                {
+                    methods.handleChangeTool(3);
+                    methods.drawShape('circle');
+                }
+                else if (event.altKey && event.key === 'k') 
+                {
+                    methods.handleChangeTool(3);
+                    methods.drawShape('line');
+                }
+                else if (event.altKey && event.key === 'l') 
+                {
+                    methods.handleChangeTool(3);
+                    methods.drawShape('fillRect');
+                }
+                else if (event.altKey && event.key === 'n') 
+                {
+                    methods.handleCancelSelect();
+                }
+                else if (event.altKey && event.key === 'd') 
+                {
+                    event.preventDefault();
+                    methods.handleRemoveSelect();
+                    // methods.handleChangeTool(8);
+                }
+                else if (event.altKey && event.key === 'e') 
+                {
+                    event.preventDefault();
+                    methods.handleChangeTool(8);
+                }
+                else if (event.ctrlKey && event.key === 'h')
+                {
+                    // 水平翻转
+                    event.preventDefault();
+                    methods.drawTransform('hReverse');
+                }
+                else if (event.ctrlKey && event.key === 'v')
+                {
+                    // 水平翻转
+                    event.preventDefault();
+                    methods.drawTransform('vReverse');
+                }
+                else if (event.ctrlKey && event.key === 'a')
+                {
+                    // 水平翻转
+                    event.preventDefault();
+                    methods.drawTransform('nsz');
+                }
+                else if (event.ctrlKey && event.key === 'd')
+                {
+                    // 水平翻转
+                    event.preventDefault();
+                    methods.drawTransform('ssz');
+                }
+                else if (event.key === 'ArrowUp')
+                {
+                    // 切换图层
+                    if (data.currentLayerIndex <= 0)
+                    {
+                        data.currentLayerIndex = 0;
+                    }
+                    else
+                    {
+                        data.currentLayerIndex--;
+                    }
+                }
+                else if (event.key === 'ArrowDown')
+                {
+                    // 切换图层
+                    if (data.currentLayerIndex >= data.drawRecord[data.currentFrameIndex].layer.length - 1)
+                    {
+                        data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
+                    }
+                    else
+                    {
+                        data.currentLayerIndex++;
+                    }
+                }
+                else if (event.key === 'ArrowLeft')
+                {
+                    // 切换帧
+                    if (data.currentFrameIndex <= 0)
+                    {
+                        data.currentFrameIndex = 0;
+                    }
+                    else
+                    {
+                        data.currentFrameIndex--;
+                    }
+                    methods.handleChangeFrame(data.currentFrameIndex);
+                }
+                else if (event.key === 'ArrowRight')
+                {
+                    // 切换帧
+                    if (data.currentFrameIndex >= data.drawRecord.length - 1)
+                    {
+                        data.currentFrameIndex = data.drawRecord.length - 1;
+                    }
+                    else
+                    {
+                        data.currentFrameIndex++;
+                    }
+                    methods.handleChangeFrame(data.currentFrameIndex);
+                }
+                data.canvas.className = '';
+                methods.addCursorClass();
+            },
+            handleKeyUpEvent (event)
+            {
+                if (event.key === ' ')
+                {
+                    data.isSpace = false;
+                    data.canvas.style.cursor = '';
+                }
+                if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
+                {
+                    data.isShift = false;
+                    data.isMoving = false;
+                    data.canvas.style.cursor = '';
+                }
+            },
             addKeyBoardEvent ()
             {
-                document.addEventListener('keydown', function (event) 
-                {
-                    if (event.key === ' ')
-                    {
-                        event.preventDefault();
-                        data.isSpace = true;
-                        data.canvas.style.cursor = 'grabbing';
-                        return;
-                    }
-                    if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
-                    {
-                        data.isShift = true;
-                        data.isMoving = true;
-                        data.canvas.style.cursor = 'move';
-                        return;
-                    }
-                    if (event.altKey && event.key === 'c' && data.selectData.selectList.length)
-                    {
-                        methods.handleCopySelectData();
-                        console.log('复制成功');
-                    }
-                    else if (event.altKey && event.key === 'z') 
-                    {
-                        methods.handleRevoke();
-                    } 
-                    else if (event.altKey && event.key === 'x') 
-                    {
-                        methods.handleRecover();
-                    }
-                    else if (event.altKey && event.key === 'q') 
-                    {
-                        // 切换画笔
-                        methods.handleChangeTool(0);
-
-                    }
-                    else if (event.altKey && event.key === 'w') 
-                    {
-                        // 切换橡皮
-                        methods.handleChangeTool(1);
-                    }
-                    else if (event.altKey && event.key === 'a') 
-                    {
-                        // 切换吸管工具
-                        event.preventDefault();
-                        methods.handleChangeTool(2);
-                    }
-                    else if (event.altKey && event.key === 'b') 
-                    {
-                        // 切换油漆桶
-                        methods.handleChangeTool(4);
-                    }
-                    else if (event.altKey && event.key === 'm') 
-                    {
-                        methods.handleChangeTool(7);
-                    }
-                    else if (event.altKey && event.key === 's')
-                    {
-                        methods.handleSaveColor(true);
-                    }
-                    else if (event.ctrlKey && event.key === 'c')
-                    {
-                        methods.handleCopyColor();
-                    }
-                    else if (event.altKey && event.key === 'r') 
-                    {
-                        methods.handleChangeTool(6);
-                    }
-                    else if (event.altKey && event.key === 'v') 
-                    {
-                        // methods.handleChangeTool(8);
-
-                    }
-                    else if (event.altKey && event.key === 'g') 
-                    {
-                        proxy.$refs.MyColorDialog.handleOpen();
-                    }
-                    else if (event.altKey && event.key === 'h') 
-                    {
-                        methods.handleChangeTool(3);
-                        methods.drawShape('rect');
-                    }
-                    else if (event.altKey && event.key === 'j') 
-                    {
-                        methods.handleChangeTool(3);
-                        methods.drawShape('circle');
-                    }
-                    else if (event.altKey && event.key === 'k') 
-                    {
-                        methods.handleChangeTool(3);
-                        methods.drawShape('line');
-                    }
-                    else if (event.altKey && event.key === 'l') 
-                    {
-                        methods.handleChangeTool(3);
-                        methods.drawShape('fillRect');
-                    }
-                    else if (event.altKey && event.key === 'n') 
-                    {
-                        methods.handleCancelSelect();
-                    }
-                    else if (event.altKey && event.key === 'd') 
-                    {
-                        event.preventDefault();
-                        methods.handleRemoveSelect();
-                        // methods.handleChangeTool(8);
-                    }
-                    else if (event.altKey && event.key === 'e') 
-                    {
-                        event.preventDefault();
-                        methods.handleChangeTool(8);
-                    }
-                    else if (event.ctrlKey && event.key === 'h')
-                    {
-                        // 水平翻转
-                        event.preventDefault();
-                        methods.drawTransform('hReverse');
-                    }
-                    else if (event.ctrlKey && event.key === 'v')
-                    {
-                        // 水平翻转
-                        event.preventDefault();
-                        methods.drawTransform('vReverse');
-                    }
-                    else if (event.ctrlKey && event.key === 'a')
-                    {
-                        // 水平翻转
-                        event.preventDefault();
-                        methods.drawTransform('nsz');
-                    }
-                    else if (event.ctrlKey && event.key === 'd')
-                    {
-                        // 水平翻转
-                        event.preventDefault();
-                        methods.drawTransform('ssz');
-                    }
-                    else if (event.key === 'ArrowUp')
-                    {
-                        // 切换图层
-                        if (data.currentLayerIndex <= 0)
-                        {
-                            data.currentLayerIndex = 0;
-                        }
-                        else
-                        {
-                            data.currentLayerIndex--;
-                        }
-                    }
-                    else if (event.key === 'ArrowDown')
-                    {
-                        // 切换图层
-                        if (data.currentLayerIndex >= data.drawRecord[data.currentFrameIndex].layer.length - 1)
-                        {
-                            data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
-                        }
-                        else
-                        {
-                            data.currentLayerIndex++;
-                        }
-                    }
-                    else if (event.key === 'ArrowLeft')
-                    {
-                        // 切换帧
-                        if (data.currentFrameIndex <= 0)
-                        {
-                            data.currentFrameIndex = 0;
-                        }
-                        else
-                        {
-                            data.currentFrameIndex--;
-                        }
-                        methods.handleChangeFrame(data.currentFrameIndex);
-                    }
-                    else if (event.key === 'ArrowRight')
-                    {
-                        // 切换帧
-                        if (data.currentFrameIndex >= data.drawRecord.length - 1)
-                        {
-                            data.currentFrameIndex = data.drawRecord.length - 1;
-                        }
-                        else
-                        {
-                            data.currentFrameIndex++;
-                        }
-                        methods.handleChangeFrame(data.currentFrameIndex);
-                    }
-                    data.canvas.className = '';
-                    methods.addCursorClass();
-                });
-
-                document.addEventListener('keyup', function (event) 
-                {
-                    if (event.key === ' ')
-                    {
-                        data.isSpace = false;
-                        data.canvas.style.cursor = '';
-                    }
-                    if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
-                    {
-                        data.isShift = false;
-                        data.isMoving = false;
-                        data.canvas.style.cursor = '';
-                    }
-                });
+                document.addEventListener('keydown', methods.handlekeyBoardEvent);
+                document.addEventListener('keyup', methods.handleKeyUpEvent);
+            },
+            handleResizeWindowEvent (event)
+            {
+                const pixelBox = document.querySelector('.pixelBox');
+                data.canvas.width = pixelBox?.clientWidth;
+                data.canvas.height = pixelBox?.clientHeight;
+                data.bgCanvas.width = pixelBox?.clientWidth;
+                data.bgCanvas.height = pixelBox?.clientHeight;
+                data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                methods.drawPixelArea();
+                methods.reDraw(false, false);
             },
             handleResizeWindow ()
             {
-                window.addEventListener('resize', function () 
-                {
-                    const pixelBox = document.querySelector('.pixelBox');
-                    data.canvas.width = pixelBox?.clientWidth;
-                    data.canvas.height = pixelBox?.clientHeight;
-                    data.bgCanvas.width = pixelBox?.clientWidth;
-                    data.bgCanvas.height = pixelBox?.clientHeight;
-                    data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-                    data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
-                    methods.drawPixelArea();
-                    methods.reDraw(false, false);
-                });
+                window.addEventListener('resize', methods.handleResizeWindowEvent);
             },
             onDragLayerEnd (event, node)
             {
@@ -2832,6 +2825,82 @@ export default defineComponent({
                     dom.style.transform = 'translateX(100%)';
                     dom1.children[0].style.transform = 'rotate(180deg)';
                 }
+            },
+            handleReadProjectData ()
+            {
+                // 效验id是否为项目id
+                let projectId = proxy.$route.params.projectId;
+                let projectData = editSpaceStore.projectList.find((v) => v.projectId === projectId);
+                if (projectData)
+                {
+                    // 读取indexdb下的数据
+                    data.loading = true;
+                    data.projectData.projectId = projectData.projectId;
+                    data.projectData.projectName = projectData.projectName;
+                    data.projectData.updateAt = projectData.updateAt;
+                    data.projectData.createAt = projectData.createAt;
+                    data.projectData.desc = projectData.desc;
+                    data.canvasWidth = projectData.width;
+                    data.canvasHeight = projectData.height;
+                    methods.getMyColorList();
+                    const pixelBox = document.querySelector('.pixelBox');
+                    data.canvas = document.getElementById('Canvas');
+                    data.bgCanvas = document.getElementById('PixelCanvas');
+                    data.realCanvas = document.getElementById('RealCanvas');
+                    data.canvas.width = pixelBox?.clientWidth;
+                    data.canvas.height = pixelBox?.clientHeight;
+                    data.bgCanvas.width = pixelBox?.clientWidth;
+                    data.bgCanvas.height = pixelBox?.clientHeight;
+                    data.ctx1 = data.canvas.getContext('2d');
+                    data.ctx2 = data.bgCanvas.getContext('2d');
+                    data.ctx3 = data.realCanvas.getContext('2d');
+                    methods.computeScale();
+                    data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                    data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                    methods.drawPixelArea();
+
+                    let jsonData = null as any;
+                    useDBHooks.findDB(projectData.projectId).then((res:any) => 
+                    {
+                        jsonData = res[0].data;
+                        console.log(jsonData);
+                        
+                        if (jsonData.data)
+                        {
+                            data.worker.postMessage({
+                                type:4, 
+                                variables:jsonData.data
+                            });
+                            data.worker.onmessage = (event) => 
+                            {
+                                data.drawRecord = event.data;
+                                methods.reDraw();
+                                data.loading = false;
+                            };
+                        }
+                        else
+                        {
+                            methods.initCanvasRecord('init');
+                            data.loading = false;
+                        }
+                    }).catch((err) => 
+                    {
+                        console.log(err);
+                        proxy.$message.error('打开项目失败 ' + err);
+                        editSpaceStore.saveProjectId(0);
+                        proxy.$router.replace('/project');
+                    });
+                    methods.startDrawing();
+                    methods.addKeyBoardEvent();
+                    methods.handleResizeWindow();
+
+                }
+                else
+                {
+                    proxy.$message.error('项目不存在');
+                    editSpaceStore.saveProjectId(0);
+                    proxy.$router.replace('/project');
+                }
             }
         };
 
@@ -2840,38 +2909,64 @@ export default defineComponent({
             methods.drawPixelArea();
             methods.reDraw(false);
         });
+
+        watch(data.drawRecord, (newValue, oldValue) => 
+        {
+            data.isSaveProject = false;
+        }, { deep:true });
         
         onMounted(() => 
         {
-            window.onbeforeunload = function (e)
-            {
-                e.returnValue = '1111';
-            };
+            // window.onbeforeunload = function (e)
+            // {
+            //     e.returnValue = '1111';
+            // };
+            // 从本地读取项目
             data.worker = new Worker();
-            initTheme();
-            methods.changeLanguage();
-            methods.getMyColorList();
-            const pixelBox = document.querySelector('.pixelBox');
-            data.canvas = document.getElementById('Canvas');
-            data.bgCanvas = document.getElementById('PixelCanvas');
-            data.realCanvas = document.getElementById('RealCanvas');
-            data.canvas.width = pixelBox?.clientWidth;
-            data.canvas.height = pixelBox?.clientHeight;
-            data.bgCanvas.width = pixelBox?.clientWidth;
-            data.bgCanvas.height = pixelBox?.clientHeight;
-            data.ctx1 = data.canvas.getContext('2d');
-            data.ctx2 = data.bgCanvas.getContext('2d');
-            data.ctx3 = data.realCanvas.getContext('2d');
-            methods.computeScale();
-            data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-            data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
-            methods.drawPixelArea();
-            methods.initCanvasRecord('init');
+            methods.handleReadProjectData();
+            // initTheme();
+            // methods.changeLanguage();
+            // methods.getMyColorList();
+            // const pixelBox = document.querySelector('.pixelBox');
+            // data.canvas = document.getElementById('Canvas');
+            // data.bgCanvas = document.getElementById('PixelCanvas');
+            // data.realCanvas = document.getElementById('RealCanvas');
+            // data.canvas.width = pixelBox?.clientWidth;
+            // data.canvas.height = pixelBox?.clientHeight;
+            // data.bgCanvas.width = pixelBox?.clientWidth;
+            // data.bgCanvas.height = pixelBox?.clientHeight;
+            // data.ctx1 = data.canvas.getContext('2d');
+            // data.ctx2 = data.bgCanvas.getContext('2d');
+            // data.ctx3 = data.realCanvas.getContext('2d');
+            // methods.computeScale();
+            // data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+            // data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+            // methods.drawPixelArea();
+            // methods.initCanvasRecord('init');
+            // methods.startDrawing();
+            // // methods.getNoticeData();
+            // // methods.getColorModules();
+            // methods.addKeyBoardEvent();
+            // methods.handleResizeWindow();
+        });
+
+        onActivated(() =>
+        {
             methods.startDrawing();
-            methods.getNoticeData();
-            methods.getColorModules();
             methods.addKeyBoardEvent();
             methods.handleResizeWindow();
+        });
+
+        onDeactivated(() => 
+        {
+            data.canvas.removeEventListener('mousedown', methods.start);
+            data.canvas.removeEventListener('mousemove', methods.draw);
+            data.canvas.removeEventListener('mouseup', methods.stop);
+            data.canvas.removeEventListener('mouseout', methods.leave);
+            data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
+            document.removeEventListener('keydown', methods.handlekeyBoardEvent);
+            document.removeEventListener('keyup', methods.handleKeyUpEvent);
+            window.removeEventListener('resize', methods.handleResizeWindowEvent);
         });
 
         return {
@@ -2879,7 +2974,6 @@ export default defineComponent({
             ...methods,
             ...computedApi,
             copyText,
-            ...fullScreen(),
             ...useDrag()
         };
     }
