@@ -31,7 +31,7 @@
                         placement="bottom">
                             <el-icon style="margin-right: 25px;" @click="exportVisible=true"><Files /></el-icon>
                         </el-tooltip> -->
-                        <el-dropdown placement="bottom" trigger="click">
+                        <el-dropdown placement="bottom" trigger="hover">
                             <!-- <el-icon style="margin-right: 25px;"><Files /></el-icon> -->
                             <el-icon style="margin-right: 25px;"><FolderOpened /></el-icon>
                             <template #dropdown>
@@ -276,7 +276,7 @@
                                     <el-dropdown-item @click="handleDeleteFrame(index)" v-if="index!==0">删 除</el-dropdown-item>
                                     <el-dropdown-item @click="handleCopyFrame(index, 'copyData')">复制帧数据</el-dropdown-item>
                                     <el-dropdown-item @click="handleCopyFrame(index, 'pasteData')">粘贴帧数据</el-dropdown-item>
-                                    <el-dropdown-item @click="handleExportFrame(index)">导出为图片</el-dropdown-item>
+                                    <el-dropdown-item @click="handleExportFrame(index)">导出为图像</el-dropdown-item>
                                   
                                 </el-dropdown-menu>
                             </template>
@@ -478,8 +478,8 @@
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
-                                        <el-dropdown-item @click="handleImportLayer(currentFrameIndex, index)">导入图片</el-dropdown-item>
-                                      <el-dropdown-item @click="handleExportLayer(currentFrameIndex, index)">导出为图片</el-dropdown-item>
+                                        <el-dropdown-item @click="handleImportLayer(currentFrameIndex, index)">导入图像</el-dropdown-item>
+                                      <el-dropdown-item @click="handleExportLayer(currentFrameIndex, index)">导出为图像</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>
                             </el-dropdown>

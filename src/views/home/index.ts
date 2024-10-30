@@ -2012,7 +2012,7 @@ export default defineComponent({
             handleAddLayer ()
             {
                 // 新建图层
-                if (data.drawRecord[data.currentFrameIndex].layer.length > data.maxLayer) return proxy.$message.warning('图层达到上限');
+                if (data.drawRecord[data.currentFrameIndex].layer.length > data.maxLayer) return proxy.$message.warning('图层数量达到上限');
                 let layerArr = [] as any;
                 for (let i = 0; i < data.canvasHeight; i++) 
                 {
@@ -2160,7 +2160,7 @@ export default defineComponent({
                             {
                                 data.loading = false;
                                 URL.revokeObjectURL(url);
-                                return proxy.$message.warning('导入图片尺寸须小于画布大小');
+                                return proxy.$message.warning('导入图片尺寸须小于等于画布大小');
                             }
                             methods.handleTransfromPngToPixel(img, url);
                         };
@@ -2200,7 +2200,7 @@ export default defineComponent({
             // 帧开始
             handleAddFrame ()
             {
-                if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧达到上限');
+                if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧数量达到上限');
                 let layerArr = [] as any;
                 for (let i = 0; i < data.canvasHeight; i++) 
                 {
@@ -2238,10 +2238,12 @@ export default defineComponent({
                 if (type === 'copyData')
                 {
                     editSpaceStore.frameCopyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
+                    proxy.$message.success('复制成功');
 
                 }
                 else if (type === 'pasteData')
                 {
+                    if (!editSpaceStore.frameCopyData) return proxy.$message.warning('数据不存在');
                     let pasteData = editSpaceStore.frameCopyData;
                     if (pasteData.frameId === data.drawRecord[index].frameId) 
                     {
@@ -2252,12 +2254,13 @@ export default defineComponent({
                         data.drawRecord[index].currentFrameImg = pasteData.currentFrameImg;
                         data.drawRecord[index].layer = pasteData.layer;
                     }
+                    proxy.$message.success('粘贴成功');
                     methods.reDraw(true, true);
 
                 }
                 else if (type === 'copy')
                 {
-                    if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧达到上限');
+                    if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧数量达到上限');
                     let copyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
                     copyData.frameId = uuid.v1();
                     data.drawRecord.splice(index, 0, copyData);
