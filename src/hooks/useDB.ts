@@ -88,6 +88,7 @@ function useDB ()
         },
         updateDB (value)
         {
+            let valueData = JSON.parse(JSON.stringify(value));
             // 修改
             return new Promise((resolve, reject) => 
             {
@@ -95,10 +96,10 @@ function useDB ()
                 {
                     res.update({
                         tableName:'pixelGrid',
-                        condition:(item) => item.id === value.id,
+                        condition:(item) => item.id === valueData.id,
                         handle: (r) => 
                         {
-                            r.data = value.data; 
+                            r.data = valueData.data; 
                         },
                         success:(res) => 
                         {

@@ -154,6 +154,16 @@ export default defineComponent({
                         // proxy.$message.error(err);
                         console.error(err);
                     });
+            },
+            getProjectList ()
+            {
+                let projectData = proxy.$utils.cache.project.get();
+                if (projectData)
+                {
+                    editSpaceStore.projectList = JSON.parse(projectData);
+                    console.log(editSpaceStore.projectList);
+                    
+                }
             }
             
         };
@@ -166,6 +176,7 @@ export default defineComponent({
             };
             methods.changeLanguage();
             initTheme();
+            // methods.getProjectList();
             methods.getColorModules();
             methods.getNoticeData();
 

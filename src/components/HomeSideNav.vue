@@ -10,7 +10,7 @@
         v-for="item in menuList" 
         :key="item.path" 
         :index="item.path"
-        :class="{active:item.path===$route.path}"
+        :class="{active:item.path === $route.path, active1:$route.path.includes('/work') && item.path === '/project'}"
         style="justify-content:flex-start">
             <el-icon size="16" style="width: 16px;">
                 <component :is="item.icon" style="width: 16px;height: 16px;"></component>
@@ -89,6 +89,7 @@ export default defineComponent({
         {
             window.addEventListener('resize', cancalDebounce);
             methods.handleChangeSize();
+            
         });
 
         onBeforeUnmount(() => 
@@ -112,6 +113,10 @@ export default defineComponent({
 }
 
 .active {
+    background-color:var(--el-menu-active-bg-color);
+}
+
+.active1 {
     background-color:var(--el-menu-active-bg-color);
 }
 

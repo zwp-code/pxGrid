@@ -74,9 +74,9 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
     if (to.path.includes('project'))
     {
         let id = cache.currentProjectId.get();
-        if (id && id !== 0)
+        if (id && id != 0)
         {
-            next(`/work/${editSpaceStore.currentProjectId}`);
+            next(`/work/${id}`);
         }
         else
         {

@@ -1,4 +1,4 @@
-import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch, onDeactivated, onActivated } from 'vue';
+import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch, onDeactivated, onActivated, onBeforeUnmount } from 'vue';
 import MyColorDialog from '@/components/dialog/MyColorDialog.vue';
 import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
@@ -147,7 +147,7 @@ export default defineComponent({
                 max:13,
                 min:8
             },
-            isSaveProject:false
+            isSaveProject:true
         });
 
 
@@ -245,7 +245,7 @@ export default defineComponent({
             {
                 if (data.isSaveProject)
                 {
-                    editSpaceStore.saveProjectId(0);
+                    editSpaceStore.saveProjectId('0');
                     return proxy.$router.replace('/project');
                 }
                 ElMessageBox.confirm(
@@ -259,7 +259,7 @@ export default defineComponent({
                 )
                     .then(() => 
                     {
-                        editSpaceStore.saveProjectId(0);
+                        editSpaceStore.saveProjectId('0');
                         proxy.$router.replace('/project');
                     })
                     .catch(() => 
@@ -2831,74 +2831,146 @@ export default defineComponent({
                 // 效验id是否为项目id
                 let projectId = proxy.$route.params.projectId;
                 let projectData = editSpaceStore.projectList.find((v) => v.projectId === projectId);
+                
                 if (projectData)
                 {
                     // 读取indexdb下的数据
-                    data.loading = true;
-                    data.projectData.projectId = projectData.projectId;
-                    data.projectData.projectName = projectData.projectName;
-                    data.projectData.updateAt = projectData.updateAt;
-                    data.projectData.createAt = projectData.createAt;
-                    data.projectData.desc = projectData.desc;
-                    data.canvasWidth = projectData.width;
-                    data.canvasHeight = projectData.height;
-                    methods.getMyColorList();
-                    const pixelBox = document.querySelector('.pixelBox');
-                    data.canvas = document.getElementById('Canvas');
-                    data.bgCanvas = document.getElementById('PixelCanvas');
-                    data.realCanvas = document.getElementById('RealCanvas');
-                    data.canvas.width = pixelBox?.clientWidth;
-                    data.canvas.height = pixelBox?.clientHeight;
-                    data.bgCanvas.width = pixelBox?.clientWidth;
-                    data.bgCanvas.height = pixelBox?.clientHeight;
-                    data.ctx1 = data.canvas.getContext('2d');
-                    data.ctx2 = data.bgCanvas.getContext('2d');
-                    data.ctx3 = data.realCanvas.getContext('2d');
-                    methods.computeScale();
-                    data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-                    data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
-                    methods.drawPixelArea();
+                    // data.loading = true;
+                    // data.projectData.projectId = projectData.projectId;
+                    // data.projectData.projectName = projectData.projectName;
+                    // data.projectData.updateAt = projectData.updateAt;
+                    // data.projectData.createAt = projectData.createAt;
+                    // data.projectData.desc = projectData.desc;
+                    // data.canvasWidth = projectData.width;
+                    // data.canvasHeight = projectData.height;
+                    console.log(data.projectData.projectId, projectData.projectId);
+                    
+                    if (data.projectData.projectId !== projectData.projectId)
+                    {
+                        data.historyRecord = [];
+                        data.loading = true;
+                        data.projectData.projectId = projectData.projectId;
+                        data.projectData.projectName = projectData.projectName;
+                        data.projectData.updateAt = projectData.updateAt;
+                        data.projectData.createAt = projectData.createAt;
+                        data.projectData.desc = projectData.desc;
+                        data.canvasWidth = projectData.width;
+                        data.canvasHeight = projectData.height;
+                        methods.getMyColorList();
+                        const pixelBox = document.querySelector('.pixelBox');
+                        data.canvas = document.getElementById('Canvas');
+                        data.bgCanvas = document.getElementById('PixelCanvas');
+                        data.realCanvas = document.getElementById('RealCanvas');
+                        data.canvas.width = pixelBox?.clientWidth;
+                        data.canvas.height = pixelBox?.clientHeight;
+                        data.bgCanvas.width = pixelBox?.clientWidth;
+                        data.bgCanvas.height = pixelBox?.clientHeight;
+                        data.ctx1 = data.canvas.getContext('2d');
+                        data.ctx2 = data.bgCanvas.getContext('2d');
+                        data.ctx3 = data.realCanvas.getContext('2d');
+                        methods.computeScale();
+                        data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                        data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                        methods.drawPixelArea();
 
-                    let jsonData = null as any;
-                    useDBHooks.findDB(projectData.projectId).then((res:any) => 
-                    {
-                        jsonData = res[0].data;
-                        console.log(jsonData);
-                        
-                        if (jsonData.data)
+                        let jsonData = null as any;
+                        useDBHooks.findDB(projectData.projectId).then((res:any) => 
                         {
-                            data.worker.postMessage({
-                                type:4, 
-                                variables:jsonData.data
-                            });
-                            data.worker.onmessage = (event) => 
+                            jsonData = res[0].data;
+                            console.log(jsonData);
+                            
+                            if (jsonData.data)
                             {
-                                data.drawRecord = event.data;
-                                methods.reDraw();
+                                data.worker.postMessage({
+                                    type:4, 
+                                    variables:jsonData.data
+                                });
+                                data.worker.onmessage = (event) => 
+                                {
+                                    data.drawRecord = event.data;
+                                    editSpaceStore.saveProjectId(projectId);
+                                    methods.reDraw();
+                                    data.loading = false;
+                                };
+                            }
+                            else
+                            {
+                                editSpaceStore.saveProjectId(projectId);
+                                data.drawRecord = [];
+                                methods.initCanvasRecord('init');
                                 data.loading = false;
-                            };
-                        }
-                        else
+                            }
+                        }).catch((err) => 
                         {
-                            methods.initCanvasRecord('init');
-                            data.loading = false;
-                        }
-                    }).catch((err) => 
-                    {
-                        console.log(err);
-                        proxy.$message.error('打开项目失败 ' + err);
-                        editSpaceStore.saveProjectId(0);
-                        proxy.$router.replace('/project');
-                    });
-                    methods.startDrawing();
-                    methods.addKeyBoardEvent();
-                    methods.handleResizeWindow();
+                            console.log(err);
+                            proxy.$message.error('打开项目失败 ' + err);
+                            editSpaceStore.saveProjectId('0');
+                            proxy.$router.replace('/project');
+                        });
+                        methods.startDrawing();
+                        methods.addKeyBoardEvent();
+                        methods.handleResizeWindow();
+                    }
+                    // methods.getMyColorList();
+                    // const pixelBox = document.querySelector('.pixelBox');
+                    // data.canvas = document.getElementById('Canvas');
+                    // data.bgCanvas = document.getElementById('PixelCanvas');
+                    // data.realCanvas = document.getElementById('RealCanvas');
+                    // data.canvas.width = pixelBox?.clientWidth;
+                    // data.canvas.height = pixelBox?.clientHeight;
+                    // data.bgCanvas.width = pixelBox?.clientWidth;
+                    // data.bgCanvas.height = pixelBox?.clientHeight;
+                    // data.ctx1 = data.canvas.getContext('2d');
+                    // data.ctx2 = data.bgCanvas.getContext('2d');
+                    // data.ctx3 = data.realCanvas.getContext('2d');
+                    // methods.computeScale();
+                    // data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                    // data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                    // methods.drawPixelArea();
+
+                    // let jsonData = null as any;
+                    // useDBHooks.findDB(projectData.projectId).then((res:any) => 
+                    // {
+                    //     jsonData = res[0].data;
+                    //     console.log(jsonData);
+                        
+                    //     if (jsonData.data)
+                    //     {
+                    //         data.worker.postMessage({
+                    //             type:4, 
+                    //             variables:jsonData.data
+                    //         });
+                    //         data.worker.onmessage = (event) => 
+                    //         {
+                    //             data.drawRecord = event.data;
+                    //             // editSpaceStore.saveProjectId(projectId);
+                    //             methods.reDraw();
+                    //             data.loading = false;
+                    //         };
+                    //     }
+                    //     else
+                    //     {
+                    //         methods.initCanvasRecord('init');
+                    //         data.loading = false;
+                    //     }
+                    // }).catch((err) => 
+                    // {
+                    //     console.log(err);
+                    //     proxy.$message.error('打开项目失败 ' + err);
+                    //     editSpaceStore.saveProjectId('0');
+                    //     proxy.$router.replace('/project');
+                    // });
+                    // methods.startDrawing();
+                    // methods.addKeyBoardEvent();
+                    // methods.handleResizeWindow();
 
                 }
                 else
                 {
+                    console.log('项目不存在');
+                    
                     proxy.$message.error('项目不存在');
-                    editSpaceStore.saveProjectId(0);
+                    editSpaceStore.saveProjectId('0');
                     proxy.$router.replace('/project');
                 }
             }
@@ -2910,7 +2982,7 @@ export default defineComponent({
             methods.reDraw(false);
         });
 
-        watch(data.drawRecord, (newValue, oldValue) => 
+        watch(() => data.drawRecord, (newValue, oldValue) => 
         {
             data.isSaveProject = false;
         }, { deep:true });
@@ -2923,7 +2995,7 @@ export default defineComponent({
             // };
             // 从本地读取项目
             data.worker = new Worker();
-            methods.handleReadProjectData();
+            // methods.handleReadProjectData();
             // initTheme();
             // methods.changeLanguage();
             // methods.getMyColorList();
@@ -2952,21 +3024,34 @@ export default defineComponent({
 
         onActivated(() =>
         {
-            methods.startDrawing();
-            methods.addKeyBoardEvent();
-            methods.handleResizeWindow();
+            methods.handleReadProjectData();
+            if (data.canvas)
+            {
+                methods.startDrawing();
+                methods.addKeyBoardEvent();
+                methods.handleResizeWindow();
+            }
         });
 
         onDeactivated(() => 
         {
-            data.canvas.removeEventListener('mousedown', methods.start);
-            data.canvas.removeEventListener('mousemove', methods.draw);
-            data.canvas.removeEventListener('mouseup', methods.stop);
-            data.canvas.removeEventListener('mouseout', methods.leave);
-            data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
-            document.removeEventListener('keydown', methods.handlekeyBoardEvent);
-            document.removeEventListener('keyup', methods.handleKeyUpEvent);
-            window.removeEventListener('resize', methods.handleResizeWindowEvent);
+            if (data.canvas)
+            {
+                data.canvas.removeEventListener('mousedown', methods.start);
+                data.canvas.removeEventListener('mousemove', methods.draw);
+                data.canvas.removeEventListener('mouseup', methods.stop);
+                data.canvas.removeEventListener('mouseout', methods.leave);
+                data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
+                document.removeEventListener('keydown', methods.handlekeyBoardEvent);
+                document.removeEventListener('keyup', methods.handleKeyUpEvent);
+                window.removeEventListener('resize', methods.handleResizeWindowEvent);
+            }
+        });
+
+        onBeforeUnmount(() => 
+        {
+            console.log(1111);
+            editSpaceStore.saveProjectId('0');
         });
 
         return {
