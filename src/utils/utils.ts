@@ -158,6 +158,19 @@ export function generateIamge (width, height, imageData)
     return url;
 }
 
+export function downloadFile (data, type, filename) 
+{
+    const blob = new Blob([data], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.json`; // 设置下载文件名
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 
 export function downloadImage (canvas, name) 
 {
@@ -182,3 +195,77 @@ export function exportImageForZip (filenamae, imgArr)
         FileSaver.saveAs(content, `${filenamae}.zip`);
     });
 }
+
+// 转时间戳
+export function formatTimeStamp (time:any):number
+{    
+    if (!time)
+    {
+        return 0;
+    }
+    let date = time.replace(/-/g, '/');
+    let timestamp = new Date(date).getTime();
+    return timestamp;
+}
+
+export function sortList (list, key)
+{
+    console.log(list.length);
+    
+    if (list.length <= 1) return list;
+    for (let j = 0; j < list.length; j++)
+    {
+        if (j + 1 >= list.length) break;
+        if (list[j].data['isTop'] === list[j + 1].data['isTop'])
+        {
+            if (formatTimeStamp(list[j].data[key]) < formatTimeStamp(list[j + 1].data[key]))
+            {
+                let temp = list[j];
+                list[j] = list[j + 1];
+                list[j + 1] = temp;
+            }
+        }
+        else if (list[j].data['isTop'] < list[j + 1].data['isTop'])
+        {
+            let temp = list[j];
+            list[j] = list[j + 1];
+            list[j + 1] = temp;
+        }
+    }
+    console.log(list);
+    
+    return list;
+}
+
+export const base64ToBlob = (dataurl) => 
+{
+    let arr = dataurl.split(',');
+    let mime = arr[0].match(/:(.*?);/)[1];
+    let bstr = atob(arr[1]);
+    let n = bstr.length;
+    let u8arr = new Uint8Array(n);
+    while (n--) 
+    {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+};
+
+export function blobToBase64 (blob) 
+{
+    return new Promise((resolve, reject) => 
+    {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => 
+        {
+            resolve(reader.result);
+        };
+        reader.onerror = (e) => 
+        {
+            reject(e);
+        };
+    });
+}
+  
+  

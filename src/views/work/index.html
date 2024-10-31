@@ -38,10 +38,10 @@
                         <el-icon style="margin-right: 25px;"><FolderOpened /></el-icon>
                         <template #dropdown>
                             <el-dropdown-menu>
-                                <el-dropdown-item @click="handleSaveProject">保存项目</el-dropdown-item>
-                                <el-dropdown-item @click="handleImportProject">导入项目</el-dropdown-item>
-                                <el-dropdown-item @click="exportVisible=true;isExportProject=true">导出项目</el-dropdown-item>
-                                <el-dropdown-item @click="exportVisible=true;isExportProject=false">导出图像</el-dropdown-item>
+                                <el-dropdown-item @click="handleSaveProject">保存项目 [Ctrl + s]</el-dropdown-item>
+                                <!-- <el-dropdown-item @click="handleImportProject">导入项目</el-dropdown-item> -->
+                                <el-dropdown-item @click="exportVisible=true;isExportProject=true">导出项目 [Ctrl + p]</el-dropdown-item>
+                                <el-dropdown-item @click="exportVisible=true;isExportProject=false">导出图像 [Ctrl + i]</el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
                     </el-dropdown>

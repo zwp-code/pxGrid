@@ -34,6 +34,28 @@ function useDB ()
                 });
             });
         },
+        findAllDB ()
+        {
+            return new Promise((resolve, reject) => 
+            {
+                proxy.$zdb.then((res) => 
+                {
+                    res.queryAll({
+                        tableName:'pixelGrid',
+                        success: async (res1) => 
+                        {
+                            console.log(res1);
+                            resolve(res1);
+                        }
+                    });
+                }, 
+                (err) => 
+                {
+                    reject(err);
+                    console.error('读取数据失败' + err.message);
+                });
+            });
+        },
         exportDB (id)
         {
             // 导出某个备份数据

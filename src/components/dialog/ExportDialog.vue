@@ -29,6 +29,7 @@
 </template>
 
 <script lang="ts">
+import { useEditSpaceStore } from '@/store';
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance } from 'vue';
 export default defineComponent({
     name: 'ExportDialog',
@@ -51,9 +52,10 @@ export default defineComponent({
     setup (props, context) 
     {
         let { proxy }:any = getCurrentInstance();
+        const editSpaceStore = useEditSpaceStore();
         let data = reactive({
             dialogVisible:props.visible,
-            fileName:'',
+            fileName:editSpaceStore.getCurrentProjectNameById(),
             checked1:true,
             checked2:false,
             checked3:false,

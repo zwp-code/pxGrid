@@ -24,7 +24,12 @@ export default {
         'edit':'编 辑',
         'exportLoading':'正在导出',
         'saveSucceeded':'保存成功',
-        'saveFailed':'保存失败'
+        'saveFailed':'保存失败',
+        'importSucceeded':'导入成功',
+        'importFailed':'导入失败',
+        'cancelTop':'取消置顶',
+        'top':'置 顶',
+        'download':'下 载'
 
     }
 };

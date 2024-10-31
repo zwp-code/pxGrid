@@ -1,4 +1,5 @@
 import { createApp } from 'vue';
+import plugins from './plugins';
 import App from './App.vue';
 import '@/style/config.scss';
 import ElementPlus from 'element-plus';
@@ -7,7 +8,6 @@ import './style/dark/css-vars.css';
 // import 'element-plus/dist/index.css';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import en from 'element-plus/dist/locale/en.mjs';
-import plugins from './plugins';
 import { componentIcon } from './utils/element-plus';
 import { createPinia } from 'pinia';
 import i18n from '@/i18n';

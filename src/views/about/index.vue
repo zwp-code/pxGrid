@@ -23,13 +23,14 @@
                     class="link"
                     v-for="item in links"
                     :key="item.url"
+                    :type="item.type"
                     @click="handleOpen(item.url)">{{item.label}}</el-link>
                 </div>
 
                 <h2># {{$t('message.donate')}}</h2>
                 <div class="flex-warp flex-start thanks-box">
                     <div v-for="item in donates" :key="item.id">
-                        <el-link :href="item.link||'#'"  :underline="false" class="flex-center">
+                        <el-link :href="item.link||'#'"  :underline="false" class="flex-center" type="success">
                             <el-avatar :src="item.avatar || require('@/assets/boy.png')" :size="30"/>
                             {{ item.name }}(${{item.amount}})
                         </el-link>
@@ -71,7 +72,8 @@ h2 {
 
 .link {
     margin-bottom: 5px;
-    color: var(--el-text-color-second);
+    // color: var(--el-text-color-second);
+    font-weight: 600;
 }
 
 .link, .thank+.thank {

@@ -143,28 +143,14 @@ body,html{
 }
 
 .oneline {
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space: nowrap;
-    display:-webkit-box;
-    -webkit-line-clamp:1;
-    -webkit-box-orient:vertical;
-    /* 这两个在技术上是一样的, 为了兼容了浏览器两个都加上 */
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-
-    -ms-word-break: break-all;
-    /* 这个的使用在web-kit中有些危险，他可能会阶段所有东西 */
-    word-break: break-all;
-    /* Instead use this non-standard one: */
-    // word-break: break-word;
-
-    /* 如果浏览器支持的话增加一个连接符(Blink不支持) */
-    -ms-hyphens: auto;
-    -moz-hyphens: auto;
-    -webkit-hyphens: auto;
-    hyphens: auto;
+    @include ellipsis(1)
 }
+
+.twoline {
+    @include ellipsis(2)
+}
+
+
 
 .flex {
     display: flex;
@@ -376,6 +362,64 @@ body,html{
 .scrollbar::-webkit-scrollbar-thumb:hover { /* 鼠标移入滑块 */
     background: #b2b2b2af;
     cursor: pointer;
+}
+
+
+.input-search {
+    min-width: 200px;
+    width: 100%;
+    height: 40px;
+    border-radius: 5px;
+    display: flex;
+    // grid-template-columns: 15% 85%;
+    background-color: $ShadowColor;
+    padding: 0 .4rem;
+    border: 1px solid #f2f2f2;
+    transition: all .5s;
+
+    &:hover {
+        border: 1px solid $PrimaryColor;
+        background-color: $PageBackgroundColor;
+        i {
+            color: $PrimaryColor;
+        }
+    }
+     &:focus-within {
+        border: 1px solid $PrimaryColor;
+        background-color: $BackgroundColor;
+        i {
+            color: $PrimaryColor;
+        }
+    }
+
+    i {
+        height: 40px !important;
+        width: 40px !important;
+        text-align: center !important;
+        line-height: 39px !important;
+        color: #c5b9b9 !important;
+        font-size: 15px !important;
+    }
+
+    input {
+        width: 100%;
+        height: 40px;
+        background: none;
+        outline: none;
+        border: none;
+        line-height: 1;
+        font-weight: 400;
+        font-size: 15px;
+        color: $TextColor;
+        // margin-bottom: 2px;
+
+        &::placeholder {
+            color: #c5b9b9;
+            font-weight: 400;
+        }
+    }
+    
+    
 }
 
 

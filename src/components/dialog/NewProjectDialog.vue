@@ -91,6 +91,9 @@ export default defineComponent({
                 projectId:'',
                 width:32,
                 height:32,
+                frameImg:'',
+                isTop:0,
+                tip:'新项目',
                 data:null
             } as any,
             isloading:false
@@ -133,32 +136,42 @@ export default defineComponent({
                         if (props.editInfo)
                         {
                             data.itemInfo.updateAt = formatTime();
-                            editSpaceStore.saveProject(data.itemInfo);
-                            proxy.$message.success(proxy.$t('message.saveSucceeded'));
-                            data.isloading = false;
-                            context.emit('save');
-                            methods.handleClose();
+                            data.itemInfo.tip = '最近编辑';
+                            editSpaceStore.saveProject(data.itemInfo).then((res) => 
+                            {
+                                if (res) 
+                                {
+                                    data.isloading = false;
+                                    // context.emit('save');
+                                    methods.handleClose();
+                                    proxy.$message.success(proxy.$t('message.saveSucceeded'));
+                                }
+                            }).catch((err) => 
+                            {
+                                console.log(err);
+                                data.isloading = false;
+                                proxy.$message.error(proxy.$t('message.saveFailed'));
+                            });
                             return;
                         }
                         data.itemInfo.projectId = uuid.v1();
                         data.itemInfo.createAt = formatTime();
                         data.itemInfo.updateAt = data.itemInfo.createAt;
-                        // editSpaceStore.saveProject(data.itemInfo);
-                        console.log(data.itemInfo);
-                        
-                        useDBHooks.saveDB(data.itemInfo.projectId, data.itemInfo).then((res) => 
+                        editSpaceStore.saveProject(data.itemInfo).then((res) => 
                         {
-                            editSpaceStore.saveProject(data.itemInfo);
-                            proxy.$message.success(proxy.$t('message.saveSucceeded'));
-                            data.isloading = false;
-                            methods.handleClose();
-                            proxy.$router.push({
-                                name:'work',
-                                params:{
-                                    projectId:data.itemInfo.projectId
-                                }
-                            });
-                            editSpaceStore.saveProjectId(data.itemInfo.projectId);
+                            if (res) 
+                            {
+                                proxy.$message.success(proxy.$t('message.saveSucceeded'));
+                                data.isloading = false;
+                                methods.handleClose();
+                                proxy.$router.push({
+                                    name:'work',
+                                    params:{
+                                        projectId:data.itemInfo.projectId
+                                    }
+                                });
+                                editSpaceStore.saveProjectId(data.itemInfo.projectId);
+                            }
                         }).catch((err) => 
                         {
                             console.log(err);

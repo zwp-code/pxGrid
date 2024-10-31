@@ -13,6 +13,6 @@ export default {
         // app.config.globalProperties.$http = http;
         app.config.globalProperties.$utils = utils; 
         app.config.globalProperties.$message = message;
-        app.config.globalProperties.$zdb = Zdb(db);
+        // app.config.globalProperties.$zdb = Zdb(db);
     }
 };

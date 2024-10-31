@@ -11,7 +11,6 @@ import useDrag from '@/hooks/useDrag';
 import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
-import useDB from '@/hooks/useDB';
 export default defineComponent({
     name:'work',
     components: {
@@ -25,7 +24,6 @@ export default defineComponent({
     {
         const { proxy }:any = getCurrentInstance();
         const useFilterHooks = useFilter();
-        const useDBHooks = useDB();
         const editSpaceStore = useEditSpaceStore();
         let data = reactive({
             projectData:{
@@ -35,7 +33,11 @@ export default defineComponent({
                 createAt:'',
                 desc:'',
                 width:'',
-                height:''
+                height:'',
+                frameImg:'',
+                data:null,
+                isTop:0,
+                tip:''
             } as any,
             emptyColor:'#00000000',
             bgCanvas:null as any,
@@ -228,12 +230,16 @@ export default defineComponent({
                 data.projectData.updateAt = formatTime();
                 data.projectData.height = data.canvasHeight;
                 data.projectData.width = data.canvasWidth;
+                data.projectData.tip = '最近编辑';
                 data.projectData.data = methods.compressDrawRecordData();
-                useDBHooks.updateDB({id:data.projectData.projectId, data:data.projectData}).then((res) => 
+                data.projectData.frameImg = data.drawRecord[0].currentFrameImg;
+                editSpaceStore.saveProject(data.projectData).then((res) => 
                 {
-                    editSpaceStore.saveProject(data.projectData);
-                    proxy.$message.success(proxy.$t('message.saveSucceeded'));
-                    data.loading = false;
+                    if (res) 
+                    {
+                        proxy.$message.success(proxy.$t('message.saveSucceeded'));
+                        data.loading = false;
+                    }
                 }).catch((err) => 
                 {
                     console.log(err);
@@ -511,6 +517,11 @@ export default defineComponent({
                     data.ctx2.lineTo(beginX + data.canvasWidth * data.scale, beginY + (data.canvasHeight * data.scale) / 2);
                     data.ctx2.stroke();
                 }
+                // 更新帧预览;
+                // const imageData = data.ctx2.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
+                // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+                // data.projectData.frameImg = dataURL;
+                // await editSpaceStore.saveProject(data.projectData);
                 // console.log(data.drawRecord);
                 // if (data.drawAreaList.length >= data.canvasWidth * data.canvasHeight) cancelAnimationFrame(data.AnimationFrameId_1);
             },
@@ -2308,6 +2319,7 @@ export default defineComponent({
             handleExportProject (filename)
             {
                 // 导出项目为json文件
+                data.exportLoaidng = true;
                 let fileData = {
                     ...data.projectData,
                     // projectId:data.projectData.projectId,
@@ -2319,6 +2331,7 @@ export default defineComponent({
                 console.log(fileData);
                 
                 fileData.data = methods.compressDrawRecordData();
+                fileData.frameImg = data.drawRecord[0].currentFrameImg;
                 const d = JSON.stringify(fileData);
                 const blob = new Blob([d], {type: ''});
                 FileSaver.saveAs(blob, `${filename}.json`);
@@ -2351,6 +2364,7 @@ export default defineComponent({
                             data.projectData.updateAt = jsonData.updateAt;
                             data.projectData.createAt = jsonData.createAt;
                             data.projectData.desc = jsonData.desc;
+                            data.projectData.frameImg = jsonData.frameImg;
                             data.canvasWidth = jsonData.width;
                             data.canvasHeight = jsonData.height;
                             data.historyRecord = [];
@@ -2494,6 +2508,7 @@ export default defineComponent({
                     hid:uuid.v1(),
                     record:JSON.parse(JSON.stringify(data.drawRecord))
                 });
+                data.isSaveProject = false;
 
                 console.log(data.historyRecord);
                 
@@ -2663,21 +2678,35 @@ export default defineComponent({
                 }
                 else if (event.ctrlKey && event.key === 'v')
                 {
-                    // 水平翻转
                     event.preventDefault();
                     methods.drawTransform('vReverse');
                 }
                 else if (event.ctrlKey && event.key === 'a')
                 {
-                    // 水平翻转
                     event.preventDefault();
                     methods.drawTransform('nsz');
                 }
                 else if (event.ctrlKey && event.key === 'd')
                 {
-                    // 水平翻转
                     event.preventDefault();
                     methods.drawTransform('ssz');
+                }
+                else if (event.ctrlKey && event.key === 's')
+                {
+                    event.preventDefault();
+                    methods.handleSaveProject();
+                }
+                else if (event.ctrlKey && event.key === 'p')
+                {
+                    event.preventDefault();
+                    data.exportVisible = true;
+                    data.isExportProject = true;
+                }
+                else if (event.ctrlKey && event.key === 'i')
+                {
+                    event.preventDefault(); 
+                    data.exportVisible = true;
+                    data.isExportProject = false;
                 }
                 else if (event.key === 'ArrowUp')
                 {
@@ -2830,21 +2859,11 @@ export default defineComponent({
             {
                 // 效验id是否为项目id
                 let projectId = proxy.$route.params.projectId;
-                let projectData = editSpaceStore.projectList.find((v) => v.projectId === projectId);
+                let projectData = editSpaceStore.getProjectById(projectId);
                 
                 if (projectData)
                 {
                     // 读取indexdb下的数据
-                    // data.loading = true;
-                    // data.projectData.projectId = projectData.projectId;
-                    // data.projectData.projectName = projectData.projectName;
-                    // data.projectData.updateAt = projectData.updateAt;
-                    // data.projectData.createAt = projectData.createAt;
-                    // data.projectData.desc = projectData.desc;
-                    // data.canvasWidth = projectData.width;
-                    // data.canvasHeight = projectData.height;
-                    console.log(data.projectData.projectId, projectData.projectId);
-                    
                     if (data.projectData.projectId !== projectData.projectId)
                     {
                         data.historyRecord = [];
@@ -2856,6 +2875,10 @@ export default defineComponent({
                         data.projectData.desc = projectData.desc;
                         data.canvasWidth = projectData.width;
                         data.canvasHeight = projectData.height;
+                        data.projectData.frameImg = projectData.frameImg;
+                        data.projectData.tip = projectData.tip;
+                        data.projectData.isTop = projectData.isTop;
+                        data.projectData.data = projectData.data;
                         methods.getMyColorList();
                         const pixelBox = document.querySelector('.pixelBox');
                         data.canvas = document.getElementById('Canvas');
@@ -2872,103 +2895,34 @@ export default defineComponent({
                         data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
                         data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
                         methods.drawPixelArea();
-
-                        let jsonData = null as any;
-                        useDBHooks.findDB(projectData.projectId).then((res:any) => 
-                        {
-                            jsonData = res[0].data;
-                            console.log(jsonData);
-                            
-                            if (jsonData.data)
-                            {
-                                data.worker.postMessage({
-                                    type:4, 
-                                    variables:jsonData.data
-                                });
-                                data.worker.onmessage = (event) => 
-                                {
-                                    data.drawRecord = event.data;
-                                    editSpaceStore.saveProjectId(projectId);
-                                    methods.reDraw();
-                                    data.loading = false;
-                                };
-                            }
-                            else
-                            {
-                                editSpaceStore.saveProjectId(projectId);
-                                data.drawRecord = [];
-                                methods.initCanvasRecord('init');
-                                data.loading = false;
-                            }
-                        }).catch((err) => 
-                        {
-                            console.log(err);
-                            proxy.$message.error('打开项目失败 ' + err);
-                            editSpaceStore.saveProjectId('0');
-                            proxy.$router.replace('/project');
-                        });
                         methods.startDrawing();
                         methods.addKeyBoardEvent();
                         methods.handleResizeWindow();
+                        if (data.projectData.data)
+                        {
+                            data.worker.postMessage({
+                                type:4, 
+                                variables:JSON.parse(JSON.stringify(projectData.data))
+                            });
+                            data.worker.onmessage = (event) => 
+                            {
+                                data.drawRecord = event.data;
+                                editSpaceStore.saveProjectId(projectId);
+                                methods.reDraw();
+                                data.loading = false;
+                            };
+                        }
+                        else
+                        {
+                            editSpaceStore.saveProjectId(projectId);
+                            data.drawRecord = [];
+                            methods.initCanvasRecord('init');
+                            data.loading = false;
+                        }
                     }
-                    // methods.getMyColorList();
-                    // const pixelBox = document.querySelector('.pixelBox');
-                    // data.canvas = document.getElementById('Canvas');
-                    // data.bgCanvas = document.getElementById('PixelCanvas');
-                    // data.realCanvas = document.getElementById('RealCanvas');
-                    // data.canvas.width = pixelBox?.clientWidth;
-                    // data.canvas.height = pixelBox?.clientHeight;
-                    // data.bgCanvas.width = pixelBox?.clientWidth;
-                    // data.bgCanvas.height = pixelBox?.clientHeight;
-                    // data.ctx1 = data.canvas.getContext('2d');
-                    // data.ctx2 = data.bgCanvas.getContext('2d');
-                    // data.ctx3 = data.realCanvas.getContext('2d');
-                    // methods.computeScale();
-                    // data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-                    // data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
-                    // methods.drawPixelArea();
-
-                    // let jsonData = null as any;
-                    // useDBHooks.findDB(projectData.projectId).then((res:any) => 
-                    // {
-                    //     jsonData = res[0].data;
-                    //     console.log(jsonData);
-                        
-                    //     if (jsonData.data)
-                    //     {
-                    //         data.worker.postMessage({
-                    //             type:4, 
-                    //             variables:jsonData.data
-                    //         });
-                    //         data.worker.onmessage = (event) => 
-                    //         {
-                    //             data.drawRecord = event.data;
-                    //             // editSpaceStore.saveProjectId(projectId);
-                    //             methods.reDraw();
-                    //             data.loading = false;
-                    //         };
-                    //     }
-                    //     else
-                    //     {
-                    //         methods.initCanvasRecord('init');
-                    //         data.loading = false;
-                    //     }
-                    // }).catch((err) => 
-                    // {
-                    //     console.log(err);
-                    //     proxy.$message.error('打开项目失败 ' + err);
-                    //     editSpaceStore.saveProjectId('0');
-                    //     proxy.$router.replace('/project');
-                    // });
-                    // methods.startDrawing();
-                    // methods.addKeyBoardEvent();
-                    // methods.handleResizeWindow();
-
                 }
                 else
                 {
-                    console.log('项目不存在');
-                    
                     proxy.$message.error('项目不存在');
                     editSpaceStore.saveProjectId('0');
                     proxy.$router.replace('/project');
@@ -2982,10 +2936,10 @@ export default defineComponent({
             methods.reDraw(false);
         });
 
-        watch(() => data.drawRecord, (newValue, oldValue) => 
-        {
-            data.isSaveProject = false;
-        }, { deep:true });
+        // watch(() => data.drawRecord, (newValue, oldValue) => 
+        // {
+        //     data.isSaveProject = false;
+        // }, { deep:true });
         
         onMounted(() => 
         {
