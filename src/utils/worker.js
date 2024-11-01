@@ -89,5 +89,54 @@ addEventListener('message', (e) =>
         }
         return postMessage(dataTable);
     }
+    else if (data.type === 5)
+    {
+        // 计算拖拽图形的中心位置真实坐标
+        let dataTable = data.variables;
+        let scale = data.scale;
+        let canvasBeginPos = data.canvasBeginPos;
+        let pos = {
+            centerX:0,
+            centerY:0
+        };
+        
+        let maxX = dataTable[0][0];
+        let minX = dataTable[0][0];
+        let maxY = dataTable[0][1];
+        let minY = dataTable[0][1];
+        for (let i = 0; i < dataTable.length; i++)
+        {
+            const x = dataTable[i][0];
+            const y = dataTable[i][1];
+
+            // 更新最小和最大的x值
+            if (x < minX) 
+            {
+                minX = x;
+            }
+            if (x > maxX) 
+            {
+                maxX = x;
+            }
+
+            // 更新最小和最大的y值
+            if (y < minY) 
+            {
+                minY = y;
+            }
+            if (y > maxY) 
+            {
+                maxY = y;
+            }
+        }
+        console.log(maxX, maxY, minX, minY);
+        maxX = (maxX * scale) + canvasBeginPos.x;
+        minX = (minX * scale) + canvasBeginPos.x;
+        maxY = (maxY * scale) + canvasBeginPos.y;
+        minY = (minY * scale) + canvasBeginPos.y;
+        pos.centerX = (maxX - minX) / 2 + minX;
+        pos.centerY = (maxY - minY) / 2 + minY;
+        return postMessage(pos);
+    }
 });
 export default {};

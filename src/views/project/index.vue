@@ -19,7 +19,7 @@
                     <div class="frameImg">
                         <img :src="getFrameImg(item.data.frameImg)"/>
                         <img :src="require('@/assets/top.png')" class="top" v-if="item.data.isTop"/>
-                        <el-tag type="primary" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
+                        <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
                         <el-tag type="primary" effect="dark" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
                     </div>
                     <div class="info">

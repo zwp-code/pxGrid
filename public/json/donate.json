@@ -2,7 +2,7 @@
     {
         "id":1,
         "name":"Java",
-        "avatar":null,
+        "avatar":"http://mms1.baidu.com/it/u=1898223341,1209652472&fm=253&app=138&f=JPEG?w=500&h=500",
         "link":null,
         "amount":20
     },
@@ -16,7 +16,7 @@
     {
         "id":3,
         "name":"鲈鱼",
-        "avatar":null,
+        "avatar":"http://mms1.baidu.com/it/u=1941719249,3277343847&fm=253&app=138&f=JPEG?w=500&h=500",
         "link":null,
         "amount":5
     },
@@ -30,7 +30,7 @@
     {
         "id":5,
         "name":"简单的快乐",
-        "avatar":null,
+        "avatar":"http://mms1.baidu.com/it/u=2246375611,1435016285&fm=253&app=138&f=JPEG?w=400&h=400",
         "link":null,
         "amount":6
     },

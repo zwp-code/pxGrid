@@ -197,7 +197,7 @@ export function exportImageForZip (filenamae, imgArr)
 }
 
 // 转时间戳
-export function formatTimeStamp (time:any):number
+export function formatTimeStamp (time?:any):number
 {    
     if (!time)
     {

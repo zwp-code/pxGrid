@@ -52,6 +52,19 @@
     }
 }
 
+.select {
+    width: 150px;
+    margin-left: 20px;
+    border: 1px solid #f2f2f2;
+    border-radius: 5px;
+    height: 42px;
+
+    :deep(.el-select__wrapper) {
+        border-radius: 5px;
+        box-shadow:none;
+    }
+}
+
 :deep(.el-divider__text) {
     font-size: 12px;
     color: var(--el-text-color-second);

@@ -53,7 +53,7 @@ export default defineComponent({
             // },
             async handleOpenProject (project)
             {
-                editSpaceStore.saveProjectId(project.projectId);
+                // editSpaceStore.saveProjectId(project.projectId);
                 proxy.$router.push({
                     name:'work',
                     params:{
@@ -80,11 +80,11 @@ export default defineComponent({
             async handleTopProject (projectData)
             {
                 let cloneData = JSON.parse(JSON.stringify(projectData));
-                cloneData.isTop = 1;
+                cloneData.isTop = projectData.isTop === 0 ? 1 : 0;
                 try
                 {
                     await editSpaceStore.saveProject(cloneData);
-                    proxy.$message.success('已置顶');
+                    proxy.$message.success(`${!cloneData.isTop ? '已取消置顶' : '已置顶'}`);
                 }
                 catch (err)
                 {

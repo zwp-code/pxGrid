@@ -170,7 +170,7 @@ export default defineComponent({
                                         projectId:data.itemInfo.projectId
                                     }
                                 });
-                                editSpaceStore.saveProjectId(data.itemInfo.projectId);
+                                // editSpaceStore.saveProjectId(data.itemInfo.projectId);
                             }
                         }).catch((err) => 
                         {

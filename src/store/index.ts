@@ -34,8 +34,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
                     db.updateDB({ id:data.projectId, data }).then((res) => 
                     {
                         this.projectList[index].data = data;
+                        this.projectList = this.sortProjectList(this.sort, this.projectList);
                         resolve(res);
-                        this.sortProjectList(this.sort);
                         // this.updateProjectTip();
                     }).catch((err) => 
                     {
@@ -48,8 +48,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
                     db.saveDB(data.projectId, data).then((res) => 
                     {
                         this.projectList.push({ id:data.projectId, data });
+                        this.projectList = this.sortProjectList(this.sort, this.projectList);
                         resolve(res);
-                        this.sortProjectList(this.sort);
                         // this.updateProjectTip();
                     }).catch((err) => 
                     {
@@ -78,7 +78,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
                 {
                     // this.projectList = res;
                     this.projectList = this.updateProjectTip(res);
-                    this.sortProjectList(this.sort);
+                    // console.log(JSON.parse(JSON.stringify(this.projectList)));
+                    // this.sortProjectList(this.sort);
                 }
             }).catch((err) => 
             {
@@ -90,8 +91,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
         {
             for (let j = 0; j < projectList.length; j++)
             {
-                let dif = formatTimeStamp(projectList[j].data['updateAt']) - formatTimeStamp(projectList[j].data['createAt']);
-                if (dif === 0)
+                let dif = new Date().getTime() - formatTimeStamp(projectList[j].data['updateAt']);
+                if (formatTimeStamp(projectList[j].data['updateAt']) - formatTimeStamp(projectList[j].data['createAt']) === 0)
                 {
                     projectList[j].data['tip'] = '新项目';
                 }
@@ -104,7 +105,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
                     projectList[j].data['tip'] = '';
                 }
             }
-            return projectList;
+            return this.sortProjectList(this.sort, projectList);
         },
         deleteProjectById (projectId)
         {
@@ -129,28 +130,33 @@ export const useEditSpaceStore = defineStore('editSpace', {
         {
             return this.getProjectById(this.currentProjectId).projectName;
         },
-        sortProjectList (key)
+        sortProjectList (key, projectList)
         {
-            if (this.projectList.length <= 1) return;
-            for (let j = 0; j < this.projectList.length; j++)
+            if (projectList.length <= 1) return;
+            for (let i = 0; i < projectList.length - 1; i++)
             {
-                if (j + 1 >= this.projectList.length) break;
-                if (this.projectList[j].data['isTop'] === this.projectList[j + 1].data['isTop'])
+                for (let j = 0; j < projectList.length - 1 - i; j++)
                 {
-                    if (formatTimeStamp(this.projectList[j].data[key]) < formatTimeStamp(this.projectList[j + 1].data[key]))
+                    if (projectList[j].data['isTop'] === projectList[j + 1].data['isTop'])
                     {
-                        let temp = this.projectList[j];
-                        this.projectList[j] = this.projectList[j + 1];
-                        this.projectList[j + 1] = temp;
+                        if (formatTimeStamp(projectList[j].data[key]) < formatTimeStamp(projectList[j + 1].data[key]))
+                        {
+                            let temp = projectList[j];
+                            projectList[j] = projectList[j + 1];
+                            projectList[j + 1] = temp;
+                        }
+                    }
+                    else if (projectList[j].data['isTop'] < projectList[j + 1].data['isTop'])
+                    {
+                        let temp = projectList[j];
+                        projectList[j] = projectList[j + 1];
+                        projectList[j + 1] = temp;
                     }
                 }
-                else if (this.projectList[j].data['isTop'] < this.projectList[j + 1].data['isTop'])
-                {
-                    let temp = this.projectList[j];
-                    this.projectList[j] = this.projectList[j + 1];
-                    this.projectList[j + 1] = temp;
-                }
             }
+            return projectList;
+            // console.log(this.projectList);
+            
         }
     }
 });

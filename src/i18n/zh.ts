@@ -12,7 +12,7 @@ export default {
         'fullscreen': '全 屏',
         'about':'关 于',
         'project':'项 目',
-        'moduleShop':'创意工坊',
+        'moduleShop':'资 源',
         'update':'更 新',
         'link':'链 接',
         'mineProject':'我的项目',
@@ -29,7 +29,8 @@ export default {
         'importFailed':'导入失败',
         'cancelTop':'取消置顶',
         'top':'置 顶',
-        'download':'下 载'
+        'download':'下 载',
+        'import':'导 入'
 
     }
 };

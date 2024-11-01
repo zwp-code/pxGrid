@@ -121,12 +121,16 @@ export default defineComponent({
 
             canvasBeginPos:{
                 x:0,
-                y:0
+                y:0,
+                centerX:0,
+                centerY:0
             },
 
             moveData:{
                 x:0,
                 y:0,
+                centerX:0,
+                centerY:0,
                 list:[] as any
             },
 
@@ -372,6 +376,22 @@ export default defineComponent({
                     // methods.handleFrameImg(data.ctx1);
                     return;
                 }
+                // else if (index === 7)
+                // {
+                //     data.worker.postMessage({
+                //         type:5,
+                //         canvasBeginPos:JSON.parse(JSON.stringify(data.canvasBeginPos)),
+                //         scale:data.scale,
+                //         variables:JSON.parse(JSON.stringify(data.moveData.list))
+                //     });
+                //     data.worker.onmessage = (e) => 
+                //     {
+                //         data.moveData.centerX = e.data.centerX;
+                //         data.moveData.centerY = e.data.centerY;
+                //         console.log(data.moveData.centerX, data.moveData.centerY);
+                        
+                //     };
+                // }
                 data.currentTool = index;
             },
             handleChangeCanvasSize (e, key)
@@ -472,6 +492,8 @@ export default defineComponent({
                 {
                     beginX = data.canvasBeginPos.x;
                     beginY = data.canvasBeginPos.y;
+                    data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                    data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 }
                 data.drawAreaList = [];
                 data.ctx2.clearRect(0, 0, data.bgCanvas.width, data.bgCanvas.height);
@@ -505,7 +527,7 @@ export default defineComponent({
                     // 绘制参考线
                     data.ctx2.globalAlpha = 0.5;
                     data.ctx2.lineWidth = 2;
-                    data.ctx2.strokeStyle = 'black';
+                    data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
                     data.ctx2.beginPath();
                     data.ctx2.setLineDash([5, 3]);
                     data.ctx2.moveTo(beginX + (data.canvasWidth * data.scale) / 2, beginY);
@@ -880,8 +902,8 @@ export default defineComponent({
                             return proxy.$message.warning('请先取消选中区域');
                         }
                         if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
-                        data.isMoving = true;
                         // 获取可移动的坐标数组和记录初始点击的行列号
+                        data.isMoving = true;
                         data.moveData.x = col;
                         data.moveData.y = row;
                         data.moveData.list = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
@@ -892,6 +914,8 @@ export default defineComponent({
                             }
                             return null;
                         }))));
+                        
+                        
                         console.log(data.moveData);
                         
                     }
@@ -1202,6 +1226,10 @@ export default defineComponent({
                         data.moveData.y = row;
                         // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                         methods.reDraw(false, false, data.canvasBeginPos, false);
+                        let maxX = data.moveData.list[0][0];
+                        let minX = data.moveData.list[0][0];
+                        let maxY = data.moveData.list[0][1];
+                        let minY = data.moveData.list[0][1];
                         for (let i = 0; i < data.moveData.list.length; i++)
                         {
                             if (data.moveData.list[i][0] >= data.canvasWidth || data.moveData.list[i][1] >= data.canvasHeight || data.moveData.list[i][0] < 0 || data.moveData.list[i][1] < 0) continue;
@@ -1209,7 +1237,80 @@ export default defineComponent({
                             let gridY = (data.moveData.list[i][1] * data.scale) + data.canvasBeginPos.y;
                             data.ctx1.fillStyle = data.moveData.list[i][2];
                             data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                            const x = data.moveData.list[i][0];
+                            const y = data.moveData.list[i][1];
+
+                            // 更新最小和最大的x值
+                            if (x < minX) 
+                            {
+                                minX = x;
+                            }
+                            if (x > maxX) 
+                            {
+                                maxX = x;
+                            }
+
+                            // 更新最小和最大的y值
+                            if (y < minY) 
+                            {
+                                minY = y;
+                            }
+                            if (y > maxY) 
+                            {
+                                maxY = y;
+                            }
                         }
+                        let realmaxX = (maxX * data.scale) + data.canvasBeginPos.x + data.scale;
+                        let realminX = (minX * data.scale) + data.canvasBeginPos.x;
+                        let realmaxY = (maxY * data.scale) + data.canvasBeginPos.y + data.scale;
+                        let realminY = (minY * data.scale) + data.canvasBeginPos.y;
+                        let centerX = (realmaxX - realminX) / 2 + realminX;
+                        let centerY = (realmaxY - realminY) / 2 + realminY;
+                        // let canvasCenterX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                        // let canvasCenterY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
+                        data.ctx2.globalAlpha = 0.8;
+                        data.ctx2.lineWidth = 3;
+                        data.ctx2.strokeStyle = '#ffaf02ff';
+                        data.ctx2.setLineDash([5, 3]);
+                        let thresholdX = Math.abs(centerX - data.canvasBeginPos.centerX);
+                        let thresholdY = Math.abs(centerY - data.canvasBeginPos.centerY);
+                        if (thresholdX >= 0 && thresholdX <= data.scale / 2)
+                        {
+                            data.ctx2.beginPath();
+                            data.ctx2.moveTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y);
+                            data.ctx2.lineTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y + data.canvasHeight * data.scale);
+                            data.ctx2.stroke();
+                        }
+                        
+                        if (thresholdY >= 0 && thresholdY <= data.scale / 2)
+                        {
+                            data.ctx2.beginPath();
+                            data.ctx2.moveTo(data.canvasBeginPos.x, data.canvasBeginPos.centerY);
+                            data.ctx2.lineTo(data.canvasBeginPos.x + data.canvasWidth * data.scale, data.canvasBeginPos.centerY);
+                            data.ctx2.stroke();
+                        }
+
+                        if (thresholdX > data.scale / 2  || thresholdY > data.scale / 2)
+                        {
+                            methods.drawPixelArea();
+                            if (thresholdX >= 0 && thresholdX <= data.scale / 2)
+                            {
+                                data.ctx2.globalAlpha = 0.8;
+                                data.ctx2.beginPath();
+                                data.ctx2.moveTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y);
+                                data.ctx2.lineTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y + data.canvasHeight * data.scale);
+                                data.ctx2.stroke();
+                            }
+                            if (thresholdY >= 0 && thresholdY <= data.scale / 2)
+                            {
+                                data.ctx2.globalAlpha = 0.8;
+                                data.ctx2.beginPath();
+                                data.ctx2.moveTo(data.canvasBeginPos.x, data.canvasBeginPos.centerY);
+                                data.ctx2.lineTo(data.canvasBeginPos.x + data.canvasWidth * data.scale, data.canvasBeginPos.centerY);
+                                data.ctx2.stroke();
+                            }
+                        }
+                        
                     }
                     if (data.isSelecting)
                     {
@@ -1379,9 +1480,12 @@ export default defineComponent({
                     let originY = data.drawAreaList[0][1];
                     let beginX = originX + difX;
                     let beginY = originY + difY;
+                    let centerX = beginX + data.scale * data.canvasWidth / 2;
+                    
+                    let centerY = beginY + data.scale * data.canvasHeight / 2;
                     
                     methods.drawPixelArea(beginX, beginY);
-                    methods.reDraw(false, false, { x:beginX, y:beginY });
+                    methods.reDraw(false, false, { x:beginX, y:beginY, centerX, centerY });
                     // methods.reDrawSelectData({ x:beginX, y:beginY });
                 }
                 
@@ -1731,6 +1835,8 @@ export default defineComponent({
             reDraw (isRenderFrameImg = true, isAddHistory = true, beginPos = data.canvasBeginPos, isSelfRender = true)
             {
                 // 重新绘制内容
+                console.log(data.drawRecord);
+                
                 let count = 0;
                 data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 if (data.drawRecord.length - 1 < data.currentFrameIndex) data.currentFrameIndex = data.drawRecord.length - 1;
@@ -2789,6 +2895,8 @@ export default defineComponent({
                 data.bgCanvas.height = pixelBox?.clientHeight;
                 data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
                 data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 methods.drawPixelArea();
                 methods.reDraw(false, false);
             },
@@ -2855,18 +2963,32 @@ export default defineComponent({
                     dom1.children[0].style.transform = 'rotate(180deg)';
                 }
             },
+            handleInitData ()
+            {
+                data.historyRecord = [];
+                data.currentFrameIndex = 0;
+                data.currentLayerIndex = 0;
+                data.currentFrameId = 0;
+                data.currentLayerId = 0;
+                data.shapeFillColor = '#000000ff';
+                data.brushColor = '#000000ff';
+                data.isCheckedRatio = true;
+                data.isShowReferenceLine = false;
+                data.widthHeightRatio = 1;
+                data.currentTool = 0;
+            },
             handleReadProjectData ()
             {
                 // 效验id是否为项目id
                 let projectId = proxy.$route.params.projectId;
-                let projectData = editSpaceStore.getProjectById(projectId);
+                let projectData = JSON.parse(JSON.stringify(editSpaceStore.getProjectById(projectId)));
                 
                 if (projectData)
                 {
                     // 读取indexdb下的数据
-                    if (data.projectData.projectId !== projectData.projectId)
+                    if (editSpaceStore.currentProjectId !== projectData.projectId)
                     {
-                        data.historyRecord = [];
+                        methods.handleInitData();
                         data.loading = true;
                         data.projectData.projectId = projectData.projectId;
                         data.projectData.projectName = projectData.projectName;
@@ -2894,10 +3016,16 @@ export default defineComponent({
                         methods.computeScale();
                         data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
                         data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                        data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                        data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
+                        console.log(data.canvasBeginPos, data.scale);
+                        
                         methods.drawPixelArea();
                         methods.startDrawing();
                         methods.addKeyBoardEvent();
                         methods.handleResizeWindow();
+                        console.log(data.projectData.data);
+                        
                         if (data.projectData.data)
                         {
                             data.worker.postMessage({
@@ -2907,14 +3035,14 @@ export default defineComponent({
                             data.worker.onmessage = (event) => 
                             {
                                 data.drawRecord = event.data;
-                                editSpaceStore.saveProjectId(projectId);
+                                editSpaceStore.saveProjectId(data.projectData.projectId);
                                 methods.reDraw();
                                 data.loading = false;
                             };
                         }
                         else
                         {
-                            editSpaceStore.saveProjectId(projectId);
+                            editSpaceStore.saveProjectId(data.projectData.projectId);
                             data.drawRecord = [];
                             methods.initCanvasRecord('init');
                             data.loading = false;
@@ -2943,37 +3071,9 @@ export default defineComponent({
         
         onMounted(() => 
         {
-            // window.onbeforeunload = function (e)
-            // {
-            //     e.returnValue = '1111';
-            // };
-            // 从本地读取项目
             data.worker = new Worker();
-            // methods.handleReadProjectData();
-            // initTheme();
-            // methods.changeLanguage();
-            // methods.getMyColorList();
-            // const pixelBox = document.querySelector('.pixelBox');
-            // data.canvas = document.getElementById('Canvas');
-            // data.bgCanvas = document.getElementById('PixelCanvas');
-            // data.realCanvas = document.getElementById('RealCanvas');
-            // data.canvas.width = pixelBox?.clientWidth;
-            // data.canvas.height = pixelBox?.clientHeight;
-            // data.bgCanvas.width = pixelBox?.clientWidth;
-            // data.bgCanvas.height = pixelBox?.clientHeight;
-            // data.ctx1 = data.canvas.getContext('2d');
-            // data.ctx2 = data.bgCanvas.getContext('2d');
-            // data.ctx3 = data.realCanvas.getContext('2d');
-            // methods.computeScale();
-            // data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-            // data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
-            // methods.drawPixelArea();
-            // methods.initCanvasRecord('init');
-            // methods.startDrawing();
-            // // methods.getNoticeData();
-            // // methods.getColorModules();
-            // methods.addKeyBoardEvent();
-            // methods.handleResizeWindow();
+            console.log(data.worker);
+            
         });
 
         onActivated(() =>
