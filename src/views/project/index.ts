@@ -185,6 +185,8 @@ export default defineComponent({
         onMounted(() => 
         {
             // methods.getProjectData();
+            console.log('项目列表', editSpaceStore.projectList);
+            
         });
 
         // onActivated(() => 

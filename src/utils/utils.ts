@@ -87,6 +87,15 @@ export function isHexColor (color)
     return hexWithAlphaRegex.test(color) || hexWithoutAlphaRegex.test(color);
 }
 
+export function isRgbaColor (color) 
+{
+    if (color.includes('rgb'))
+    {
+        return true;
+    }
+    return false;
+}
+
 export function formatTime (value:any = new Date()) 
 {
     // 通过时间戳转字符串或者获取时间字符串

@@ -1,7 +1,7 @@
 <template>
     <div 
     class="full-layout scrollbar routerview flex-center">
-        <div class="full-layout" :loading="isloading">
+        <div class="full-layout" v-loading="isloading" element-loading-background="#00000000">
             <div class="flex-start" style="padding:20px 20px 10px;">
                 <div class="input-search">
                     <el-icon><Search /></el-icon>
@@ -23,7 +23,7 @@
                 <button class="pixelButton" style="margin-left:20px" @click="handleReset">重 置</button>
             </div>
             <div class="full-layout scrollbar flex-start flex-warp"
-            v-if="searchData.length" 
+            v-if="searchData.length && !isloading" 
             style="height: calc(100% - 90px);
                 align-content: flex-start;
                 align-items:flex-start;
@@ -34,7 +34,7 @@
                         <img :src="getFrameImg(item.data.frameImg)"/>
                         <!-- <img :src="require('@/assets/hot.png')" class="top" v-if="item.data.isTop"/> -->
                         <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
-                        <el-tag type="error" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
+                        <el-tag type="danger" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
                     </div>
                     <div class="info">
                         <div class="flex-between" style="padding-bottom: 5px;">
@@ -65,7 +65,7 @@
                     
                 </div>
             </div>
-            <div v-else class="full-layout flex-center">
+            <div v-else-if="!isloading && !searchData.length" class="full-layout flex-center">
                 <el-empty
                 :image="require('@/assets/empty.png')"
                 description="空空如也"

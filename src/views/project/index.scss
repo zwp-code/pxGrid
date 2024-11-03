@@ -21,6 +21,10 @@
             object-fit: contain;
         }
 
+        .emptyImg {
+            object-fit: cover;
+        }
+
         .size {
             position: absolute;
             bottom: 5px;
@@ -47,7 +51,7 @@
 
 
         .twoline {
-            margin-top: 10px;
+            margin-top: 8px;
         }
     }
 }

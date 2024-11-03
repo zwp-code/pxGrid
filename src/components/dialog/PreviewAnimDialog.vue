@@ -56,7 +56,10 @@ export default defineComponent({
             {
                 data.dialogVisible = false;
                 cancelAnimationFrame(data.frameId);
-                data.spirit.animate = false;
+                if (data.spirit)
+                {
+                    data.spirit.animate = false;
+                }
             },
             handleOpen (value)
             {

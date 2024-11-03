@@ -1,6 +1,7 @@
 import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch, onDeactivated, onActivated, onBeforeUnmount } from 'vue';
 import MyColorDialog from '@/components/dialog/MyColorDialog.vue';
 import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
+import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import { copyText, downloadImage, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
@@ -16,7 +17,8 @@ export default defineComponent({
     components: {
         MyColorDialog,
         ExportDialog,
-        PreviewAnimDialog
+        PreviewAnimDialog,
+        ReplaceColorDialog
     },
     props:{},
     emits:[],
@@ -376,22 +378,6 @@ export default defineComponent({
                     // methods.handleFrameImg(data.ctx1);
                     return;
                 }
-                // else if (index === 7)
-                // {
-                //     data.worker.postMessage({
-                //         type:5,
-                //         canvasBeginPos:JSON.parse(JSON.stringify(data.canvasBeginPos)),
-                //         scale:data.scale,
-                //         variables:JSON.parse(JSON.stringify(data.moveData.list))
-                //     });
-                //     data.worker.onmessage = (e) => 
-                //     {
-                //         data.moveData.centerX = e.data.centerX;
-                //         data.moveData.centerY = e.data.centerY;
-                //         console.log(data.moveData.centerX, data.moveData.centerY);
-                        
-                //     };
-                // }
                 data.currentTool = index;
             },
             handleChangeCanvasSize (e, key)
@@ -401,7 +387,10 @@ export default defineComponent({
                     data[key] = e < 6 ? 6 : e > 70 ? 70 : data[key];
                     proxy.$message.warning('画布不能小于6或大于70像素');
                 }
-                data[key] = Number(e);
+                else
+                {
+                    data[key] = Number(e);
+                }
                 if (data.isCheckedRatio)
                 {
                     // 如果选择了保持横纵比
@@ -841,6 +830,10 @@ export default defineComponent({
                                 if (currentFrame[i].layerData[index][2] !== data.emptyColor) 
                                 {
                                     data.brushColor = currentFrame[i].layerData[index][2];
+                                    if (proxy.$refs.ReplaceColorDialog.dialogVisible)
+                                    {
+                                        proxy.$refs.ReplaceColorDialog.handleUpdate(data.brushColor);
+                                    }
                                     break;
                                 }
                                 else
@@ -1443,15 +1436,19 @@ export default defineComponent({
                 //     data.ctx1.fillStyle = data.selectData.selectList[i][2];
                 //     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                 // }
-                data.selectData.selectList = [];
-                data.selectData.copyList = [];
-                data.isMoving = false;
-                data.isSelecting = false;
-                methods.reDraw(true, false);
+                if (data.selectData.selectList.length)
+                {
+                    data.selectData.selectList = [];
+                    data.selectData.copyList = [];
+                    data.isMoving = false;
+                    data.isSelecting = false;
+                    methods.reDraw(true, false);
+                }
             },
 
             handleRemoveSelect ()
             {
+                if (!data.selectData.selectList.length) return;
                 for (let i = 0; i < data.selectData.selectList.length; i++)
                 {
                     if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
@@ -2378,29 +2375,40 @@ export default defineComponent({
                 data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
                 console.log(imageData);
                 
-                let layerArr = [] as any;
+                // let layerArr = [] as any;
                 for (let i = imageData.length - 1; i >= 0; i--)
                 {
                     if (imageData[i].isRender)
                     {
-                        for (let j = 0; j < imageData[i].layerData.length; j++)
+                        // for (let j = 0; j < imageData[i].layerData.length; j++)
+                        // {
+                        //     layerArr.push(imageData[i].layerData[j]);
+                        // }
+                        for (let y = 0; y < data.canvasHeight; y++) 
                         {
-                            layerArr.push(imageData[i].layerData[j]);
+                            for (let x = 0; x < data.canvasWidth; x++) 
+                            {
+                                let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
+                                
+                                // 在新的 canvas 上绘制缩小后的像素
+                                data.ctx3.fillStyle = color;
+                                data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                            }
                         }
                     }
                 }
                 
-                for (let y = 0; y < data.canvasHeight; y++) 
-                {
-                    for (let x = 0; x < data.canvasWidth; x++) 
-                    {
-                        let color = layerArr[x + (y * data.canvasWidth)][2];
+                // for (let y = 0; y < data.canvasHeight; y++) 
+                // {
+                //     for (let x = 0; x < data.canvasWidth; x++) 
+                //     {
+                //         let color = layerArr[x + (y * data.canvasWidth)][2];
                         
-                        // 在新的 canvas 上绘制缩小后的像素
-                        data.ctx3.fillStyle = color;
-                        data.ctx3.fillRect(x * scale, y * scale, scale, scale);
-                    }
-                }
+                //         // 在新的 canvas 上绘制缩小后的像素
+                //         data.ctx3.fillStyle = color;
+                //         data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                //     }
+                // }
                 if (isDownload) downloadImage(data.realCanvas, `frame${index + 1}`);
             },
             compressDrawRecordData ()
@@ -2651,6 +2659,10 @@ export default defineComponent({
             {
                 proxy.$refs.MyColorDialog.handleOpen();
             },
+            handleOpenReplaceColorDialog ()
+            {
+                proxy.$refs.ReplaceColorDialog.handleOpen();
+            },
             handleOpenPreviewDialog ()
             {
                 data.previewLoading = true;
@@ -2671,7 +2683,7 @@ export default defineComponent({
                 {
                     event.preventDefault();
                     data.isSpace = true;
-                    data.canvas.style.cursor = 'grabbing';
+                    // data.canvas.style.cursor = 'grabbing';
                     return;
                 }
                 if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
@@ -2724,8 +2736,13 @@ export default defineComponent({
                 {
                     methods.handleSaveColor(true);
                 }
-                else if (event.ctrlKey && event.key === 'c')
+                else if (event.altKey && event.key === 't')
                 {
+                    methods.handleOpenReplaceColorDialog();
+                }
+                else if (event.ctrlKey && event.altKey && event.key === 'c')
+                {
+                    event.preventDefault(); 
                     methods.handleCopyColor();
                 }
                 else if (event.altKey && event.key === 'r') 
@@ -2776,23 +2793,23 @@ export default defineComponent({
                     event.preventDefault();
                     methods.handleChangeTool(8);
                 }
-                else if (event.ctrlKey && event.key === 'h')
+                else if (event.ctrlKey && event.key === 'ArrowUp')
                 {
                     // 水平翻转
                     event.preventDefault();
                     methods.drawTransform('hReverse');
                 }
-                else if (event.ctrlKey && event.key === 'v')
+                else if (event.ctrlKey && event.key === 'ArrowDown')
                 {
                     event.preventDefault();
                     methods.drawTransform('vReverse');
                 }
-                else if (event.ctrlKey && event.key === 'a')
+                else if (event.ctrlKey && event.key === 'ArrowLeft')
                 {
                     event.preventDefault();
                     methods.drawTransform('nsz');
                 }
-                else if (event.ctrlKey && event.key === 'd')
+                else if (event.ctrlKey && event.key === 'ArrowRight')
                 {
                     event.preventDefault();
                     methods.drawTransform('ssz');
@@ -2897,6 +2914,7 @@ export default defineComponent({
                 data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
                 data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
                 data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
+                // methods.computeScale();
                 methods.drawPixelArea();
                 methods.reDraw(false, false);
             },
@@ -2962,6 +2980,63 @@ export default defineComponent({
                     dom.style.transform = 'translateX(100%)';
                     dom1.children[0].style.transform = 'rotate(180deg)';
                 }
+            },
+            handleTransformColorAsHex (color)
+            {
+                return isHexColor(color) ? rgbaToHex(hexToRgba(color)) : rgbaToHex(extractRgbaValues(color));
+            },
+            handleConfirmReplaceColor (value, callback)
+            {
+                let replaceColor = methods.handleTransformColorAsHex(value.replaceColor);
+                let newColor = methods.handleTransformColorAsHex(value.newColor);
+                if (value.type === 1)
+                {
+                    console.log('更新当前图层颜色');
+                    let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    for (let i = 0; i < currentLayerData.length; i += 2)
+                    {
+
+                        if (i + 1 < currentLayerData.length)
+                        {
+                            if (currentLayerData[i][2] === replaceColor)
+                            {
+                                currentLayerData[i][2] = newColor;
+                            }
+
+                            if (currentLayerData[i + 1][2] === replaceColor)
+                            {
+                                currentLayerData[i + 1][2] = newColor;
+                            }
+                        }
+                    }
+                    
+                }
+                else if (value.type === 2)
+                {
+                    console.log('更新所有图层颜色');
+                    let currentLayerData = data.drawRecord[data.currentFrameIndex].layer;
+                    for (let i = 0; i < currentLayerData.length; i++)
+                    {
+                        for (let j = 0; j < currentLayerData[i].layerData.length; j += 2)
+                        {
+                            if (j + 1 < currentLayerData[i].layerData.length)
+                            {
+                                if (currentLayerData[i].layerData[j][2] === replaceColor)
+                                {
+                                    currentLayerData[i].layerData[j][2] = newColor;
+                                }
+
+                                if (currentLayerData[i].layerData[j + 1][2] === replaceColor)
+                                {
+                                    currentLayerData[i].layerData[j + 1][2] = newColor;
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+                callback();
+                methods.reDraw();
             },
             handleInitData ()
             {
@@ -3099,6 +3174,9 @@ export default defineComponent({
                 document.removeEventListener('keydown', methods.handlekeyBoardEvent);
                 document.removeEventListener('keyup', methods.handleKeyUpEvent);
                 window.removeEventListener('resize', methods.handleResizeWindowEvent);
+                proxy.$refs.ReplaceColorDialog.handleClose();
+                proxy.$refs.MyColorDialog.handleClose();
+                proxy.$refs.PreviewAnimDialog.handleClose();
             }
         });
 

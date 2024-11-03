@@ -183,10 +183,10 @@
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
-                                        <el-dropdown-item @click="drawTransform('hReverse')">水平翻转 [Ctrl + h]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转 [Ctrl + v]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('ssz')" :disabled="canvasWidth!==canvasHeight">顺时针旋转90度 [Ctrl + d]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('nsz')" :disabled="canvasWidth!==canvasHeight">逆时针旋转90度 [Ctrl + a]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('hReverse')">水平翻转 [Ctrl + ↑]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('vReverse')">垂直翻转 [Ctrl + ↓]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('ssz')" :disabled="canvasWidth!==canvasHeight">顺时针旋转90度 [Ctrl + →]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('nsz')" :disabled="canvasWidth!==canvasHeight">逆时针旋转90度 [Ctrl + ←]</el-dropdown-item>
                                         <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                     </el-dropdown-menu>
                                 </template>
@@ -211,6 +211,14 @@
                                 </template>
                             </el-dropdown>
                             
+                        </el-tooltip>
+                        <el-tooltip
+                            content="替换颜色 [Alt + t]"
+                            placement="right"
+                        >
+                            <div class="pointer toolItem" @click="handleOpenReplaceColorDialog">
+                                <img :src="requireIcon('color')"/>
+                            </div>
                         </el-tooltip>
                         <el-tooltip
                             content="清空图层 [Alt + r]"
@@ -315,7 +323,7 @@
                                 <el-link type="info" :underline="false" @click="handleSaveColor(false)">保存</el-link>
                             </el-tooltip>
                             <el-tooltip
-                            content="复制颜色 [Ctrl + c]"
+                            content="复制颜色 [Ctrl + Alt + c]"
                             placement="top">
                                 <el-link type="info" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
                             </el-tooltip>
@@ -503,6 +511,7 @@
         ref="MyColorDialog"
         @select="(color) => brushColor = color">
         </MyColorDialog>
+        <ReplaceColorDialog ref="ReplaceColorDialog" @confirm="handleConfirmReplaceColor"></ReplaceColorDialog>
         <!-- <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog> -->
         <!-- <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog> -->
         <ExportDialog 
@@ -511,7 +520,8 @@
         :visible="exportVisible"
         :isExportProject="isExportProject"
         @export="handleExport"
-        @close="exportVisible=false"></ExportDialog>
+        @close="exportVisible=false">
+        </ExportDialog>
         <PreviewAnimDialog 
         ref="PreviewAnimDialog">
         </PreviewAnimDialog>

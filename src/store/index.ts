@@ -132,7 +132,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
         },
         sortProjectList (key, projectList)
         {
-            if (projectList.length <= 1) return;
+            // if (projectList.length <= 1) return projectList;
             for (let i = 0; i < projectList.length - 1; i++)
             {
                 for (let j = 0; j < projectList.length - 1 - i; j++)

@@ -1,6 +1,6 @@
 <template>
     <div class="full-layout flex-center scrollbar routerview">
-        <div class="full-layout" :loading="isloading">
+        <div class="full-layout" v-loading="isloading">
             <div class="flex-between flex-warp" style="padding:20px 30px 10px;row-gap: 10px;">
                 <h2>{{$t('message.mineProject')}}</h2>
                 <div class="flex-end">
@@ -17,7 +17,8 @@
             padding:0 10px">
                 <div v-for="item in editSpaceStore.projectList" :key="item.id" class="project-item">
                     <div class="frameImg">
-                        <img :src="getFrameImg(item.data.frameImg)"/>
+                        <img :src="item.data.frameImg" v-if="item.data.frameImg!==''"/>
+                        <img :src="require('@/assets/grid.png')" v-else class="emptyImg"/>
                         <img :src="require('@/assets/top.png')" class="top" v-if="item.data.isTop"/>
                         <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
                         <el-tag type="primary" effect="dark" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>

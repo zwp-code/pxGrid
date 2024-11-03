@@ -58,14 +58,15 @@ export default defineComponent({
                 //     proxy.$message.info('未找到搜索内容 QAQ');
                 // }
             },
-            handleDownload ({ projectId, projectName })
+            handleDownload ({ projectId, projectName, frameImg })
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}project/${projectId}.json`, {
-                    responseType: 'blob'
-                })
+                axios.get(`${import.meta.env.VITE_APP_API_URL}project/${projectId}.json`)
                     .then((res) => 
                     {
-                        downloadFile(res.data, 'application/json', projectName);
+                        let projectData = res.data;
+                        projectData.frameImg = frameImg;
+                        console.log(projectData);
+                        downloadFile(JSON.stringify(projectData), 'application/json', projectName);
                     })
                     .catch((err) => 
                     {
@@ -79,9 +80,8 @@ export default defineComponent({
                     .then((res) => 
                     {
                         console.log(res.data);
-                        
+                        data.isloading = false;
                         data.moduleList = sortList(res.data, 'createAt');
-                        // data.isloading = false;
                         methods.handleFilter(data.filterValue);
                     })
                     .catch((err) => 

@@ -13,7 +13,7 @@
                     <el-input v-model="itemInfo.projectName" clearable placeholder="请输入"/>
                 </el-form-item>
                 <el-form-item label="画布像素" required v-if="!editInfo">
-                    <div class="flex-start full-w">
+                    <div class="flex-between full-w">
                         <el-input
                         v-model="itemInfo.width"
                         type="number"
@@ -33,6 +33,9 @@
                         >
                             <template #prepend>高</template>
                         </el-input>
+                        <div style="margin-left: 10px;">
+                            <el-checkbox v-model="isCheckedRatio" label="保持横纵比" @change="handleChangeRatio" />
+                        </div>
                     </div>
                 </el-form-item>
                 <el-form-item label="项目描述" required prop="desc">
@@ -96,9 +99,18 @@ export default defineComponent({
                 tip:'新项目',
                 data:null
             } as any,
-            isloading:false
+            isloading:false,
+            isCheckedRatio:true,
+            widthHeightRatio:1
         });
         let methods = {
+            handleChangeRatio (e)
+            {
+                if (e)
+                {
+                    data.widthHeightRatio = data.itemInfo.width / data.itemInfo.height;
+                }
+            },
             handleClose ()
             {
                 data.dialogVisible = false;
@@ -111,19 +123,22 @@ export default defineComponent({
                     data.itemInfo[key] = e < 6 ? 6 : e > 70 ? 70 : data.itemInfo[key];
                     proxy.$message.warning('画布像素不能小于6或大于70像素');
                 }
-                // data[key] = Number(e);
-                // if (data.isCheckedRatio)
-                // {
-                //     // 如果选择了保持横纵比
-                //     if (key === 'canvasWidth')
-                //     {
-                //         data.canvasHeight = parseInt(data[key] / data.widthHeightRatio);
-                //     }
-                //     else
-                //     {
-                //         data.canvasWidth = parseInt(data[key] / data.widthHeightRatio);
-                //     }
-                // }
+                else
+                {
+                    data.itemInfo[key] = Number(e);
+                }
+                if (data.isCheckedRatio)
+                {
+                    // 如果选择了保持横纵比
+                    if (key === 'width')
+                    {
+                        data.itemInfo.height = parseInt(data.itemInfo[key] / data.widthHeightRatio);
+                    }
+                    else
+                    {
+                        data.itemInfo.width = parseInt(data.itemInfo[key] / data.widthHeightRatio);
+                    }
+                }
             },
             handleConfirm ()
             {

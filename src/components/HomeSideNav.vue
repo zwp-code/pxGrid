@@ -11,7 +11,7 @@
         :key="item.path" 
         :index="item.path"
         :class="{active:item.path === $route.path, active1:$route.path.includes('/work') && item.path === '/project'}"
-        style="justify-content:flex-start">
+        style="justify-content:center">
             <el-icon size="16" style="width: 16px;">
                 <component :is="item.icon" style="width: 16px;height: 16px;"></component>
             </el-icon>
@@ -110,6 +110,12 @@ export default defineComponent({
     border-right:0 !important;
     box-shadow: 1px 0px 4px 4px var(--el-shadow-aside);
     z-index: 10;
+
+    :deep(.el-menu-item .el-menu-tooltip__trigger) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 .active {
