@@ -12,6 +12,7 @@ import useDrag from '@/hooks/useDrag';
 import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
+import iconSvg from '@/assets/svg/icon.js';
 export default defineComponent({
     name:'work',
     components: {
@@ -70,7 +71,7 @@ export default defineComponent({
             drawShapeList:[] as any,
             gridInfo:'[]',
             myColorList:proxy.$config.colorList,
-            myColor:'#ffffff',
+            myColor:'#ffffffff',
             myColorGroup:1,
             isAddGroup:false,
             myGroupName:'',
@@ -164,6 +165,7 @@ export default defineComponent({
             {
                 return (value) => 
                 {
+                    // return iconSvg[value];
                     if (editSpaceStore.themeValue)
                     {
                         return new URL(`../../assets/light/${value}.png`, import.meta.url).href;
@@ -173,6 +175,7 @@ export default defineComponent({
             }),
             requireShapeImg: computed(() => 
             {
+                // return iconSvg[data.currentDrawShape];
                 if (editSpaceStore.themeValue)
                 {
                     return new URL(`../../assets/light/${data.currentDrawShape}.png`, import.meta.url).href;
@@ -181,6 +184,7 @@ export default defineComponent({
             }),
             requireTransformImg: computed(() => 
             {
+                // return iconSvg[data.currentDrawTransform];
                 if (editSpaceStore.themeValue)
                 {
                     return new URL(`../../assets/light/${data.currentDrawTransform}.png`, import.meta.url).href;
@@ -193,12 +197,14 @@ export default defineComponent({
                 {
                     if (value)
                     {
+                        // return iconSvg['eye'];
                         if (editSpaceStore.themeValue)
                         {
                             return new URL(`../../assets/light/visible.png`, import.meta.url).href;
                         }
                         return new URL(`../../assets/dark/visible.png`, import.meta.url).href;
                     }
+                    // return iconSvg['eyeClose'];
                     if (editSpaceStore.themeValue)
                     {
                         return new URL(`../../assets/light/hidden.png`, import.meta.url).href;
@@ -238,7 +244,8 @@ export default defineComponent({
                 data.projectData.width = data.canvasWidth;
                 data.projectData.tip = '最近编辑';
                 data.projectData.data = methods.compressDrawRecordData();
-                data.projectData.frameImg = data.drawRecord[0].currentFrameImg;
+                data.projectData.frameImg = '@';
+                // data.projectData.frameImg = methods.getCurrentFrameImg()
                 editSpaceStore.saveProject(data.projectData).then((res) => 
                 {
                     if (res) 
@@ -884,7 +891,7 @@ export default defineComponent({
                         // console.log(data.drawRecord);
                         // let replacementColor = isHexColor(data.brushColor) ? rgbaToHex(hexToRgba(data.brushColor)) : rgbaToHex(extractRgbaValues(data.brushColor));
                         // console.log(replacementColor);
-                        
+                        console.log(data.brushColor, replacementColor);
                         methods.fillChunk(col, row, rgbaToHex(targetColor), replacementColor);
 
                     }
@@ -969,7 +976,7 @@ export default defineComponent({
             fillChunk (x, y, targetColor, replacementColor)
             {
                 console.log(targetColor, replacementColor, data.drawRecord);
-                
+                if (targetColor === replacementColor) return;
                 const stack = [[x, y]];
                 const isSameColor = (col, row, color) =>
                 {
@@ -987,7 +994,7 @@ export default defineComponent({
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
-                        console.log(col, row, index);
+                        // console.log(col, row, index);
                         
                         if (currentLayerData[index][2] === color) flag = true;
                     }
@@ -1777,6 +1784,16 @@ export default defineComponent({
                 };
                 if (isAddHistory) methods.handleAddHistory();
             },
+
+            // handleRenderAllFrameImg (ctx)
+            // {
+            //     let beginX = data.drawAreaList[0][0];
+            //     let beginY = data.drawAreaList[0][1];
+            //     const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
+            //     const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+            //     data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
+            // },
+
             addDrawRecord (value, isUpdate = true)
             {
                 console.log(value);
@@ -2416,7 +2433,7 @@ export default defineComponent({
                 let compressValue = JSON.parse(JSON.stringify(data.drawRecord));
                 for (let i = 0; i < compressValue.length; i++)
                 {
-                    compressValue[i].currentFrameImg = '';
+                    // compressValue[i].currentFrameImg = '';
                     for (let j = 0; j < compressValue[i].layer.length; j++)
                     {
                         for (let k = 0; k < compressValue[i].layer[j].layerData.length; k++)
@@ -3038,6 +3055,11 @@ export default defineComponent({
                 callback();
                 methods.reDraw();
             },
+            handleResetCanvas ()
+            {
+                methods.computeScale();
+                methods.handleResizeWindowEvent('');
+            },
             handleInitData ()
             {
                 data.historyRecord = [];
@@ -3112,6 +3134,7 @@ export default defineComponent({
                                 data.drawRecord = event.data;
                                 editSpaceStore.saveProjectId(data.projectData.projectId);
                                 methods.reDraw();
+                                // methods.handleRenderAllFrameImg(data.ctx1);
                                 data.loading = false;
                             };
                         }

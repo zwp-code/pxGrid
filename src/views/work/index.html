@@ -21,6 +21,10 @@
                         <el-icon style="margin-right: 25px;" @click="handleRecover"><Right /></el-icon>
                     </el-tooltip>
 
+                    <el-tooltip content="重置 [Alt + v]" placement="bottom">
+                        <el-icon style="margin-right: 25px;" @click="handleResetCanvas"><Refresh /></el-icon>
+                    </el-tooltip>
+
                     <el-tooltip
                     :content="!previewLoading ? '预览动画' : '正在加载'"
                     placement="bottom">
@@ -35,7 +39,8 @@
                     </el-tooltip> -->
                     <el-dropdown placement="bottom" trigger="hover">
                         <!-- <el-icon style="margin-right: 25px;"><Files /></el-icon> -->
-                        <el-icon style="margin-right: 25px;"><FolderOpened /></el-icon>
+                        <el-icon style="margin-right: 25px;" size="16"><Folder /></el-icon>
+                        <!-- <i style="width:16px;height:16px; margin-right: 25px;" v-html="$iconSvg['save']"></i> -->
                         <template #dropdown>
                             <el-dropdown-menu>
                                 <el-dropdown-item @click="handleSaveProject">保存项目 [Ctrl + s]</el-dropdown-item>
@@ -92,9 +97,10 @@
                             content="画笔 [Alt + q]"
                             placement="right"
                         >
-                            <div class="pointer toolItem" style="margin-top: 0;" @click="handleChangeTool(0)"
+                            <div class="pointer toolItem flex-center" style="margin-top: 0;" @click="handleChangeTool(0)"
                             :class="{ 'active': currentTool === 0 }">
                                 <img :src="requireIcon('brush')"/>
+                                <!-- <span v-html="$iconSvg['brush']"></span> -->
                             </div>
                         </el-tooltip>
                         <el-tooltip
@@ -103,6 +109,7 @@
                         >
                             <div class="pointer toolItem" @click="handleChangeTool(1)" :class="{ 'active': currentTool === 1 }">
                                 <img :src="requireIcon('eraser')"/>
+                                <!-- <span v-html="$iconSvg['eraser']"></span> -->
                             </div>
                         </el-tooltip>
                         <el-tooltip
@@ -110,6 +117,7 @@
                             placement="right"
                         >
                             <div class="pointer toolItem" @click="handleChangeTool(2)" :class="{ 'active': currentTool === 2 }">
+                                <!-- <span v-html="$iconSvg['straw']"></span> -->
                                 <img :src="requireIcon('straw')"/>
                             </div>
                         </el-tooltip>

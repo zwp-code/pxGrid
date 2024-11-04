@@ -15,6 +15,7 @@
             <el-icon size="16" style="width: 16px;">
                 <component :is="item.icon" style="width: 16px;height: 16px;"></component>
             </el-icon>
+            <!-- <i v-html="$iconSvg[item.icon]" style="width:18px;height:18px" class="el-icon"></i> -->
             <template #title>
                 <p style="margin-left: 10px;">{{ $t(`message.${item.title}`)}}</p>
             </template>

@@ -6,7 +6,7 @@ const config =
             id:1,
             groupName:'常用颜色',
             list:[
-                '#000000', '#ffffff'
+                '#000000ff', '#ffffffff'
             ]
         }
     ]

@@ -30,7 +30,9 @@ export default {
         'cancelTop':'取消置顶',
         'top':'置 顶',
         'download':'下 载',
-        'import':'导 入'
+        'import':'导 入',
+        'newSucceeded':'新建成功',
+        'newFailed':'新建失败'
 
     }
 };

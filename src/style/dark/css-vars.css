@@ -37,6 +37,8 @@ html.dark {
     --el-menu-active-color:#ffffff;
     --el-menu-active-bg-color:#313131;
     --el-menu-hover-bg-color:#1f1b1b;
+
+    --icon-svg-fill:#ffffff;
 }
 
 html.light {
@@ -76,6 +78,8 @@ html.light {
     --el-menu-active-color:#2c3e50;
     --el-menu-active-bg-color:#efefef;
     --el-menu-hover-bg-color:#e1e1e1;
+
+    --icon-svg-fill:#000000;
 }
 
 html {
@@ -115,4 +119,6 @@ html {
     --el-menu-active-color:#2c3e50;
     --el-menu-active-bg-color:#efefef;
     --el-menu-hover-bg-color:#e1e1e1;
+
+    --icon-svg-fill:#000000;
 }

@@ -32,11 +32,11 @@ export default defineComponent({
             {
                 return (value) => 
                 {
-                    if (value && value !== '')
+                    if (value.frameImg[0] === '/')
                     {
-                        return value;
+                        return `${import.meta.env.VITE_APP_API_URL}moduleImg${value.frameImg}`;
                     }
-                    return require('@/assets/grid.png');
+                    return value.data[0].currentFrameImg !== '' ? value.data[0].currentFrameImg : value.frameImg;
                 };
             })
         };

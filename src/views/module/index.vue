@@ -2,7 +2,7 @@
     <div 
     class="full-layout scrollbar routerview flex-center">
         <div class="full-layout" v-loading="isloading" element-loading-background="#00000000">
-            <div class="flex-start" style="padding:20px 20px 10px;">
+            <div class="flex-start searchBox">
                 <div class="input-search">
                     <el-icon><Search /></el-icon>
                     <input type="text" v-model="searchValue" placeholder="请输入搜索词" @keyup.enter="search">
@@ -12,7 +12,10 @@
                 size="large"
                 @change="handleFilter"
                 class="select"
-                style="width: 150px;margin-left:20px">
+                collapse-tags
+                collapse-tags-tooltip
+                :max-collapse-tags="3"
+                multiple>
                     <el-option
                         v-for="item in filterOptions"
                         :key="item.value"
@@ -20,7 +23,7 @@
                         :value="item.value"
                     />
                 </el-select>
-                <button class="pixelButton" style="margin-left:20px" @click="handleReset">重 置</button>
+                <button class="pixelButton" @click="handleReset">重 置</button>
             </div>
             <div class="full-layout scrollbar flex-start flex-warp"
             v-if="searchData.length && !isloading" 
@@ -32,7 +35,7 @@
                 <div v-for="item in searchData" :key="item.id" class="download-item">
                     <div class="frameImg">
                         <img :src="getFrameImg(item.data.frameImg)"/>
-                        <!-- <img :src="require('@/assets/hot.png')" class="top" v-if="item.data.isTop"/> -->
+                        <img :src="require('@/assets/hot.png')" class="top" v-if="item.data.isTop"/>
                         <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
                         <el-tag type="danger" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
                     </div>
@@ -53,7 +56,7 @@
                                 </template>
                             </el-dropdown>
                         </div>
-                        <el-divider border-style="dashed" content-position="left" style="margin:5px 0;">{{ item.data.updateAt }}</el-divider>
+                        <el-divider border-style="dashed" content-position="left" style="margin:5px 0;">{{ item.data.createAt }}</el-divider>
                         <el-tooltip :content="item.data.desc" effect="light">
                             <div class="twoline" style="font-size: 14px;display: -webkit-inline-box;">
                                 <!-- {{ item.desc !== '' ? $t(`message.${item.desc}`) : $t(`message.None`) }} -->

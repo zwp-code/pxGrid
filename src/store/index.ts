@@ -33,8 +33,10 @@ export const useEditSpaceStore = defineStore('editSpace', {
                     // 更新数据
                     db.updateDB({ id:data.projectId, data }).then((res) => 
                     {
-                        this.projectList[index].data = data;
-                        this.projectList = this.sortProjectList(this.sort, this.projectList);
+                        // this.projectList[index].data = data;
+                        let projectList = JSON.parse(JSON.stringify(this.projectList));
+                        projectList[index].data = data;
+                        this.projectList = this.sortProjectList(this.sort, projectList);
                         resolve(res);
                         // this.updateProjectTip();
                     }).catch((err) => 
@@ -47,8 +49,10 @@ export const useEditSpaceStore = defineStore('editSpace', {
                 {
                     db.saveDB(data.projectId, data).then((res) => 
                     {
-                        this.projectList.push({ id:data.projectId, data });
-                        this.projectList = this.sortProjectList(this.sort, this.projectList);
+                        // this.projectList.push({ id:data.projectId, data });
+                        let projectList = JSON.parse(JSON.stringify(this.projectList));
+                        projectList.push({ id:data.projectId, data });
+                        this.projectList = this.sortProjectList(this.sort, projectList);
                         resolve(res);
                         // this.updateProjectTip();
                     }).catch((err) => 

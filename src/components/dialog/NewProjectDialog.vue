@@ -176,7 +176,7 @@ export default defineComponent({
                         {
                             if (res) 
                             {
-                                proxy.$message.success(proxy.$t('message.saveSucceeded'));
+                                proxy.$message.success(proxy.$t('message.newSucceeded'));
                                 data.isloading = false;
                                 methods.handleClose();
                                 proxy.$router.push({
@@ -190,7 +190,7 @@ export default defineComponent({
                         }).catch((err) => 
                         {
                             console.log(err);
-                            proxy.$message.error(proxy.$t('message.saveFailed'));
+                            proxy.$message.error(proxy.$t('message.newFailed'));
                             data.isloading = false;
                         });
                         

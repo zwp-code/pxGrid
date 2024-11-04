@@ -219,28 +219,28 @@ export function formatTimeStamp (time?:any):number
 
 export function sortList (list, key)
 {
-    console.log(list.length);
-    
-    if (list.length <= 1) return list;
-    for (let j = 0; j < list.length; j++)
+    for (let i = 0; i < list.length - 1; i++)
     {
-        if (j + 1 >= list.length) break;
-        if (list[j].data['isTop'] === list[j + 1].data['isTop'])
+        for (let j = 0; j < list.length - 1 - i; j++)
         {
-            if (formatTimeStamp(list[j].data[key]) < formatTimeStamp(list[j + 1].data[key]))
+            if (list[j].data['isTop'] === list[j + 1].data['isTop'])
+            {
+                if (formatTimeStamp(list[j].data[key]) < formatTimeStamp(list[j + 1].data[key]))
+                {
+                    let temp = list[j];
+                    list[j] = list[j + 1];
+                    list[j + 1] = temp;
+                }
+            }
+            else if (list[j].data['isTop'] < list[j + 1].data['isTop'])
             {
                 let temp = list[j];
                 list[j] = list[j + 1];
                 list[j + 1] = temp;
             }
         }
-        else if (list[j].data['isTop'] < list[j + 1].data['isTop'])
-        {
-            let temp = list[j];
-            list[j] = list[j + 1];
-            list[j + 1] = temp;
-        }
     }
+    
     console.log(list);
     
     return list;

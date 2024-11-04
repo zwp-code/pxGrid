@@ -17,7 +17,7 @@
             padding:0 10px">
                 <div v-for="item in editSpaceStore.projectList" :key="item.id" class="project-item">
                     <div class="frameImg">
-                        <img :src="item.data.frameImg" v-if="item.data.frameImg!==''"/>
+                        <img :src="getFrameImg(item.data)" v-if="item.data.frameImg!==''"/>
                         <img :src="require('@/assets/grid.png')" v-else class="emptyImg"/>
                         <img :src="require('@/assets/top.png')" class="top" v-if="item.data.isTop"/>
                         <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>

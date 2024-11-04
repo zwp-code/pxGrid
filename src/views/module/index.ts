@@ -20,12 +20,14 @@ export default defineComponent({
             isloading:true,
             searchValue:'',
             searchData:[] as any,
-            filterValue:0,
+            filterValue:[0],
             filterOptions:[
                 { value:0, label:'全部' },
                 { value:1, label:'低分辨率' },
                 { value:2, label:'中分辨率' },
-                { value:3, label:'高分辨率' }
+                { value:3, label:'高分辨率' },
+                { value:4, label:'动态' },
+                { value:5, label:'静态' }
             ]
         });
 
@@ -36,7 +38,7 @@ export default defineComponent({
                 {
                     if (value && value !== '')
                     {
-                        return value;
+                        return `${import.meta.env.VITE_APP_API_URL}moduleImg${value}`;
                     }
                     return require('@/assets/grid.png');
                 };
@@ -52,6 +54,7 @@ export default defineComponent({
                 // {
                 //     return reg.test(item.data.projectName) || reg.test(item.data.desc);
                 // });
+                data.isloading = true;
                 methods.handleFilter(data.filterValue);
                 // if (data.searchData.length === 0)
                 // {
@@ -102,37 +105,80 @@ export default defineComponent({
                     }
                     return item.data.width * item.data.height <= max && item.data.width * item.data.height > min;
                 });
-                if (!d.length) 
+                // if (!d.length) 
+                // {
+                //     // d = arr;
+                //     // proxy.$message.info('未找到相关内容 QAQ');
+                // }
+                return d;
+            },
+            filterData2 (arr, value)
+            {
+                let reg = new RegExp(data.searchValue, 'i');
+                let d = arr.filter((item:any) => 
                 {
-                    // d = arr;
-                    proxy.$message.info('未找到相关内容 QAQ');
-                }
+                    if (data.searchValue !== '')
+                    {
+                        return (reg.test(item.data.projectName) || reg.test(item.data.desc)) && (item.data.tip === value);
+                    }
+                    return item.data.tip === value;
+                });
                 return d;
             },
             handleFilter (e)
             {
-                if (data.filterValue === 0)
+                data.isloading = true;
+                if (data.filterValue.length <= 0)
                 {
-                    data.searchData = methods.filterData(data.moduleList, 70 * 70, 6 * 6);
+                    data.filterValue = [0];
                 }
-                else if (data.filterValue === 1)
+                if (data.filterValue.length > 1)
                 {
-                    data.searchData =  methods.filterData(data.moduleList, 20 * 20, 6 * 6);
+                    if (data.filterValue[data.filterValue.length - 1] === 0)
+                    {
+                        data.filterValue = [0];
+                    }
+                    else
+                    {
+                        let index = data.filterValue.findIndex((v) => v === 0);
+                        if (index >= 0)
+                        {
+                            data.filterValue.splice(index, 1);
+                        }
+                    }
                 }
-                else if (data.filterValue === 2)
+                data.searchData = [];
+                if (data.filterValue.includes(0))
                 {
-                    data.searchData =  methods.filterData(data.moduleList, 40 * 40, 20 * 20);
+                    data.searchData = [...data.searchData, ...methods.filterData(data.moduleList, 70 * 70, 6 * 6)];
                 }
-                else if (data.filterValue === 3)
+                if (data.filterValue.includes(1))
                 {
-                    data.searchData = methods.filterData(data.moduleList, 70 * 70, 40 * 40);
+                    data.searchData =  [...data.searchData, ...methods.filterData(data.moduleList, 20 * 20, 6 * 6)];
                 }
+                if (data.filterValue.includes(2))
+                {
+                    data.searchData =  [...data.searchData, ...methods.filterData(data.moduleList, 40 * 40, 20 * 20)];
+                }
+                if (data.filterValue.includes(3))
+                {
+                    data.searchData = [...data.searchData, ...methods.filterData(data.moduleList, 70 * 70, 40 * 40)];
+                }
+                if (data.filterValue.includes(4))
+                {
+                    data.searchData = [...data.searchData, ...methods.filterData2(data.moduleList, '动画')];
+                }
+                if (data.filterValue.includes(5))
+                {
+                    data.searchData = [...data.searchData, ...methods.filterData2(data.moduleList, '静态')];
+                }
+                data.isloading = false;
 
             },
             handleReset ()
             {
                 data.searchValue = '';
-                data.filterValue = 0;
+                data.filterValue = [0];
                 methods.handleFilter(data.filterValue);
             },
             handleImport (projectData)
