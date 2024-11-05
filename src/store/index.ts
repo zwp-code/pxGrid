@@ -18,6 +18,15 @@ export const useEditSpaceStore = defineStore('editSpace', {
             sort:'updateAt'
         };
     },
+    getters: {
+        getProjectListData:(state) =>
+        {
+            return () => 
+            {
+                return state.projectList;
+            };
+        }
+    },
     actions: {
         setMyColorList (value)
         {
@@ -34,10 +43,13 @@ export const useEditSpaceStore = defineStore('editSpace', {
                     db.updateDB({ id:data.projectId, data }).then((res) => 
                     {
                         // this.projectList[index].data = data;
+                        let i = this.projectList.findIndex((v) => v.id === data.projectId);
                         let projectList = JSON.parse(JSON.stringify(this.projectList));
-                        projectList[index].data = data;
+                        projectList[i].data = data;
                         this.projectList = this.sortProjectList(this.sort, projectList);
                         resolve(res);
+                        console.log('更新数据了');
+                        
                         // this.updateProjectTip();
                     }).catch((err) => 
                     {
@@ -54,6 +66,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
                         projectList.push({ id:data.projectId, data });
                         this.projectList = this.sortProjectList(this.sort, projectList);
                         resolve(res);
+                        console.log('新增数据了');
                         // this.updateProjectTip();
                     }).catch((err) => 
                     {
@@ -64,6 +77,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
            
             // cache.project.set(JSON.stringify(this.projectList));
         },
+        
         getProjectById (projectId)
         {
             let value = this.projectList.find((v) => v.id === projectId);
@@ -82,7 +96,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
                 {
                     // this.projectList = res;
                     this.projectList = this.updateProjectTip(res);
-                    // console.log(JSON.parse(JSON.stringify(this.projectList)));
+                    console.log('获取数据了');
                     // this.sortProjectList(this.sort);
                 }
             }).catch((err) => 

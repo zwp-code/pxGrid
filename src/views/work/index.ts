@@ -1785,15 +1785,6 @@ export default defineComponent({
                 if (isAddHistory) methods.handleAddHistory();
             },
 
-            // handleRenderAllFrameImg (ctx)
-            // {
-            //     let beginX = data.drawAreaList[0][0];
-            //     let beginY = data.drawAreaList[0][1];
-            //     const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
-            //     const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
-            //     data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
-            // },
-
             addDrawRecord (value, isUpdate = true)
             {
                 console.log(value);
@@ -3073,6 +3064,19 @@ export default defineComponent({
                 data.isShowReferenceLine = false;
                 data.widthHeightRatio = 1;
                 data.currentTool = 0;
+                data.projectData = {
+                    projectName:'',
+                    projectId:'',
+                    updateAt:'',
+                    createAt:'',
+                    desc:'',
+                    width:'',
+                    height:'',
+                    frameImg:'',
+                    data:null,
+                    isTop:0,
+                    tip:''
+                };
             },
             handleReadProjectData ()
             {
