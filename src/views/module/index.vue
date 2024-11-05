@@ -24,14 +24,25 @@
                     />
                 </el-select>
                 <button class="pixelButton" @click="handleReset">重 置</button>
+                <div style="margin-left:5px">
+                    <el-pagination
+                    v-model:current-page="currentPage"
+                    :page-size="15"
+                    background
+                    layout="total, prev, pager, next"
+                    :hide-on-single-page="true"
+                    :total="total"
+                    @current-change="handleCurrentChange"
+                    />
+                </div>
             </div>
             <div class="full-layout scrollbar flex-start flex-warp"
             v-if="searchData.length && !isloading" 
             style="height: calc(100% - 90px);
-                align-content: flex-start;
-                align-items:flex-start;
-                overflow: auto;
-                padding:0 10px">
+            align-content: flex-start;
+            align-items:flex-start;
+            overflow: auto;
+            padding:0 10px">
                 <div v-for="item in searchData" :key="item.id" class="download-item">
                     <div class="frameImg">
                         <img :src="getFrameImg(item.data.frameImg)"/>
@@ -64,9 +75,8 @@
                             </div>
                         </el-tooltip>
                     </div>
-                    
-                    
                 </div>
+                
             </div>
             <div v-else-if="!isloading && !searchData.length" class="full-layout flex-center">
                 <el-empty

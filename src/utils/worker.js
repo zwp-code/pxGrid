@@ -1,5 +1,5 @@
-import { rgbaToHex, unique2DArray } from '@/utils/utils';
-
+import { rgbaToHex, colorDistance, hexToRgba } from '@/utils/utils';
+import pindouMap from '@/config/pindou';
 addEventListener('message', (e) => 
 {
     const { data } = e;
@@ -137,6 +137,65 @@ addEventListener('message', (e) =>
         pos.centerX = (maxX - minX) / 2 + minX;
         pos.centerY = (maxY - minY) / 2 + minY;
         return postMessage(pos);
+    }
+    else if (data.type === 6)
+    {
+        // 处理拼豆的转换
+        let variables = data.variables;
+        let currentPindouColorList = pindouMap.get(data.currentPindouBrand);
+        let similarColorCache = new Map();
+        let colorStatList = new Map();
+        const findSimilarColor = (r, g, b, a) => 
+        {
+            let hex = rgbaToHex([r, g, b, a]);
+            if (similarColorCache.has(hex)) 
+            {
+                return similarColorCache.get(hex);
+            }
+            let minDistance = 584970;// 最小色差值（初始值为纯黑和纯白的色差，使用colorDistance(0,0,0,255,255,255)计算而得）
+            let minColor = null;// 最小值对应的颜色组
+            for (let object of currentPindouColorList) 
+            {
+                let rgba = hexToRgba(object.color);
+                let distance = colorDistance(rgba[0], rgba[1], rgba[2], r, g, b);
+                if (distance === 0) 
+                { // 颜色相等直接返回
+                    similarColorCache.set(hex, object); // 写入缓存
+                    return object;
+                }
+                if (distance < minDistance) 
+                {
+                    minDistance = distance;
+                    minColor = object;
+                }
+            }
+            return minColor;
+        };
+        for (let i = 0; i < variables.length; i++)
+        {
+            // 每个图层的像素都要进行转换
+            for (let j = 0; j < variables[i].layerData.length; j++)
+            {
+                if (variables[i].layerData[j][2] === '#00000000') continue;
+                let rgba = hexToRgba(variables[i].layerData[j][2]);
+                let replaceColorObj = findSimilarColor(rgba[0], rgba[1], rgba[2], rgba[3]);
+                variables[i].layerData[j][2] = '#' + replaceColorObj.color + 'ff';
+                variables[i].layerData[j][3] = replaceColorObj.name;
+                if (colorStatList.has(replaceColorObj.name))
+                {
+                    let arr = colorStatList.get(replaceColorObj.name);
+                    let count = arr[1] + 1;
+                    colorStatList.set(replaceColorObj.name, [variables[i].layerData[j][2], count]);
+                }
+                else
+                {
+                    colorStatList.set(replaceColorObj.name, [variables[i].layerData[j][2], 1]);
+                }
+            }
+        }
+        // 颜色统计
+        return postMessage({ variables, colorStatList });
+
     }
 });
 export default {};

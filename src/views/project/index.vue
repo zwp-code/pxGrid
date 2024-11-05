@@ -1,6 +1,6 @@
 <template>
     <div class="full-layout flex-center scrollbar routerview">
-        <div class="full-layout" v-loading="isloading">
+        <div class="full-layout" v-loading="isloading" element-loading-background="#00000000">
             <div class="flex-between flex-warp" style="padding:20px 30px 10px;row-gap: 10px;">
                 <h2>{{$t('message.mineProject')}}</h2>
                 <div class="flex-end">
@@ -9,7 +9,7 @@
                 </div>
             </div>
             <div class="full-layout scrollbar flex-start flex-warp"
-            v-if="editSpaceStore.projectList.length" 
+            v-if="editSpaceStore.projectList.length && !isloading" 
             style="height: calc(100% - 90px);
             align-content: flex-start;
             align-items:flex-start;
@@ -54,7 +54,7 @@
                     
                 </div>
             </div>
-            <div v-else class="full-layout flex-center">
+            <div v-else-if="!isloading && !editSpaceStore.projectList.length" class="full-layout flex-center">
                 <el-empty
                 :image="require('@/assets/empty.png')"
                 description="空空如也"

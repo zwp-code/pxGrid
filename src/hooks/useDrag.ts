@@ -13,8 +13,9 @@ function useDrag ()
     };
     
     const methods = {
-        onDragStart (event)
+        onDragStart (event, pinDouMode)
         {
+            if (pinDouMode) return;
             data.draging = event.target;
             event.dataTransfer.effectAllowed = 'move';
             // if (data.draging.getAttribute('data-folder'))

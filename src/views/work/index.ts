@@ -4,7 +4,7 @@ import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
 import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import { copyText, downloadImage, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -12,14 +12,15 @@ import useDrag from '@/hooks/useDrag';
 import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
-import iconSvg from '@/assets/svg/icon.js';
+import PindouDialog from '@/components/dialog/PindouDialog.vue';
 export default defineComponent({
     name:'work',
     components: {
         MyColorDialog,
         ExportDialog,
         PreviewAnimDialog,
-        ReplaceColorDialog
+        ReplaceColorDialog,
+        PindouDialog
     },
     props:{},
     emits:[],
@@ -156,7 +157,9 @@ export default defineComponent({
                 max:13,
                 min:8
             },
-            isSaveProject:true
+            isSaveProject:true,
+            pinDouMode:false,
+            pinDouData:null as any
         });
 
 
@@ -366,6 +369,7 @@ export default defineComponent({
             },
             handleChangeTool (index)
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 if (index === 6)
                 {
                     // 清空当前选择的图层绘画信息
@@ -385,7 +389,31 @@ export default defineComponent({
                     // methods.handleFrameImg(data.ctx1);
                     return;
                 }
+                else if (index === 5)
+                {
+                    if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                    if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return proxy.$message.warning('请将图层设置显示状态');
+                    data.loading = true;
+                    methods.handlePindouEvent();
+                    
+                }
                 data.currentTool = index;
+            },
+            handlePindouEvent (brand = 'mard')
+            {
+                data.worker.postMessage({
+                    type:6,
+                    currentPindouBrand:brand,
+                    variables:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer))
+                });
+                data.worker.onmessage = (event) => 
+                {
+                    data.pinDouData = event.data;
+                    console.log(data.pinDouData);
+                    methods.handleDrawPindou();
+                    data.pinDouMode = true;
+                    proxy.$refs.PindouDialog.handleOpen(event.data);
+                };
             },
             handleChangeCanvasSize (e, key)
             {
@@ -768,7 +796,14 @@ export default defineComponent({
                 data.brushSize = data.scale;
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.drawPixelArea();
-                methods.reDraw(false);
+                if (data.pinDouMode) 
+                {
+                    methods.handleDrawPindou();
+                }
+                else
+                {
+                    methods.reDraw(false);
+                }
             },
             startDrawing () 
             {
@@ -894,6 +929,10 @@ export default defineComponent({
                         console.log(data.brushColor, replacementColor);
                         methods.fillChunk(col, row, rgbaToHex(targetColor), replacementColor);
 
+                    }
+                    else if (data.currentTool === 5)
+                    {
+                        // 选择拼豆
                     }
                     else if (data.currentTool === 7)
                     {
@@ -1489,7 +1528,14 @@ export default defineComponent({
                     let centerY = beginY + data.scale * data.canvasHeight / 2;
                     
                     methods.drawPixelArea(beginX, beginY);
-                    methods.reDraw(false, false, { x:beginX, y:beginY, centerX, centerY });
+                    if (data.pinDouMode) 
+                    {
+                        methods.handleDrawPindou({ x:beginX, y:beginY, centerX, centerY });
+                    }
+                    else
+                    {
+                        methods.reDraw(false, false, { x:beginX, y:beginY, centerX, centerY });
+                    }
                     // methods.reDrawSelectData({ x:beginX, y:beginY });
                 }
                 
@@ -1837,6 +1883,45 @@ export default defineComponent({
                 if (isRedraw) methods.reDraw();
             },
 
+            handleDrawPindou (beginPos = data.canvasBeginPos)
+            {
+                // 画拼豆
+                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                let arr = data.pinDouData.variables;
+                for (let i = arr.length - 1; i >= 0; i--)
+                {
+                    // 从最后一项开始绘制
+                    if (arr[i].isRender)
+                    {
+                        for (let v = 0; v < arr[i].layerData.length; v++)
+                        {
+                            if (arr[i].layerData[v][0] >= data.canvasWidth || arr[i].layerData[v][1] >= data.canvasHeight || arr[i].layerData[v][0] < 0 || arr[i].layerData[v][1] < 0) continue;
+                            if (arr[i].layerData[v][2] !== data.emptyColor) 
+                            {
+                                let gridX = (arr[i].layerData[v][0] * data.scale) + beginPos.x;
+                                let gridY = (arr[i].layerData[v][1] * data.scale) + beginPos.y;
+                                data.ctx1.fillStyle = arr[i].layerData[v][2];
+                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                if (arr[i].layerData[v][3])
+                                {
+                                    const textWidth = data.ctx1.measureText(arr[i].layerData[v][3]).width;
+                                    const textHeight = data.scale / 2;
+                                    console.log(textWidth, textHeight);
+                                    
+                                    data.ctx1.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, sans-serif, Arial, "Times New Roman"`;
+                                    data.ctx1.fillStyle = getFontColor(arr[i].layerData[v][2]);
+                                    const x = gridX + (data.scale - textWidth) / 2;
+                                    const y = gridY + (data.scale - textHeight) / 2 + textHeight;
+                                    data.ctx1.fillText(arr[i].layerData[v][3], x, y - 1);
+                                }
+                            }
+                        }
+                    }
+                }
+                data.loading = false;
+
+            },
+
             reDraw (isRenderFrameImg = true, isAddHistory = true, beginPos = data.canvasBeginPos, isSelfRender = true)
             {
                 // 重新绘制内容
@@ -2111,6 +2196,7 @@ export default defineComponent({
             // 图层开始
             handleAddLayer ()
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 // 新建图层
                 if (data.drawRecord[data.currentFrameIndex].layer.length > data.maxLayer) return proxy.$message.warning('图层数量达到上限');
                 let layerArr = [] as any;
@@ -2134,10 +2220,12 @@ export default defineComponent({
             handleChangeLayer (index)
             {
                 // 切换图层
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 data.currentLayerIndex = index;
             },
             handleChangeLayerVisible (index)
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 if (index < 0)
                 {
                     for (let i = 0; i < data.drawRecord[data.currentFrameIndex].layer.length; i++)
@@ -2155,6 +2243,7 @@ export default defineComponent({
             },
             handleDeleteLayer (index)
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
                 data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
                 methods.handleAddHistory();
@@ -2162,6 +2251,7 @@ export default defineComponent({
             },
             handleCopyLayer (index)
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 let copyData = JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[index]));
                 let length = data.drawRecord[data.currentFrameIndex].layer.length;
                 copyData.layerId = uuid.v4();
@@ -2171,6 +2261,7 @@ export default defineComponent({
             },
             handleDoubleClickLayer (index, layerName)
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 data.currentEditLayer.index = index;
                 data.currentEditLayer.name = layerName;
                 
@@ -2300,6 +2391,7 @@ export default defineComponent({
             // 帧开始
             handleAddFrame ()
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧数量达到上限');
                 let layerArr = [] as any;
                 for (let i = 0; i < data.canvasHeight; i++) 
@@ -2639,6 +2731,7 @@ export default defineComponent({
             },
             handleRevoke ()
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 // 撤销操作
                 data.currentHistoryIndex = data.currentHistoryIndex - 1;
                 if (data.currentHistoryIndex < 0) proxy.$message.warning('暂无更多记录');
@@ -2653,6 +2746,7 @@ export default defineComponent({
             },
             handleRecover ()
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 // 恢复操作
                 data.currentHistoryIndex = data.currentHistoryIndex + 1;
                 if (data.currentHistoryIndex > data.historyRecord.length - 1) proxy.$message.warning('暂无更多记录');
@@ -2669,10 +2763,12 @@ export default defineComponent({
             },
             handleOpenReplaceColorDialog ()
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 proxy.$refs.ReplaceColorDialog.handleOpen();
             },
             handleOpenPreviewDialog ()
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 data.previewLoading = true;
                 let scale = 6; // 放大倍数
                 // methods.handleExport(1, '1111', false, scale);
@@ -2706,100 +2802,132 @@ export default defineComponent({
                     methods.handleCopySelectData();
                     console.log('复制成功');
                 }
+                else if (event.altKey && event.key === 'd') 
+                {
+                    event.preventDefault();
+                    methods.handleRemoveSelect(); // 删除选择
+                }
+                else if (event.altKey && event.key === 'n') 
+                {
+                    methods.handleCancelSelect(); // 取消选择
+                }
                 else if (event.altKey && event.key === 'z') 
                 {
-                    methods.handleRevoke();
+                    methods.handleRevoke(); // 撤销
                 } 
                 else if (event.altKey && event.key === 'x') 
                 {
-                    methods.handleRecover();
+                    methods.handleRecover(); // 恢复
                 }
-                else if (event.altKey && event.key === 'q') 
+                else if (event.ctrlKey && event.key === 's')
+                {
+                    event.preventDefault();
+                    methods.handleSaveProject();
+                }
+                else if (event.ctrlKey && event.key === 'p')
+                {
+                    event.preventDefault();
+                    data.exportVisible = true;
+                    data.isExportProject = true;
+                }
+                else if (event.ctrlKey && event.key === 'i')
+                {
+                    event.preventDefault(); 
+                    data.exportVisible = true;
+                    data.isExportProject = false;
+                }
+                else if (event.altKey && event.key === 'p') 
+                {
+                    methods.handleOpenPreviewDialog(); // 打开预览
+                }
+                else if (event.altKey && event.key === 'f') 
+                {
+                    event.preventDefault();
+                    methods.handleScreenFull(); // 全屏
+                }
+                else if (event.key === 'q') 
                 {
                     // 切换画笔
                     methods.handleChangeTool(0);
 
                 }
-                else if (event.altKey && event.key === 'w') 
+                else if (event.key === 'w') 
                 {
                     // 切换橡皮
                     methods.handleChangeTool(1);
                 }
-                else if (event.altKey && event.key === 'a') 
+                else if (event.key === 'e') 
                 {
                     // 切换吸管工具
-                    event.preventDefault();
+                    // event.preventDefault();
                     methods.handleChangeTool(2);
                 }
-                else if (event.altKey && event.key === 'b') 
+                else if (event.key === 'r') 
                 {
                     // 切换油漆桶
                     methods.handleChangeTool(4);
                 }
-                else if (event.altKey && event.key === 'm') 
+                else if (event.key === 't') 
                 {
+                    // 切换移动
                     methods.handleChangeTool(7);
+                }
+                else if (event.key === 'y') 
+                {
+                    // event.preventDefault();
+                    // 切换选择
+                    methods.handleChangeTool(8);
+                }
+                else if (event.key === 'u')
+                {
+                    // 打开颜色替换
+                    methods.handleOpenReplaceColorDialog();
                 }
                 else if (event.altKey && event.key === 's')
                 {
+                    // 保存当前颜色
                     methods.handleSaveColor(true);
-                }
-                else if (event.altKey && event.key === 't')
-                {
-                    methods.handleOpenReplaceColorDialog();
                 }
                 else if (event.ctrlKey && event.altKey && event.key === 'c')
                 {
+                    // 复制颜色
                     event.preventDefault(); 
                     methods.handleCopyColor();
                 }
-                else if (event.altKey && event.key === 'r') 
+                else if (event.key === 'i') 
                 {
+                    // 清空画布
                     methods.handleChangeTool(6);
                 }
                 else if (event.altKey && event.key === 'v') 
                 {
-                    // methods.handleChangeTool(8);
-
+                    // 重置画布位置
+                    methods.handleResetCanvas();
                 }
                 else if (event.altKey && event.key === 'g') 
                 {
+                    // 打开我的颜色
                     proxy.$refs.MyColorDialog.handleOpen();
                 }
-                else if (event.altKey && event.key === 'h') 
+                else if (event.key === 'a') 
                 {
                     methods.handleChangeTool(3);
-                    methods.drawShape('rect');
+                    methods.drawShape('rect'); // 打开矩形
                 }
-                else if (event.altKey && event.key === 'j') 
+                else if (event.key === 's') 
                 {
                     methods.handleChangeTool(3);
-                    methods.drawShape('circle');
+                    methods.drawShape('circle'); // 打开圆形
                 }
-                else if (event.altKey && event.key === 'k') 
+                else if (event.key === 'd') 
                 {
                     methods.handleChangeTool(3);
-                    methods.drawShape('line');
+                    methods.drawShape('line'); // 打开直线
                 }
-                else if (event.altKey && event.key === 'l') 
+                else if (event.key === 'f') 
                 {
                     methods.handleChangeTool(3);
-                    methods.drawShape('fillRect');
-                }
-                else if (event.altKey && event.key === 'n') 
-                {
-                    methods.handleCancelSelect();
-                }
-                else if (event.altKey && event.key === 'd') 
-                {
-                    event.preventDefault();
-                    methods.handleRemoveSelect();
-                    // methods.handleChangeTool(8);
-                }
-                else if (event.altKey && event.key === 'e') 
-                {
-                    event.preventDefault();
-                    methods.handleChangeTool(8);
+                    methods.drawShape('fillRect'); // 打开填充矩形
                 }
                 else if (event.ctrlKey && event.key === 'ArrowUp')
                 {
@@ -2822,23 +2950,7 @@ export default defineComponent({
                     event.preventDefault();
                     methods.drawTransform('ssz');
                 }
-                else if (event.ctrlKey && event.key === 's')
-                {
-                    event.preventDefault();
-                    methods.handleSaveProject();
-                }
-                else if (event.ctrlKey && event.key === 'p')
-                {
-                    event.preventDefault();
-                    data.exportVisible = true;
-                    data.isExportProject = true;
-                }
-                else if (event.ctrlKey && event.key === 'i')
-                {
-                    event.preventDefault(); 
-                    data.exportVisible = true;
-                    data.isExportProject = false;
-                }
+                
                 else if (event.key === 'ArrowUp')
                 {
                     // 切换图层
@@ -2924,7 +3036,14 @@ export default defineComponent({
                 data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 // methods.computeScale();
                 methods.drawPixelArea();
-                methods.reDraw(false, false);
+                if (data.pinDouMode)
+                {
+                    methods.handleDrawPindou();
+                }
+                else
+                {
+                    methods.reDraw(false, false);
+                }
             },
             handleResizeWindow ()
             {
@@ -3077,6 +3196,7 @@ export default defineComponent({
                     isTop:0,
                     tip:''
                 };
+                data.pinDouMode = false;
             },
             handleReadProjectData ()
             {
@@ -3166,10 +3286,14 @@ export default defineComponent({
             methods.reDraw(false);
         });
 
-        // watch(() => data.drawRecord, (newValue, oldValue) => 
-        // {
-        //     data.isSaveProject = false;
-        // }, { deep:true });
+        watch(() => data.pinDouMode, (newValue, oldValue) => 
+        {
+            if (newValue === false)
+            {
+                data.currentTool = 0;
+                methods.reDraw(false);
+            }
+        });
         
         onMounted(() => 
         {

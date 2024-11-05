@@ -28,7 +28,9 @@ export default defineComponent({
                 { value:3, label:'高分辨率' },
                 { value:4, label:'动态' },
                 { value:5, label:'静态' }
-            ]
+            ],
+            currentPage:1,
+            total:0
         });
 
         const computedApi = {
@@ -77,14 +79,20 @@ export default defineComponent({
                         console.error(err);
                     });
             },
+            handleCurrentChange (e)
+            {
+                data.currentPage = e;
+                methods.getData();
+            },
             getData ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/module.json`)
+                axios.get(`${import.meta.env.VITE_APP_API_URL}json/module${data.currentPage}.json`)
                     .then((res) => 
                     {
                         console.log(res.data);
                         data.isloading = false;
-                        data.moduleList = sortList(res.data, 'createAt');
+                        data.total = res.data.total;
+                        data.moduleList = sortList(res.data.data, 'createAt');
                         methods.handleFilter(data.filterValue);
                     })
                     .catch((err) => 
@@ -119,9 +127,9 @@ export default defineComponent({
                 {
                     if (data.searchValue !== '')
                     {
-                        return (reg.test(item.data.projectName) || reg.test(item.data.desc)) && (item.data.tip === value);
+                        return (reg.test(item.data.projectName) || reg.test(item.data.desc)) && (item.data.tag.includes(value));
                     }
-                    return item.data.tip === value;
+                    return item.data.tag.includes(value);
                 });
                 return d;
             },
@@ -166,11 +174,25 @@ export default defineComponent({
                 }
                 if (data.filterValue.includes(4))
                 {
-                    data.searchData = [...data.searchData, ...methods.filterData2(data.moduleList, '动画')];
+                    let arr = methods.filterData2(data.moduleList, 1);
+                    arr.forEach((item) => 
+                    {
+                        if (!data.searchData.find((value) => value.id === item.id))
+                        {
+                            data.searchData.push(item);
+                        }
+                    });
                 }
                 if (data.filterValue.includes(5))
                 {
-                    data.searchData = [...data.searchData, ...methods.filterData2(data.moduleList, '静态')];
+                    let arr = methods.filterData2(data.moduleList, 0);
+                    arr.forEach((item) => 
+                    {
+                        if (!data.searchData.find((value) => value.id === item.id))
+                        {
+                            data.searchData.push(item);
+                        }
+                    });
                 }
                 data.isloading = false;
 
@@ -231,11 +253,10 @@ export default defineComponent({
 
         watchEffect(() => 
         {
-            // if (data.searchValue.trim() === '')
-            // {
-            //     data.searchData = [];
-            //     methods.handleFilter(data.filterValue);
-            // }
+            if (data.searchValue.trim() === '')
+            {
+                methods.handleFilter(data.filterValue);
+            }
         });
 
         return {

@@ -27,7 +27,13 @@ export function rgbaToHex (arr)
 export function hexToRgba (hex) 
 {
     let r = 0, g = 0, b = 0, a = 255;
-    if (hex.length === 7) 
+    if (hex.length === 6) 
+    {
+        r = parseInt(hex.slice(0, 2), 16);
+        g = parseInt(hex.slice(2, 4), 16);
+        b = parseInt(hex.slice(4, 6), 16);
+    } 
+    else if (hex.length === 7) 
     {
         r = parseInt(hex.slice(1, 3), 16);
         g = parseInt(hex.slice(3, 5), 16);
@@ -275,6 +281,29 @@ export function blobToBase64 (blob)
             reject(e);
         };
     });
+}
+
+export function getFontColor (arg1?:any, arg2?:any, arg3?:any) 
+{
+    if (typeof arg1 == 'string' && arg1.length >= 6) 
+    {
+        let rgb = hexToRgba(arg1);
+        return rgb[0] + rgb[1] + rgb[2] > 384 ? '#000' : '#FFF';// 浅色黑字，深色白字
+    } 
+    else if (typeof arg1 == 'number' && typeof arg2 == 'number' && typeof arg3 == 'number') 
+    {
+        return arg1 + arg2 + arg2 > 384 ? '#000' : '#FFF';
+    }
+    return null;
+}
+
+export function colorDistance (r1, g1, b1, r2, g2, b2) 
+{
+    let rmean = (r1 + r2) / 2,
+        rd = r1 - r2,
+        gd = g1 - g2,
+        bd = b1 - b2;
+    return (((512 + rmean) * rd * rd) >> 8) + 4 * gd * gd + (((767 - rmean) * bd * bd) >> 8);
 }
   
   
