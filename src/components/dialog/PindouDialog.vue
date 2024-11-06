@@ -61,7 +61,7 @@
                                 <p class="flex-end">数量：{{colorTotal}}</p>
                             </div>
                         </template>
-                        <ul class="flex-start flex-warp" style="gap:15px;padding: 5px 0;">
+                        <ul class="flex-start flex-warp" style="gap:10px;padding: 5px;">
                             <li 
                             v-for="([key, value], index) in colorStatList"
                             :style="{backgroundColor:value[0]}" 

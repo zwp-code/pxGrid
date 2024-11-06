@@ -184,15 +184,24 @@
 
     .function-label {
         margin-right: 16px;
+        font-size: 14px;
     }
 
-    .mycolor {
-        cursor: pointer;
-        border-radius: 3px;
-        width: 20px;
-        height: 20px;
-        box-shadow: 0px 0px 4px 2px var(--el-shadow-color);
-        margin: 10px;
+    .common-color {
+        margin-top: 5px;
+        gap: 10px;
+        padding: 10px 5px 10px 5px;
+        max-height: 100px;
+        overflow: auto;
+
+        .mycolor {
+            cursor: pointer;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            box-shadow: 0px 0px 4px 2px var(--el-shadow-color);
+            // margin: 10px;
+        }
     }
 }
 

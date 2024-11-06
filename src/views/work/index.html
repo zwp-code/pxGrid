@@ -358,8 +358,8 @@
                     </div>
                     <div class="function-block-column">
                         <span class="function-label">常用颜色</span>
-                        <div style="margin-top: 15px;" class="flex-start flex-warp">
-                            <el-dropdown v-for="(item, index) in myColorList[0].list.slice(0, 10)" :key="item" trigger="contextmenu">
+                        <div  class="flex-start flex-warp common-color scrollbar">
+                            <el-dropdown v-for="(item, index) in myColorList[0].list" :key="item" trigger="contextmenu">
                                 <div :style="{backgroundColor: item}" class="mycolor" @click="brushColor=item"></div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
