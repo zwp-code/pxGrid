@@ -4,7 +4,7 @@ import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
 import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import { copyText, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, measureTextHeight, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -1106,20 +1106,9 @@ export default defineComponent({
                 {
                     let flag = false;
                     let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                    // for (let i = 0; i < currentLayerData.length; i++)
-                    // {
-                        
-                    //     if (currentLayerData[i][0] === col && currentLayerData[i][1] === row && currentLayerData[i][2] === color)
-                    //     {
-                    //         flag = true;
-                    //         break;
-                    //     }
-                    // }
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
-                        // console.log(col, row, index);
-                        
                         if (currentLayerData[index][2] === color) flag = true;
                     }
                     
@@ -1128,14 +1117,6 @@ export default defineComponent({
                 const setColor = (col, row, color) => 
                 {
                     let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                    // for (let i = 0; i < currentLayerData.length; i++)
-                    // {
-                    //     if (currentLayerData[i][0] === col && currentLayerData[i][1] === row)
-                    //     {
-                    //         currentLayerData[i][2] = color;
-                    //         break;
-                    //     }
-                    // }
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
@@ -1212,6 +1193,7 @@ export default defineComponent({
                             data.ctx1.beginPath();
                             data.ctx1.lineTo(gridX + data.scale / 2, gridY + data.scale / 2);
                             data.ctx1.stroke();
+                            methods.reDraw(false);
                         }
                     }
                     if (data.isErasering)
@@ -1234,7 +1216,7 @@ export default defineComponent({
                                 let gridY = (row * data.scale) + data.canvasBeginPos.y;
                                 let rectWidth = (gridX + data.scale / 2 - data.lastX);
                                 let rectHeight = (gridY + data.scale / 2 - data.lastY);
-                                methods.reDraw(false, false);
+                                methods.reDraw(false);
                                 data.ctx1.beginPath();
                                 if (gridY + data.scale / 2 === data.lastY && gridX + data.scale / 2 !== data.lastX)
                                 {
@@ -1269,6 +1251,7 @@ export default defineComponent({
                                 else
                                 {
                                     data.ctx1.rect(data.lastX, data.lastY, rectWidth, rectHeight);
+                                    
                                 }
                                 if (data.currentDrawShape === 'fillRect')
                                 {
@@ -1980,10 +1963,18 @@ export default defineComponent({
                                 {
                                     let gridX = x * scale + ruler;
                                     let gridY =  y * scale + ruler;
-                                    let textWidth = ~~(bigCtx.measureText(imageData[i].layerData[x + (y * data.canvasWidth)][3]).width);
+                                    // let textHeight = ~~(scale / 2);
+                                    // bigCtx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                    // let textWidth = ~~(bigCtx.measureText(imageData[i].layerData[x + (y * data.canvasWidth)][3]).width);
+                                    // if (textWidth >= 16) textHeight -= 2;
                                     let textHeight = ~~(scale / 2);
-                                    if (textWidth >= 16) textHeight -= 2;
-                                    bigCtx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, sans-serif, Arial, "Times New Roman"`;
+                                    bigCtx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                    let textWidth = ~~(bigCtx.measureText(imageData[i].layerData[x + (y * data.canvasWidth)][3]).width);
+                                    textHeight = measureTextHeight(textWidth, textHeight);
+                                    bigCtx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                    textWidth = ~~(bigCtx.measureText(imageData[i].layerData[x + (y * data.canvasWidth)][3]).width);
+
+
                                     bigCtx.textAlign = 'start';
                                     bigCtx.fillStyle = getFontColor(imageData[i].layerData[x + (y * data.canvasWidth)][2]);
                                     const x1 = gridX + (scale - textWidth) / 2;
@@ -2001,23 +1992,25 @@ export default defineComponent({
             addDrawRecord (value, isUpdate = true)
             {
                 console.log(value);
-                if (!isHexColor(value[2])) 
-                {
-                    value[2] = rgbaToHex(extractRgbaValues(value[2]));
-                }
-                else if (isHexColor(value[2]) && value[2].length < 9)
-                {
-                    value[2] = rgbaToHex(hexToRgba(value[2]));
-                }
+                // if (!isHexColor(value[2])) 
+                // {
+                //     value[2] = rgbaToHex(extractRgbaValues(value[2]));
+                // }
+                // else if (isHexColor(value[2]) && value[2].length < 9)
+                // {
+                //     value[2] = rgbaToHex(hexToRgba(value[2]));
+                // }
+                value[2] = methods.handleTransformColorAsHex(value[2]);
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                for (let v = 0; v < arr.length; v++)
-                {
-                    if (arr[v][0] === value[0] && arr[v][1] === value[1])
-                    {
-                        arr[v][2] = value[2];
-                        break;
-                    }
-                }
+                // for (let v = 0; v < arr.length; v++)
+                // {
+                //     if (arr[v][0] === value[0] && arr[v][1] === value[1])
+                //     {
+                //         arr[v][2] = value[2];
+                //         break;
+                //     }
+                // }
+                arr[value[0] + (value[1] * data.canvasWidth)][2] = value[2];
                 console.log(data.drawRecord);
                 if (isUpdate)
                 {
@@ -2034,8 +2027,7 @@ export default defineComponent({
             removeDrawRecord (value, isRedraw = true)
             {
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                console.log(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData);
-                
+                // console.log(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData);
                 let index = value[0] + value[1] * data.canvasHeight;
                 if (arr[index][2] === data.emptyColor) return;
                 arr[index][2] = data.emptyColor;
@@ -2072,11 +2064,13 @@ export default defineComponent({
                                 ctx.fillRect(gridX, gridY, data.scale, data.scale);
                                 if (arr[i].layerData[v][3])
                                 {
-                                    let textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
                                     let textHeight = ~~(data.scale / 2);
-                                    if (textWidth >= 16) textHeight -= 2; 
-                                    
-                                    ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, sans-serif, Arial, "Times New Roman"`;
+                                    ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                    let textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                    textHeight = measureTextHeight(textWidth, textHeight);
+                                    ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                    textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                    // console.log(textWidth, textHeight);
                                     ctx.fillStyle = getFontColor(arr[i].layerData[v][2]);
                                     // ctx.textBaseline = 'middle';
                                     // ctx.textAlign = 'center';
@@ -2096,7 +2090,7 @@ export default defineComponent({
             reDraw (isRenderFrameImg = true, isAddHistory = true, beginPos = data.canvasBeginPos, isSelfRender = true)
             {
                 // 重新绘制内容
-                console.log(data.drawRecord);
+                // console.log(data.drawRecord);
                 
                 let count = 0;
                 data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);

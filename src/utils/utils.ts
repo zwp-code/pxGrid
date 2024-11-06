@@ -338,5 +338,16 @@ export function colorDistance (r1, g1, b1, r2, g2, b2)
         bd = b1 - b2;
     return (((512 + rmean) * rd * rd) >> 8) + 4 * gd * gd + (((767 - rmean) * bd * bd) >> 8);
 }
-  
+
+export function measureTextHeight (width, height)
+{
+    let newHeight = height;
+    if (width >= 40) return newHeight -= 8;
+    if (width >= 35) return newHeight -= 7;
+    if (width >= 30) return newHeight -= 6;
+    if (width >= 25) return newHeight -= 5;
+    if (width >= 20) return newHeight -= 4;
+    if (width >= 15) return newHeight -= 3;
+    return newHeight;
+}
   
