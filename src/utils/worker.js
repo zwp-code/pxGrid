@@ -173,7 +173,8 @@ addEventListener('message', (e) =>
         };
         for (let i = 0; i < variables.length; i++)
         {
-            // 每个图层的像素都要进行转换
+            // 每个图层的像素都要进行转换,隐藏的不更改
+            if (!variables[i].isRender) continue;
             for (let j = 0; j < variables[i].layerData.length; j++)
             {
                 if (variables[i].layerData[j][2] === '#00000000') continue;

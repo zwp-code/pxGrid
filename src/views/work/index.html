@@ -555,7 +555,11 @@
         ref="PreviewAnimDialog">
         </PreviewAnimDialog>
         <PindouDialog
-        ref="PindouDialog" @close="pinDouMode = false" @change="handlePindouEvent">
+        ref="PindouDialog" 
+        @close="pinDouMode = false" 
+        @change="handlePindouEvent"
+        @replace="handleReplacePindouColor"
+        @export="handleExportPindou">
         </PindouDialog>
     </teleport>
     

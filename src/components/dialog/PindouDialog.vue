@@ -9,7 +9,7 @@
         <div class="content">
             <div class="item flex-start">
                 <p>拼豆品牌</p>
-                <el-select v-model="pindouBrand" @change="$emit('change', pindouBrand)" placeholder="请选择" style="width:200px">
+                <el-select v-model="pindouBrand" @change="handleChangeBrand" placeholder="请选择" style="width:200px">
                     <el-option
                         v-for="item in brandOptions"
                         :key="item.value"
@@ -21,22 +21,31 @@
             <div v-if="selectedObj">
                 <div class="item flex-start">
                     <p>当前选择的颜色</p>
-                    <div class="flex-center color-item" :style="{backgroundColor:selectedObj.color}">
+                    <div class="flex-center color-item" 
+                    :style="{backgroundColor:selectedObj.color, color:getFontColor(selectedObj.color)}">
                         {{selectedObj.name}}
                     </div>
                 </div>
-                <div class="item flex-start">
+                <div class="item flex-start" style="gap:10px">
                     <p>替换颜色</p>
-                    <el-select v-model="replaceObj" value-key="name" @change="handleChangeColor" placeholder="请选择" style="width:200px">
+                    <el-select v-model="replaceObj" value-key="name"
+                    @change="handleChangeColor" placeholder="请选择" style="width:200px">
                         <el-option
                             v-for="item in pindouColorList"
                             :key="item.name"
                             :label="item.name"
                             :value="item">
                                 <span style="float: left">{{ item.name }}</span>
-                                <span style=" float: right;" :style="{backgroundColor:`#${item.color}ff`}"></span>
+                                <div style="float: right;width: 40px;padding:5px" class="flex-center full-h">
+                                    <span 
+                                    style="border-radius:5px;box-shadow: 0px 0px 4px 2px var(--el-shadow-color);" 
+                                    :style="{backgroundColor:`#${item.color}ff`}" class="full-layout"></span>
+                                </div>
                         </el-option>
                     </el-select>
+                    <div class="flex-center color-item" v-if="replaceObj" style="width:40px; height:30px"
+                    :style="{backgroundColor:replaceObj.color}">
+                    </div>
                 </div>
                 <div>
                     <el-checkbox v-model="checked1" label="单独像素" @change="handleChange($evnet, 1)"/>
@@ -52,7 +61,7 @@
                                 <p class="flex-end">数量：{{colorTotal}}</p>
                             </div>
                         </template>
-                        <ul class="flex-start flex-warp" style="gap:15px">
+                        <ul class="flex-start flex-warp" style="gap:15px;padding: 5px 0;">
                             <li 
                             v-for="([key, value], index) in colorStatList"
                             :style="{backgroundColor:value[0]}" 
@@ -64,22 +73,10 @@
                     </el-collapse-item>
                 </el-collapse>
             </div>
-            <!-- <div class="color flex-start">
-                <p>替换颜色</p>
-                <el-color-picker v-model="replaceColor" show-alpha @active-change="(e) => replaceColor = e"/>
-            </div>
-            <div class="color flex-start">
-                <p>新颜色</p>
-                <el-color-picker v-model="newColor" show-alpha @active-change="(e) => newColor = e"/>
-            </div>
-            <div>
-                <el-checkbox v-model="checked1" label="当前图层" @change="handleChange($evnet, 1)"/>
-                <el-checkbox v-model="checked2" label="所有图层" @change="handleChange($evnet, 2)"/>
-            </div> -->
         </div>
         <template #footer>
             <span class="dialog-footer">
-                <el-button type="success" @click="handleExport"
+                <el-button type="success" @click="handleExport" :disabled="loading"
                 >导出拼豆图</el-button>
                 <el-button type="primary" @click="handleReplace" :loading="loading" v-if="selectedObj"
                 >替换颜色</el-button>
@@ -92,6 +89,7 @@
 import { useEditSpaceStore } from '@/store';
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance } from 'vue';
 import pindouMap from '@/config/pindou'; 
+import { getFontColor } from '@/utils/utils'; 
 export default defineComponent({
     name: 'PindouDialog',
     components: {},
@@ -177,6 +175,9 @@ export default defineComponent({
             handleClose ()
             {
                 data.dialogVisible = false;
+                data.pindouBrand = 'mard';
+                data.replaceObj = null;
+                data.selectedObj = null;
                 methods.handleChange('', 1);
                 context.emit('close');
             },
@@ -185,6 +186,7 @@ export default defineComponent({
                 data.dialogVisible = true;
                 data.pindouColorList = pindouMap.get(data.pindouBrand);
                 data.colorStatList = value.colorStatList;
+                data.colorTotal = 0;
                 data.colorStatList.forEach((v, k) => 
                 {
                     data.colorTotal += v[1];
@@ -197,13 +199,21 @@ export default defineComponent({
             handleExport ()
             {
                 // 导出拼豆图
+                data.loading = true;
+                context.emit('export', () => data.loading = false);
             },
             handleReplace ()
             {
                 // 替换颜色
-                if (data.replaceObj) return proxy.$message.warning('替换颜色不能为空');
+                if (!data.replaceObj) return proxy.$message.warning('替换颜色不能为空');
                 data.loading = true;
                 context.emit('replace', { type:data.type, replaceObj:data.replaceObj, originObj:data.selectedObj }, () => data.loading = false);
+            },
+            handleChangeBrand (e)
+            {
+                data.replaceObj = null;
+                data.selectedObj = null;
+                proxy.$emit('change', data.pindouBrand);
             }
 
             // handleConfirm ()
@@ -224,7 +234,8 @@ export default defineComponent({
         });
         return {
             ...toRefs(data),
-            ...methods
+            ...methods,
+            getFontColor
         };
     }
 });
@@ -237,9 +248,17 @@ export default defineComponent({
 
     .item {
         margin: 10px 0;
+        gap:15px;
 
         p {
-            margin: 10px 20px 10px 0;
+            margin: 10px 0 10px 0;
+        }
+
+
+        .color-item {
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 4px 2px var(--el-shadow-color);
         }
 
         .color-item-1 {
@@ -248,6 +267,7 @@ export default defineComponent({
             border-radius: 5px;
             // overflow: hidden;
             align-items: flex-end;
+            box-shadow: 0px 0px 4px 2px var(--el-shadow-nav);
 
 
             div {

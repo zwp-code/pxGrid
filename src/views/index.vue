@@ -162,6 +162,7 @@ export default defineComponent({
         {
             window.onbeforeunload = function (e)
             {
+                // e.preventDefault(); 
                 e.returnValue = '1111';
             };
             methods.changeLanguage();

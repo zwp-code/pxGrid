@@ -198,6 +198,16 @@ export function downloadImage (canvas, name)
     document.body.removeChild(a);
 }
 
+export function downloadImageByDataURL (name, dataURL) 
+{
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = name || 'pixel';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 export function exportImageForZip (filenamae, imgArr)
 {
     const zip = new JSZip();
@@ -209,6 +219,29 @@ export function exportImageForZip (filenamae, imgArr)
     {
         FileSaver.saveAs(content, `${filenamae}.zip`);
     });
+}
+
+export function downloadIamgeByUrl (url, name) // 外链下载
+{
+    // 下载图片地址和图片名
+    let image = new Image();
+    // 解决跨域 Canvas 污染问题
+    image.setAttribute('crossOrigin', 'anonymous');
+    image.onload = function () 
+    {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context:any = canvas.getContext('2d');
+        context.drawImage(image, 0, 0, image.width, image.height);
+        const dataURL = canvas.toDataURL('image/png');
+        const a = document.createElement('a'); 
+        const event = new MouseEvent('click'); 
+        a.download = name || 'photo';
+        a.href = dataURL;
+        a.dispatchEvent(event);
+    };
+    image.src = url;
 }
 
 // 转时间戳

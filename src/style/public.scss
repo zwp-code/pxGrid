@@ -272,6 +272,12 @@ body,html{
     top: 65px !important;
 }
 
+.my-select-popper {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
 @keyframes Hide {
     0% {
         display: block;

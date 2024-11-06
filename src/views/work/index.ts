@@ -4,7 +4,7 @@ import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
 import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import { copyText, downloadImage, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { copyText, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -13,6 +13,7 @@ import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
 import PindouDialog from '@/components/dialog/PindouDialog.vue';
+import project from '../project';
 export default defineComponent({
     name:'work',
     components: {
@@ -268,6 +269,7 @@ export default defineComponent({
                 if (data.isSaveProject)
                 {
                     editSpaceStore.saveProjectId('0');
+                    data.pinDouMode = false;
                     return proxy.$router.replace('/project');
                 }
                 ElMessageBox.confirm(
@@ -282,6 +284,7 @@ export default defineComponent({
                     .then(() => 
                     {
                         editSpaceStore.saveProjectId('0');
+                        data.pinDouMode = false;
                         proxy.$router.replace('/project');
                     })
                     .catch(() => 
@@ -410,7 +413,7 @@ export default defineComponent({
                 {
                     data.pinDouData = event.data;
                     console.log(data.pinDouData);
-                    methods.handleDrawPindou();
+                    methods.handleDrawPindou(data.ctx1);
                     data.pinDouMode = true;
                     proxy.$refs.PindouDialog.handleOpen(event.data);
                 };
@@ -798,7 +801,7 @@ export default defineComponent({
                 methods.drawPixelArea();
                 if (data.pinDouMode) 
                 {
-                    methods.handleDrawPindou();
+                    methods.handleDrawPindou(data.ctx1);
                 }
                 else
                 {
@@ -813,8 +816,6 @@ export default defineComponent({
                 data.canvas.addEventListener('mouseout', methods.leave);
                 data.canvas.addEventListener('wheel', methods.handleWheelEvent);
             },
-
-            
             start (event) 
             {
                 // 判断是否在可绘画区域
@@ -878,10 +879,10 @@ export default defineComponent({
                                     }
                                     break;
                                 }
-                                else
-                                {
-                                    continue;
-                                }
+                                // else
+                                // {
+                                //     continue;
+                                // }
                             }
                             // for (let j = 0; j < currentFrame[i].layerData.length; j++)
                             // {
@@ -933,6 +934,25 @@ export default defineComponent({
                     else if (data.currentTool === 5)
                     {
                         // 选择拼豆
+                        let index = col + row * data.canvasWidth;
+                        let arr = data.pinDouData.variables;
+                        for (let i = 0; i < arr.length; i++)
+                        {
+                            if (arr[i].isRender)
+                            {
+                                if (arr[i].layerData[index][2] !== data.emptyColor) 
+                                {
+                                    let obj = {
+                                        name:arr[i].layerData[index][3],
+                                        color:arr[i].layerData[index][2],
+                                        col,
+                                        row
+                                    };
+                                    proxy.$refs.PindouDialog.selectedObj = obj;
+                                    break;
+                                }
+                            }
+                        }
                     }
                     else if (data.currentTool === 7)
                     {
@@ -1010,6 +1030,71 @@ export default defineComponent({
                     data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData[index][2] = replacementColor;
                 }
                 methods.reDraw();
+            },
+
+            handleReplacePindouColor (value, callback)
+            {
+                // let replaceColor = methods.handleTransformColorAsHex(value.originObj.color);
+                let newColor = methods.handleTransformColorAsHex(value.replaceObj.color);
+                let arr = data.pinDouData.variables;
+                if (value.type === 1)
+                {
+                    console.log('更新当前像素颜色');
+                    for (let i = arr.length - 1; i >= 0; i--)
+                    {
+                        if (arr[i].isRender)
+                        {
+                            for (let j = 0; j < arr[i].layerData.length; j += 2)
+                            {
+                                if (arr[i].layerData[j][0] === value.originObj.col && arr[i].layerData[j][1] === value.originObj.row && arr[i].layerData[j][3])
+                                {
+                                    arr[i].layerData[j][2] = newColor;
+                                    arr[i].layerData[j][3] = value.replaceObj.name;
+                                    break;
+                                }
+                                if (j + 1 < arr[i].layerData.length)
+                                {
+                                    if (arr[i].layerData[j + 1][0] === value.originObj.col && arr[i].layerData[j + 1][1] === value.originObj.row && arr[i].layerData[j + 1][3])
+                                    {
+                                        arr[i].layerData[j + 1][2] = newColor;
+                                        arr[i].layerData[j + 1][3] = value.replaceObj.name;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    
+                }
+                else if (value.type === 2)
+                {
+                    console.log('更新所有像素颜色');
+                    for (let i = arr.length - 1; i >= 0; i--)
+                    {
+                        if (arr[i].isRender)
+                        {
+                            for (let j = 0; j < arr[i].layerData.length; j += 2)
+                            {
+                                if (arr[i].layerData[j][3] && arr[i].layerData[j][3] === value.originObj.name)
+                                {
+                                    arr[i].layerData[j][2] = newColor;
+                                    arr[i].layerData[j][3] = value.replaceObj.name;
+                                }
+                                if (j + 1 < arr[i].layerData.length)
+                                {
+                                    if (arr[i].layerData[j + 1][3] && arr[i].layerData[j + 1][3] === value.originObj.name)
+                                    {
+                                        arr[i].layerData[j + 1][2] = newColor;
+                                        arr[i].layerData[j + 1][3] = value.replaceObj.name;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                callback();
+                methods.handleDrawPindou(data.ctx1);
             },
 
             fillChunk (x, y, targetColor, replacementColor)
@@ -1530,7 +1615,7 @@ export default defineComponent({
                     methods.drawPixelArea(beginX, beginY);
                     if (data.pinDouMode) 
                     {
-                        methods.handleDrawPindou({ x:beginX, y:beginY, centerX, centerY });
+                        methods.handleDrawPindou(data.ctx1, { x:beginX, y:beginY, centerX, centerY });
                     }
                     else
                     {
@@ -1831,6 +1916,88 @@ export default defineComponent({
                 if (isAddHistory) methods.handleAddHistory();
             },
 
+            handleExportPindou (callback)
+            {
+                // 导出拼豆图
+                const bigCanvas:any = document.createElement('canvas');
+                let scale = 30;
+                let ruler = 30;
+                bigCanvas.width = data.canvasWidth * scale + ruler * 2;
+                bigCanvas.height = data.canvasHeight * scale + ruler * 2;
+                const bigCtx:any = bigCanvas.getContext('2d');
+                bigCtx.imageSmoothingEnabled = false;
+                const imageData = data.pinDouData.variables;
+                // 先绘制标尺
+                for (let y = 0; y < data.canvasHeight; y++) 
+                {
+                    // 绘制左边
+                    let x1 = ruler / 2;
+                    let y1 = (scale * y) + (scale / 2) * 3 + 5;
+                    let x2 = bigCanvas.width - ruler / 2;
+                    let y2 = y1;
+                    bigCtx.font = 'bold 14px Arial';
+                    bigCtx.textAlign = 'center';
+                    bigCtx.fillStyle = 'red';
+                    bigCtx.fillText((y + 1).toString(), x1, y1);
+                    bigCtx.fillText((y + 1).toString(), x2, y2);
+                }
+                for (let x = 0; x < data.canvasWidth; x++) 
+                {
+                    // 绘制上下
+                    let x1 = (scale * x) + (scale / 2) * 3;
+                    let y1 = ruler / 2 + 5;
+                    let x2 = x1;
+                    let y2 = bigCanvas.height - ruler / 2;
+                    bigCtx.font = 'bold 14px Arial';
+                    bigCtx.fillStyle = 'green';
+                    bigCtx.textAlign = 'center';
+                    bigCtx.fillText((x + 1).toString(), x1, y1);
+                    bigCtx.fillText((x + 1).toString(), x2, y2);
+                }
+                for (let i = imageData.length - 1; i >= 0; i--)
+                {
+                    if (imageData[i].isRender)
+                    {
+                        for (let y = 0; y < data.canvasHeight; y++) 
+                        {
+                            for (let x = 0; x < data.canvasWidth; x++) 
+                            {
+                                let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
+                                
+                                if (color === data.emptyColor)
+                                {
+                                    bigCtx.fillStyle = 'black';
+                                    bigCtx.beginPath();
+                                    bigCtx.arc((x * scale + ruler) + (scale / 2), (y * scale + ruler) + (scale / 2), 3, 0, 2 * Math.PI);
+                                    bigCtx.fill();
+                                }
+                                else
+                                {
+                                    bigCtx.fillStyle = color;
+                                    bigCtx.fillRect(x * scale + ruler, y * scale + ruler, scale, scale);
+                                }
+                                if (imageData[i].layerData[x + (y * data.canvasWidth)][3])
+                                {
+                                    let gridX = x * scale + ruler;
+                                    let gridY =  y * scale + ruler;
+                                    let textWidth = ~~(bigCtx.measureText(imageData[i].layerData[x + (y * data.canvasWidth)][3]).width);
+                                    let textHeight = ~~(scale / 2);
+                                    if (textWidth >= 16) textHeight -= 2;
+                                    bigCtx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, sans-serif, Arial, "Times New Roman"`;
+                                    bigCtx.textAlign = 'start';
+                                    bigCtx.fillStyle = getFontColor(imageData[i].layerData[x + (y * data.canvasWidth)][2]);
+                                    const x1 = gridX + (scale - textWidth) / 2;
+                                    const y1 = gridY + (scale - textHeight) / 2 + textHeight;
+                                    bigCtx.fillText(imageData[i].layerData[x + (y * data.canvasWidth)][3], ~~(x1), ~~(y1));
+                                }
+                            }
+                        }
+                    }
+                }
+                downloadImage(bigCanvas, '拼豆图 - ' + data.projectData.projectName);
+                callback();
+            },
+
             addDrawRecord (value, isUpdate = true)
             {
                 console.log(value);
@@ -1883,11 +2050,12 @@ export default defineComponent({
                 if (isRedraw) methods.reDraw();
             },
 
-            handleDrawPindou (beginPos = data.canvasBeginPos)
+            handleDrawPindou (ctx, beginPos = data.canvasBeginPos)
             {
                 // 画拼豆
-                data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                ctx.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 let arr = data.pinDouData.variables;
+                ctx.imageSmoothingEnabled = false;
                 for (let i = arr.length - 1; i >= 0; i--)
                 {
                     // 从最后一项开始绘制
@@ -1900,25 +2068,28 @@ export default defineComponent({
                             {
                                 let gridX = (arr[i].layerData[v][0] * data.scale) + beginPos.x;
                                 let gridY = (arr[i].layerData[v][1] * data.scale) + beginPos.y;
-                                data.ctx1.fillStyle = arr[i].layerData[v][2];
-                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                ctx.fillStyle = arr[i].layerData[v][2];
+                                ctx.fillRect(gridX, gridY, data.scale, data.scale);
                                 if (arr[i].layerData[v][3])
                                 {
-                                    const textWidth = data.ctx1.measureText(arr[i].layerData[v][3]).width;
-                                    const textHeight = data.scale / 2;
-                                    console.log(textWidth, textHeight);
+                                    let textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                    let textHeight = ~~(data.scale / 2);
+                                    if (textWidth >= 16) textHeight -= 2; 
                                     
-                                    data.ctx1.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, sans-serif, Arial, "Times New Roman"`;
-                                    data.ctx1.fillStyle = getFontColor(arr[i].layerData[v][2]);
+                                    ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, sans-serif, Arial, "Times New Roman"`;
+                                    ctx.fillStyle = getFontColor(arr[i].layerData[v][2]);
+                                    // ctx.textBaseline = 'middle';
+                                    // ctx.textAlign = 'center';
                                     const x = gridX + (data.scale - textWidth) / 2;
                                     const y = gridY + (data.scale - textHeight) / 2 + textHeight;
-                                    data.ctx1.fillText(arr[i].layerData[v][3], x, y - 1);
+                                    ctx.fillText(arr[i].layerData[v][3], ~~(x), ~~(y));
                                 }
                             }
                         }
                     }
                 }
                 data.loading = false;
+                // if (isDownload) downloadImage(isDownload, '拼豆图 - ' + data.projectData.projectName);
 
             },
 
@@ -2123,6 +2294,7 @@ export default defineComponent({
                     else if (data.currentDrawShape.toLowerCase().indexOf('circle') !== -1) data.canvas.classList.add('circle-cursor');
                 }
                 else if (data.currentTool === 4) data.canvas.classList.add('bucket-cursor');
+                else if (data.currentTool === 5) data.canvas.classList.add('pindou-cursor');
                 else if (data.currentTool === 7) data.canvas.classList.add('move-cursor');
                 else if (data.currentTool === 8) data.canvas.classList.add('select-cursor');
             },
@@ -3038,7 +3210,7 @@ export default defineComponent({
                 methods.drawPixelArea();
                 if (data.pinDouMode)
                 {
-                    methods.handleDrawPindou();
+                    methods.handleDrawPindou(data.ctx1);
                 }
                 else
                 {
@@ -3122,14 +3294,12 @@ export default defineComponent({
                     let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                     for (let i = 0; i < currentLayerData.length; i += 2)
                     {
-
+                        if (currentLayerData[i][2] === replaceColor)
+                        {
+                            currentLayerData[i][2] = newColor;
+                        }
                         if (i + 1 < currentLayerData.length)
                         {
-                            if (currentLayerData[i][2] === replaceColor)
-                            {
-                                currentLayerData[i][2] = newColor;
-                            }
-
                             if (currentLayerData[i + 1][2] === replaceColor)
                             {
                                 currentLayerData[i + 1][2] = newColor;
@@ -3146,13 +3316,12 @@ export default defineComponent({
                     {
                         for (let j = 0; j < currentLayerData[i].layerData.length; j += 2)
                         {
+                            if (currentLayerData[i].layerData[j][2] === replaceColor)
+                            {
+                                currentLayerData[i].layerData[j][2] = newColor;
+                            }
                             if (j + 1 < currentLayerData[i].layerData.length)
                             {
-                                if (currentLayerData[i].layerData[j][2] === replaceColor)
-                                {
-                                    currentLayerData[i].layerData[j][2] = newColor;
-                                }
-
                                 if (currentLayerData[i].layerData[j + 1][2] === replaceColor)
                                 {
                                     currentLayerData[i].layerData[j + 1][2] = newColor;
@@ -3310,6 +3479,10 @@ export default defineComponent({
                 methods.startDrawing();
                 methods.addKeyBoardEvent();
                 methods.handleResizeWindow();
+                if (data.pinDouMode)
+                {
+                    proxy.$refs.PindouDialog.handleOpen(data.pinDouData);
+                }
             }
         });
 
@@ -3328,6 +3501,7 @@ export default defineComponent({
                 proxy.$refs.ReplaceColorDialog.handleClose();
                 proxy.$refs.MyColorDialog.handleClose();
                 proxy.$refs.PreviewAnimDialog.handleClose();
+                proxy.$refs.PindouDialog.dialogVisible = false;
             }
         });
 

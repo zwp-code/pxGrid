@@ -38,7 +38,7 @@
                         </div>
                     </div>
                 </el-form-item>
-                <el-form-item label="项目描述" required prop="desc">
+                <el-form-item label="项目描述">
                     <el-input 
                     v-model="itemInfo.desc"
                     placeholder="请输入"
