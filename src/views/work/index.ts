@@ -1224,8 +1224,8 @@ export default defineComponent({
                             methods.addShapeList(col, row);
                             if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                data.ctx1.fillStyle = data.brushColor;
-                                let l = data.drawShapeList.length;
+                                // data.ctx1.fillStyle = data.brushColor;
+                                // let l = data.drawShapeList.length;
                                 let startX = data.drawShapeList[0][0];
                                 let startY = data.drawShapeList[0][1];
                                 let endX = col;
@@ -1238,6 +1238,7 @@ export default defineComponent({
                                     if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
                                     let gridX = (arr[i][0] * data.scale) + data.canvasBeginPos.x;
                                     let gridY = (arr[i][1] * data.scale) + data.canvasBeginPos.y;
+                                    data.ctx1.fillStyle = data.brushColor;
                                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                                 }
                                 
@@ -1251,7 +1252,7 @@ export default defineComponent({
                             // {
                             if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                data.ctx1.fillStyle = data.brushColor;
+                                // data.ctx1.fillStyle = data.brushColor;
                                 // let gridX = (col * data.scale) + data.canvasBeginPos.x;
                                 // let gridY = (row * data.scale) + data.canvasBeginPos.y;
                                 // let l = data.drawShapeList.length;
@@ -1267,6 +1268,7 @@ export default defineComponent({
                                     if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
                                     let gridX = (arr[i][0] * data.scale) + data.canvasBeginPos.x;
                                     let gridY = (arr[i][1] * data.scale) + data.canvasBeginPos.y;
+                                    data.ctx1.fillStyle = data.brushColor;
                                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                                 }
                             }
@@ -1278,7 +1280,7 @@ export default defineComponent({
                             methods.addShapeList(col, row);
                             if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                data.ctx1.fillStyle = data.brushColor;
+                                // data.ctx1.fillStyle = data.brushColor;
                                 // let l = data.drawShapeList.length;
                                 let startX = data.drawShapeList[0][0];
                                 let startY = data.drawShapeList[0][1];
@@ -1316,6 +1318,7 @@ export default defineComponent({
                                         if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
                                         let gridX = (arr[i][0] * data.scale) + data.canvasBeginPos.x;
                                         let gridY = (arr[i][1] * data.scale) + data.canvasBeginPos.y;
+                                        data.ctx1.fillStyle = data.brushColor;
                                         data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                                     }
                                 }
