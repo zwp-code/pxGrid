@@ -180,7 +180,7 @@
 .function-block, .function-block-column {
     display: flex;
     align-items: center;
-    margin-top: 20px;
+    margin-top: 15px;
 
     .function-label {
         margin-right: 16px;
@@ -247,6 +247,10 @@
 
 .select-cursor {
     cursor: url('../../../public/icon/select_cursor.png') -3 10, auto;
+}
+
+.magicStick-cursor {
+    cursor: url('../../../public/icon/magicStick_cursor.png') -3 10, auto;
 }
 
 .move-cursor {
@@ -321,3 +325,7 @@
     }
 }
 
+
+.el-divider--horizontal {
+    margin: 20px 0;
+}

@@ -138,7 +138,8 @@
                                         <el-dropdown-item @click="drawShape('rect')" :disabled="pinDouMode">矩 形 [a]</el-dropdown-item>
                                         <el-dropdown-item @click="drawShape('circle')" :disabled="pinDouMode">圆 形 [s]</el-dropdown-item>
                                         <el-dropdown-item @click="drawShape('line')" :disabled="pinDouMode">直 线 [d]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('fillRect')" :disabled="pinDouMode">填充矩形 [f]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('curve')" :disabled="pinDouMode">曲 线 [f]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('fillRect')" :disabled="pinDouMode">填充矩形 [g]</el-dropdown-item>
                                         <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                     </el-dropdown-menu>
                                 </template>
@@ -182,6 +183,15 @@
                                 </template>
                             </el-dropdown>
                             
+                        </el-tooltip>
+                        <el-tooltip
+                        content="魔棒 [p]"
+                        placement="right"
+                        >
+                            <div class="pointer toolItem" @click="handleChangeTool(9)"
+                            :class="{ 'active': currentTool === 9 }">
+                                <img :src="requireIcon('magicStick')"/>
+                            </div>
                         </el-tooltip>
                     </div>
                     <div class="flex-column-end">
@@ -247,6 +257,24 @@
                             <div class="pointer toolItem" @click="handleChangeTool(5)" :class="{ 'active': currentTool === 5 }">
                                 <img :src="requireIcon('pindou')"/>
                             </div>
+                        </el-tooltip>
+                        <el-tooltip
+                            content="AI"
+                            placement="right"
+                        >
+                            <el-dropdown placement="top-start" trigger="click">
+                                <div class="pointer toolItem">
+                                    <img :src="requireIcon('ai')"/>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="handleFilter(1)" :disabled="pinDouMode">智能描边</el-dropdown-item>
+                                        <el-dropdown-item @click="handleFilter(2)" :disabled="pinDouMode">智能生图</el-dropdown-item>
+                                        
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                            
                         </el-tooltip>
                     </div>
                     
@@ -337,7 +365,7 @@
                             <span class="function-label">画笔颜色</span>
                             <el-color-picker v-model="brushColor" show-alpha @active-change="(e) => brushColor = e"/>
                         </div>
-                        <div>
+                        <div class="flex-center">
                             <el-tooltip
                             content="保存颜色 [Alt + s]"
                             placement="top">
@@ -353,7 +381,7 @@
                     <div class="function-block function-block-between" v-show="currentDrawShape.indexOf('fill')>=0 && currentTool===3">
                         <div>
                             <span class="function-label">填充颜色</span>
-                            <el-color-picker v-model="shapeFillColor" show-alpha/>
+                            <el-color-picker v-model="shapeFillColor" show-alpha />
                         </div>
                     </div>
                     <div class="function-block-column">
@@ -456,10 +484,16 @@
                             </el-input>
                         </div>
                         <div style="margin-top: 10px;">
-                            <el-checkbox v-model="isCheckedRatio" label="保持横纵比" @change="handleChangeRatio" :disabled="pinDouMode"/>
-                            <el-checkbox v-model="isShowReferenceLine" label="参考线" :disabled="pinDouMode"/>
+                            <el-checkbox v-model="isCheckedRatio" size="small" label="保持横纵比" @change="handleChangeRatio" :disabled="pinDouMode"/>
+                            <el-checkbox v-model="isShowReferenceLine" size="small" label="参考线" :disabled="pinDouMode"/>
                         </div>
                         
+                    </div>
+                    <div class="function-block function-block-between" v-show="[4,9].includes(currentTool)">
+                        <div class="function-label">
+                            容 差
+                        </div>
+                        <el-slider v-model="tolerance" :max="200" size="small"/>
                     </div>
                 </div>
                 <div style="flex: 1;margin-top: 10px;" class="full-w scrollHidden" v-if="drawRecord.length">
@@ -561,6 +595,7 @@
         @replace="handleReplacePindouColor"
         @export="handleExportPindou">
         </PindouDialog>
+        <!-- <img ref="originalImage" :src="require('@/assets/keji.png')" style="display: none;"> -->
     </teleport>
     
 </div>
