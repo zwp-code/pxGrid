@@ -141,12 +141,14 @@ export default defineComponent({
             },
 
             selectData:{
+                selectLayerId:0,
                 x:-1,
                 y:-1,
                 originList:[] as any, // 原始有像素的数据
                 selectList:[] as any, // 选择的数据
                 copyList:[] as any // 复制的数据
             },
+            selectType:'select', // 选择类型
             previewLoading:false,
             selectActiveColor:'#3c8bfb8f',
             isExpandColorSelector:true,
@@ -165,7 +167,16 @@ export default defineComponent({
 
             tolerance:0, // 容差，适用于油漆桶和魔棒工具
             curvature:4, // 曲线 曲率
-            curveType:[] as any
+            curveType:{
+                isPress:false,
+                pressKey:'0'
+            }, // 曲线类型
+            curveEndPos:[] as any,
+            isHorizontal:false,
+            isVertical:false,
+            drawList:[] as any
+
+            
         });
 
 
@@ -199,6 +210,14 @@ export default defineComponent({
                     return new URL(`../../assets/light/${data.currentDrawTransform}.png`, import.meta.url).href;
                 }
                 return new URL(`../../assets/dark/${data.currentDrawTransform}.png`, import.meta.url).href;
+            }),
+            requireSelectImg: computed(() => 
+            {
+                if (editSpaceStore.themeValue)
+                {
+                    return new URL(`../../assets/light/${data.selectType}.png`, import.meta.url).href;
+                }
+                return new URL(`../../assets/dark/${data.selectType}.png`, import.meta.url).href;
             }),
             requireVisibleImg: computed(() => 
             {
@@ -750,6 +769,47 @@ export default defineComponent({
                 data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = currentLayerData2;
                 methods.reDraw();
             },
+
+            drawTransformSymmetric (transform)
+            {
+                let arr = []  as any;
+                for (let i = 0; i < data.drawList.length; i++)
+                {
+                    if (transform === 'hReverse')
+                    {
+                        let newX = (data.canvasWidth - 1) - data.drawList[i][0];
+                        let newY = data.drawList[i][1];
+                        arr.push([newX, newY, data.drawList[i][2]]);
+                    }
+                    else if (transform === 'vReverse')
+                    {
+                        let newX = data.drawList[i][0];
+                        let newY = (data.canvasHeight - 1) - data.drawList[i][1];
+                        arr.push([newX, newY, data.drawList[i][2]]);
+                    }
+                }
+                for (let j = 0; j < arr.length; j++)
+                {
+                    methods.addDrawRecord([arr[j][0], arr[j][1], arr[j][2]]);
+                }
+            },
+            handleChangeTransform (e, transform)
+            {
+                if (transform === 'isHorizontal')
+                {
+                    if (data[transform])
+                    {
+                        data.isVertical = false;
+                    }
+                }
+                else if (transform === 'isVertical')
+                {
+                    if (data[transform])
+                    {
+                        data.isHorizontal = false;
+                    }
+                }
+            },
             handleWheelEvent (event)
             {
                 event.preventDefault();
@@ -924,11 +984,16 @@ export default defineComponent({
                         console.log(data.moveData);
                         
                     }
-                    else if (data.currentTool === 8)
+                    else if (data.currentTool === 8 && data.selectType === 'select')
                     {
                         if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
+                        if (data.selectData.selectLayerId !== data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId)
+                        {
+                            // if 
+                            methods.handleCancelSelect();
+                        }
                         data.isSelecting = true;
-                        
+                        data.selectData.selectLayerId = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId;
                         data.selectData.x = col;
                         data.selectData.y = row;
                         data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
@@ -961,6 +1026,29 @@ export default defineComponent({
                         //     methods.draw(event); 
                         // }
                         // }
+                    }
+                    else if (data.currentTool === 8 && data.selectType === 'quickSelect')
+                    {
+                        // 快速选择
+                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
+                        if (data.selectData.selectLayerId !== data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId)
+                        {
+                            methods.handleCancelSelect();
+                        }
+                        data.isSelecting = true;
+                        data.selectData.selectLayerId = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId;
+                        data.selectData.x = col;
+                        data.selectData.y = row;
+                        data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
+                        {
+                            if (item[2] !== data.emptyColor) 
+                            {
+                                return item;
+                            }
+                            return null;
+                        }))));
+                        const targetColor = data.ctx1.getImageData(event.offsetX, event.offsetY, 1, 1).data;                       
+                        methods.fillChunkSelect(col, row, rgbaToHex(targetColor));
                     }
                 }
             },
@@ -1048,10 +1136,10 @@ export default defineComponent({
                 console.log(targetColor, replacementColor, data.drawRecord);
                 if (targetColor === replacementColor) return;
                 const stack = [[x, y]];
+                let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                 const isSameColor = (col, row, color) =>
                 {
-                    let flag = false;
-                    let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    // let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
@@ -1067,12 +1155,10 @@ export default defineComponent({
                         const diffA = Math.abs(rgbaColor1[3] - rgbaColor2[3]);
                         return diffR + diffG + diffB + diffA <= data.tolerance;
                     }
-                    
-                    // return flag;
                 };
                 const setColor = (col, row, color) => 
                 {
-                    let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    // let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
@@ -1109,14 +1195,107 @@ export default defineComponent({
                     // methods.reDraw(true, false);
                 }
                 methods.reDraw();
-            },      
+            },
+            fillChunkSelect (x, y, targetColor)
+            {
+                console.log(targetColor);
+                
+                if (targetColor === data.emptyColor) return;
+                if (data.selectData.selectList.find((item) => item[0] === x && item[1] === y)) return;
+                const stack = [[x, y]];
+                let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                // console.log(currentLayerData);
+                
+                const isSameColor = (col, row, color) =>
+                {
+                    // console.log(col, row, currentLayerData[col + row * data.canvasWidth][2], data.selectData.selectList);
+                    if (data.selectData.selectList.find((item) => item[0] === col && item[1] === row)) 
+                    {
+                        // console.log(currentLayerData[col + row * data.canvasWidth][2], '找不到');
+                        return false;
+                    }
+                    // let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
+                    {
+                        let index = col + row * data.canvasWidth;
+                        if (currentLayerData[index][2] === data.emptyColor) 
+                        {
+                            // console.log(currentLayerData[index][2], '空白');
+                            
+                            return false;
+                        }
+                        if (data.tolerance === 0) 
+                        {
+                            // console.log(currentLayerData[index][2]);
+                            
+                            return currentLayerData[index][2] === color;
+                        }
+                        let rgbaColor1 = hexToRgba(currentLayerData[index][2]);
+                        let rgbaColor2 = hexToRgba(color);
+                        const diffR = Math.abs(rgbaColor1[0] - rgbaColor2[0]);
+                        const diffG = Math.abs(rgbaColor1[1] - rgbaColor2[1]);
+                        const diffB = Math.abs(rgbaColor1[2] - rgbaColor2[2]);
+                        const diffA = Math.abs(rgbaColor1[3] - rgbaColor2[3]);
+                        return diffR + diffG + diffB + diffA <= data.tolerance;
+                    }
+                };
+                const setData = (col, row) => 
+                {
+                    // let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
+                    {
+                        // console.log(col, row);
+                        
+                        let index = col + row * data.canvasWidth;
+                        let color1 = currentLayerData[index][2];
+                        data.selectData.selectList.push([col, row, color1]);
+                    }
+                };
+                // let count = 20;
+                while (stack.length > 0) 
+                {
+                    // console.log(JSON.parse(JSON.stringify(stack)));
+                    
+                    const [x, y]:any = stack.pop();
+                    // count--;
+                    
+                    if (isSameColor(x, y, targetColor)) 
+                    {
+                        setData(x, y);
+                        if (x > 0)
+                        {
+                            // 左方
+                            stack.push([x - 1, y]);
+                        }
+
+                        if (x < data.canvasWidth - 1) 
+                        {
+                            stack.push([x + 1, y]);
+                        }
+
+                        if (y > 0) 
+                        {
+                            stack.push([x, y - 1]);
+                        }
+
+                        if (x < data.canvasHeight - 1) 
+                        {
+                            stack.push([x, y + 1]);
+                        }
+                    }
+                    // methods.reDraw(true, false);
+                }
+                methods.reDrawSelectData();
+            },
             draw (event) 
             {
+                // data.test.add([event.offsetX, event.offsetY]);
                 if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
                 {
                     const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
                     const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                     // console.log(col, row);
+                    
                     if (data.isSpace)
                     {
                         // 处理拖拽的逻辑
@@ -1141,6 +1320,12 @@ export default defineComponent({
                     {
                         
                         methods.addDrawRecord([col, row, data.brushColor]);
+                        if (data.isHorizontal || data.isVertical)
+                        {
+                            methods.addDrawList(col, row, data.brushColor);
+                            let symmetric = data.isHorizontal ? 'hReverse' : 'vReverse';
+                            methods.drawTransformSymmetric(symmetric);
+                        }
                         if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                         {
                             let gridX = (col * data.scale) + data.canvasBeginPos.x;
@@ -1275,43 +1460,62 @@ export default defineComponent({
                             // }
                             
                         }
-                        else if (data.currentDrawShape === 'curve')
+                        else if (data.currentDrawShape === 'curve' && data.curveType.isPress)
                         {
                             methods.addShapeList(col, row);
                             if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                             {
-                                // data.ctx1.fillStyle = data.brushColor;
-                                // let l = data.drawShapeList.length;
                                 let startX = data.drawShapeList[0][0];
                                 let startY = data.drawShapeList[0][1];
                                 let endX = col;
                                 let endY = row;
-                                // console.log(l, endX, endY);
-                                // data.curveType = 0;
+                                if (startX === endX && startY === endY) return;
                                 if (startX === endX || startY === endY)
                                 {
                                     let centerX = 0;
                                     let centerY = 0;
                                     let numSteps = 0;
-                                    if (startX === endX)
+                                    if (startX === endX && ['3', '4'].includes(data.curveType.pressKey))
                                     {
-                                        centerX = Math.round(startX - data.curvature) || 0;
+                                        // centerX = Math.round(startX - data.curvature) || 0;
                                         centerY = Math.round(Math.min(startY, endY) + Math.abs(endY - startY) / 2);
-                                        numSteps = Math.round(Math.abs(endY - startY) + Math.abs(centerX - startX));
-                                        // arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, numSteps);
+                                        
+                                        if (data.curveType.pressKey === '3')
+                                        {
+                                            // 左
+                                            centerX = Math.round(startX - data.curvature) <= 0 ? 0 : Math.round(startX - data.curvature);
+                                        }
+                                        else if (data.curveType.pressKey === '4')
+                                        {
+                                            centerX = Math.round(startX + data.curvature) >= data.canvasWidth ? data.canvasWidth : Math.round(startX + data.curvature);
+                                        }
+                                        // numSteps = Math.round(Math.abs(endY - startY) + Math.abs(centerX - startX));
+                                        // console.log(centerX, centerY, startX, startY, endX, endY);
+                                        numSteps = Math.abs(endY - startY);
                                     }
-                                    else if (startY === endY)
+                                    else if (startY === endY && ['1', '2'].includes(data.curveType.pressKey))
                                     {
                                         centerX = Math.round(Math.abs(endX - startX) / 2 + Math.min(startX, endX));
-                                        centerY = Math.round(startY - data.curvature) || 0; 
-                                        numSteps = Math.round(Math.abs(endX - startX) + Math.abs(centerY - startY));
-                                        // console.log(centerX, centerY);
+                                        if (data.curveType.pressKey === '1')
+                                        {
+                                            // 上
+                                            centerY = Math.round(startY - data.curvature) <= 0 ? 0 : Math.round(startY - data.curvature); 
+                                        }
+                                        else if (data.curveType.pressKey === '2')
+                                        {
+                                            centerY = Math.round(startY + data.curvature) >= data.canvasHeight ? data.canvasHeight : Math.round(startY + data.curvature); 
+                                        }
+                                        // console.log(centerX, centerY, startX, startY, endX, endY);
+                                        // centerY = Math.round(startY - data.curvature) || 0; 
                                         
-                                        // arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, numSteps);
+                                        // numSteps = Math.round(Math.abs(endX - startX) + Math.abs(centerY - startY));
+                                        numSteps = Math.abs(endX - startX);
+                                        
                                     }
-                                    let arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, numSteps);
-                                    console.log(arr);
-                                    data.curveType = [endX, endY];
+                                    if (centerX === 0 && centerY === 0) return;
+                                    let arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, 20 + numSteps);
+                                    // console.log(arr);
+                                    data.curveEndPos = [endX, endY];
                                     methods.reDraw(false);
                                     for (let i = 0; i < arr.length; i++)
                                     {
@@ -1450,13 +1654,17 @@ export default defineComponent({
                             data.moveData.x = col;
                             data.moveData.y = row;
                             console.log(data.moveData.x, data.moveData.y, data.selectData.x, data.selectData.y);
-                            data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                            for (let i = 0; i < data.selectData.originList.length; i++)
+                            // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                            methods.reDraw(false, false, data.canvasBeginPos, false); // 绘制其他图层
+                            for (let i = 0; i < data.selectData.originList.length; i++) // 绘制当前图层
                             {
                                 if (data.selectData.originList[i][0] >= data.canvasWidth || data.selectData.originList[i][1] >= data.canvasHeight || data.selectData.originList[i][0] < 0 || data.selectData.originList[i][1] < 0) continue;
                                 if (!data.selectData.copyList.length)
                                 {
-                                    if (data.selectData.selectList.find((item) => data.selectData.originList[i][0] === item[0] && data.selectData.originList[i][1] === item[1])) continue;
+                                    if (data.selectData.selectList.find((item) => data.selectData.originList[i][0] === item[0] && data.selectData.originList[i][1] === item[1])) 
+                                    {
+                                        continue;
+                                    }
                                 }
                                 let gridX = (data.selectData.originList[i][0] * data.scale) + data.canvasBeginPos.x;
                                 let gridY = (data.selectData.originList[i][1] * data.scale) + data.canvasBeginPos.y;
@@ -1464,7 +1672,7 @@ export default defineComponent({
                                 data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                             }
                             console.log(data.moveData.list);
-                            for (let i = 0; i < data.moveData.list.length; i++)
+                            for (let i = 0; i < data.moveData.list.length; i++) // 绘制选择移动的图层
                             {
                                 if (data.moveData.list[i][0] >= data.canvasWidth || data.moveData.list[i][1] >= data.canvasHeight || data.moveData.list[i][0] < 0 || data.moveData.list[i][1] < 0) continue;
                                 let gridX = (data.moveData.list[i][0] * data.scale) + data.canvasBeginPos.x;
@@ -1496,23 +1704,24 @@ export default defineComponent({
                             if (flag < 0) 
                             {
                                 data.selectData.selectList.push([data.selectData.x, data.selectData.y, value[2]]);
-                                for (let i = 0; i < data.selectData.selectList.length; i++)
-                                {
-                                    if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
-                                    let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
-                                    let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
-                                    data.ctx1.fillStyle = data.selectData.selectList[i][2];
-                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
-                                    data.ctx1.fillStyle = data.selectActiveColor;
-                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
-                                    const centerX = gridX + data.scale / 2;
-                                    const centerY = gridY + data.scale / 2;
-                                    // 绘制圆点
-                                    data.ctx1.beginPath();
-                                    data.ctx1.arc(centerX, centerY, 5, 0, 2 * Math.PI);
-                                    data.ctx1.fillStyle = '#3c8bfbff';
-                                    data.ctx1.fill();
-                                }
+                                methods.reDrawSelectData();
+                                // for (let i = 0; i < data.selectData.selectList.length; i++)
+                                // {
+                                //     if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
+                                //     let gridX = (data.selectData.selectList[i][0] * data.scale) + data.canvasBeginPos.x;
+                                //     let gridY = (data.selectData.selectList[i][1] * data.scale) + data.canvasBeginPos.y;
+                                //     data.ctx1.fillStyle = data.selectData.selectList[i][2];
+                                //     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                //     data.ctx1.fillStyle = data.selectActiveColor;
+                                //     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                //     const centerX = gridX + data.scale / 2;
+                                //     const centerY = gridY + data.scale / 2;
+                                //     // 绘制圆点
+                                //     data.ctx1.beginPath();
+                                //     data.ctx1.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+                                //     data.ctx1.fillStyle = '#3c8bfbff';
+                                //     data.ctx1.fill();
+                                // }
                             }
                             // else
                             // {
@@ -1534,21 +1743,23 @@ export default defineComponent({
                 }
                 
             },
-            handleSelect (value)
-            {
-                // if (value === 'move')
-                // {
-                //     if (data.selectData.selectList.length)
-                //     {
-                //         data.isMoving = true;
-                //         data.isShift = true;
-                //     }
-                // }
-                // else
-                // {
-                //     //
-                // }
-            },
+
+            // handleDrawSelect
+            // handleSelect (value)
+            // {
+            //     // if (value === 'move')
+            //     // {
+            //     //     if (data.selectData.selectList.length)
+            //     //     {
+            //     //         data.isMoving = true;
+            //     //         data.isShift = true;
+            //     //     }
+            //     // }
+            //     // else
+            //     // {
+            //     //     //
+            //     // }
+            // },
 
             handleCancelSelect ()
             {
@@ -1618,6 +1829,19 @@ export default defineComponent({
                 }
                 
             },
+            addDrawList (col, row, brushColor)
+            {
+                let flag = false;
+                for (let i = 0; i < data.drawList.length; i++)
+                {
+                    if (data.drawList[i][0] === col && data.drawList[i][1] === row)
+                    {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (!flag) data.drawList.push([col, row, brushColor]);
+            },
             addShapeList (col, row)
             {
                 data.drawShapeList.push([col, row]);
@@ -1673,9 +1897,8 @@ export default defineComponent({
 
             drawCurve (P0, P1, P2, numPoints) 
             {
-                console.log(numPoints);
+                // console.log(numPoints);
                 const points = [] as any;
-                if (numPoints <= data.curvature + 1) return unique2DArray([[P0.x, P0.y], [P2.x, P2.y]]);
                 for (let i = 0; i <= numPoints; i++) 
                 {
                     let t = i / numPoints;
@@ -1685,15 +1908,6 @@ export default defineComponent({
                     points.push([x, y]);
                 }
                 let arr = unique2DArray(points);
-                if (numPoints === 7)
-                {
-                    arr[1] = [arr[1][0] - 1, arr[1][1]];
-                }
-                if ([8, 9].includes(numPoints))
-                {
-                    arr.splice(arr.length - 4, 1);
-                    arr.splice(arr.length - 2, 1);
-                }
                 arr = arr.filter((item) => 
                 {
                     return item[0] >= 0 && item[1] >= 0;
@@ -2032,27 +2246,8 @@ export default defineComponent({
 
             addDrawRecord (value, isUpdate = true)
             {
-                // console.log(value);
-                // if (!isHexColor(value[2])) 
-                // {
-                //     value[2] = rgbaToHex(extractRgbaValues(value[2]));
-                // }
-                // else if (isHexColor(value[2]) && value[2].length < 9)
-                // {
-                //     value[2] = rgbaToHex(hexToRgba(value[2]));
-                // }
-                console.log(value);
-                
                 value[2] = methods.handleTransformColorAsHex(value[2]);
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                // for (let v = 0; v < arr.length; v++)
-                // {
-                //     if (arr[v][0] === value[0] && arr[v][1] === value[1])
-                //     {
-                //         arr[v][2] = value[2];
-                //         break;
-                //     }
-                // }
                 arr[value[0] + (value[1] * data.canvasWidth)][2] = value[2];
                 // console.log(data.drawRecord);
                 if (isUpdate)
@@ -2158,7 +2353,7 @@ export default defineComponent({
                                 count++;
                             }
                         }
-                        methods.reDrawSelectData(beginPos);
+                        if (isSelfRender) methods.reDrawSelectData(beginPos);
                     }
                 }
                 // methods.reDrawSelectData(beginPos);
@@ -2173,6 +2368,7 @@ export default defineComponent({
             stop () 
             {
                 data.isDrawing = false;
+                data.drawList = [];
                 data.isErasering = false;
                 if (data.isDragging)
                 {
@@ -2235,6 +2431,7 @@ export default defineComponent({
             {
                 methods.stop();
                 data.canvas.className = '';
+                
             },
             reDrawSelectData (beginPos = data.canvasBeginPos)
             {
@@ -2244,6 +2441,8 @@ export default defineComponent({
                     if (data.selectData.selectList[i][0] >= data.canvasWidth || data.selectData.selectList[i][1] >= data.canvasHeight || data.selectData.selectList[i][0] < 0 || data.selectData.selectList[i][1] < 0) continue;
                     let gridX = (data.selectData.selectList[i][0] * data.scale) + beginPos.x;
                     let gridY = (data.selectData.selectList[i][1] * data.scale) + beginPos.y;
+                    data.ctx1.fillStyle = data.selectData.selectList[i][2];
+                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                     data.ctx1.fillStyle = data.selectActiveColor;
                     data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
                     const centerX = gridX + data.scale / 2;
@@ -2316,35 +2515,65 @@ export default defineComponent({
                     }
                     else if (data.currentDrawShape === 'curve')
                     {
-                        let l = data.drawShapeList.length;
+                        // let l = data.drawShapeList.length;
                         let startX = data.drawShapeList[0][0];
                         let startY = data.drawShapeList[0][1];
-                        let endX = data.curveType[0];
-                        let endY = data.curveType[1];
+                        let endX = data.curveEndPos[0];
+                        let endY = data.curveEndPos[1];
                         let arr = [] as any;
-                        
-                        if (startX === endX)
+                        let centerX = 0;
+                        let centerY = 0;
+                        let numSteps = 0;
+                        if (startX === endX && startY === endY) return;
+                        if (startX === endX && ['3', '4'].includes(data.curveType.pressKey))
                         {
-                            let centerX = Math.round(startX - data.curvature) || 0;
-                            let centerY = Math.round(Math.min(startY, endY) + Math.abs(endY - startY) / 2);
-                            let numSteps = Math.round(Math.abs(endY - startY) + Math.abs(centerX - startX));
-                            arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, numSteps);
+                            centerY = Math.round(Math.min(startY, endY) + Math.abs(endY - startY) / 2);
+                            if (data.curveType.pressKey === '3')
+                            {
+                                // 左
+                                centerX = Math.round(startX - data.curvature) <= 0 ? 0 : Math.round(startX - data.curvature);
+                            }
+                            else if (data.curveType.pressKey === '4')
+                            {
+                                centerX = Math.round(startX + data.curvature) >= data.canvasWidth ? data.canvasWidth : Math.round(startX + data.curvature);
+                            }
+                            // let centerX = Math.round(startX - data.curvature) || 0;
+                            // let centerY = Math.round(Math.min(startY, endY) + Math.abs(endY - startY) / 2);
+                            // numSteps = Math.round(Math.abs(endY - startY) + Math.abs(centerX - startX));
+                            numSteps = Math.abs(endY - startY);
+                            
                         }
-                        else if (startY === endY)
+                        else if (startY === endY && ['1', '2'].includes(data.curveType.pressKey))
                         {
-                            let centerX = Math.round(Math.abs(endX - startX) / 2 + Math.min(startX, endX));
-                            let centerY = Math.round(startY - data.curvature || 0);
-                            let numSteps = Math.round(Math.abs(endX - startX) + Math.abs(centerY - startY));
-                            arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, numSteps);
+                            centerX = Math.round(Math.abs(endX - startX) / 2 + Math.min(startX, endX));
+                            if (data.curveType.pressKey === '1')
+                            {
+                                // 上
+                                centerY = Math.round(startY - data.curvature) <= 0 ? 0 : Math.round(startY - data.curvature); 
+                            }
+                            else if (data.curveType.pressKey === '2')
+                            {
+                                centerY = Math.round(startY + data.curvature) >= data.canvasHeight ? data.canvasHeight : Math.round(startY + data.curvature); 
+                            }
+                            // let centerY = Math.round(startY - data.curvature || 0);
+                            // numSteps = Math.round(Math.abs(endX - startX) + Math.abs(centerY - startY));
+                            numSteps = Math.abs(endX - startX);
+
+                            
                         }
+                        if (centerX === 0 && centerY === 0) return;
+                        arr = methods.drawCurve({x:startX, y:startY}, {x:centerX, y:centerY}, {x:endX, y:endY}, 20 + numSteps);
                         for (let i = 0; i < arr.length; i++)
                         {
                             methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
                         }
                     }
+                    console.log('更新');
+                    
                     methods.reDraw();
                     data.drawShapeList = [];
-                    data.curveType = 0;
+                    data.curveEndPos = [];
+                    data.curveType.pressKey = '0';
                     data.isDrawShape = false;
                 }
                 else
@@ -2367,7 +2596,7 @@ export default defineComponent({
                 else if (data.currentTool === 5) data.canvas.classList.add('pindou-cursor');
                 else if (data.currentTool === 7) data.canvas.classList.add('move-cursor');
                 else if (data.currentTool === 8) data.canvas.classList.add('select-cursor');
-                else if (data.currentTool === 9) data.canvas.classList.add('magicStick-cursor');
+                // else if (data.currentTool === 9) data.canvas.classList.add('magicStick-cursor');
             },
             handleCopyColor ()
             {
@@ -2464,6 +2693,7 @@ export default defineComponent({
             {
                 // 切换图层
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 data.currentLayerIndex = index;
             },
             handleChangeLayerVisible (index)
@@ -2697,7 +2927,8 @@ export default defineComponent({
             handleChangeFrame (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
-                data.selectData.selectList = [];
+                // data.selectData.selectList = [];
+                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 data.currentFrameIndex = index;
                 data.currentLayerIndex = 0;
                 methods.reDraw(true, false);
@@ -3100,12 +3331,12 @@ export default defineComponent({
                 }
                 else if (event.ctrlKey && event.key === 's')
                 {
-                    event.preventDefault();
+                    event.preventDefault(); // 保存项目
                     methods.handleSaveProject();
                 }
                 else if (event.ctrlKey && event.key === 'p')
                 {
-                    event.preventDefault();
+                    event.preventDefault(); // 打开导出项目
                     data.exportVisible = true;
                     data.isExportProject = true;
                 }
@@ -3153,9 +3384,15 @@ export default defineComponent({
                 }
                 else if (event.key === 'y') 
                 {
-                    // event.preventDefault();
-                    // 切换选择
+                    // 切换手动选择
                     methods.handleChangeTool(8);
+                    data.selectType = 'select';
+                }
+                else if (event.key === 'p') 
+                {
+                    // 切换快速选择
+                    methods.handleChangeTool(8);
+                    data.selectType = 'quickSelect';
                 }
                 else if (event.key === 'u')
                 {
@@ -3208,6 +3445,11 @@ export default defineComponent({
                     methods.handleChangeTool(3);
                     methods.drawShape('fillRect'); // 打开填充矩形
                 }
+                else if (event.key === 'g') 
+                {
+                    methods.handleChangeTool(3);
+                    methods.drawShape('curve'); // 打开曲线
+                }
                 else if (event.ctrlKey && event.key === 'ArrowUp')
                 {
                     // 水平翻转
@@ -3233,25 +3475,19 @@ export default defineComponent({
                 else if (event.key === 'ArrowUp')
                 {
                     // 切换图层
-                    if (data.currentLayerIndex <= 0)
+                    data.currentLayerIndex--;
+                    if (data.currentLayerIndex < 0)
                     {
                         data.currentLayerIndex = 0;
-                    }
-                    else
-                    {
-                        data.currentLayerIndex--;
                     }
                 }
                 else if (event.key === 'ArrowDown')
                 {
                     // 切换图层
-                    if (data.currentLayerIndex >= data.drawRecord[data.currentFrameIndex].layer.length - 1)
+                    data.currentLayerIndex++;
+                    if (data.currentLayerIndex > data.drawRecord[data.currentFrameIndex].layer.length - 1)
                     {
                         data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
-                    }
-                    else
-                    {
-                        data.currentLayerIndex++;
                     }
                 }
                 else if (event.key === 'ArrowLeft')
@@ -3276,6 +3512,12 @@ export default defineComponent({
                     }
                     methods.handleChangeFrame(data.currentFrameIndex);
                 }
+                else if (['1', '2', '3', '4'].includes(event.key) && data.isDrawShape)
+                {
+                    data.curveType.isPress = true;
+                    data.curveType.pressKey = event.key;
+                    
+                }
                 data.canvas.className = '';
                 methods.addCursorClass();
             },
@@ -3291,6 +3533,11 @@ export default defineComponent({
                     data.isShift = false;
                     data.isMoving = false;
                     data.canvas.style.cursor = '';
+                }
+                if (['1', '2', '3', '4'].includes(event.key))
+                {
+                    data.curveType.isPress = false;
+                    
                 }
             },
             addKeyBoardEvent ()

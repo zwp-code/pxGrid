@@ -138,8 +138,17 @@
                                         <el-dropdown-item @click="drawShape('rect')" :disabled="pinDouMode">矩 形 [a]</el-dropdown-item>
                                         <el-dropdown-item @click="drawShape('circle')" :disabled="pinDouMode">圆 形 [s]</el-dropdown-item>
                                         <el-dropdown-item @click="drawShape('line')" :disabled="pinDouMode">直 线 [d]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('curve')" :disabled="pinDouMode">曲 线 [f]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawShape('fillRect')" :disabled="pinDouMode">填充矩形 [g]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawShape('fillRect')" :disabled="pinDouMode">填充矩形 [f]</el-dropdown-item>
+                                        <el-dropdown-item 
+                                        @click="drawShape('curve')"
+                                        style="flex-direction: column;align-items: flex-start;"
+                                        :disabled="pinDouMode">
+                                            曲 线 [g]
+                                            <p style="color: #808080;">[数字键1 - 上曲线]</p>
+                                            <p style="color: #808080;">[数字键2 - 下曲线]</p>
+                                            <p style="color: #808080;">[数字键3 - 左曲线]</p>
+                                            <p style="color: #808080;">[数字键4 - 右曲线]</p>
+                                        </el-dropdown-item>
                                         <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                     </el-dropdown-menu>
                                 </template>
@@ -164,27 +173,29 @@
                             </div>
                         </el-tooltip>
                         <el-tooltip
-                            content="选择 [y]"
+                            content="选区"
                             placement="right"
                         >
                             <el-dropdown placement="bottom-start" trigger="click">
                                 <div class="pointer toolItem" @click="handleChangeTool(8)"
                                 :class="{ 'active': currentTool === 8 }">
-                                    <img :src="requireIcon('select')"/>
+                                    <img :src="requireSelectImg"/>
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
+                                        <el-dropdown-item @click="selectType='select'">手动选择 [y]</el-dropdown-item>
+                                        <el-dropdown-item @click="selectType='quickSelect'">快速选择 [p]</el-dropdown-item>
                                         <el-dropdown-item @click="handleCancelSelect" :disabled="!selectData.selectList.length">取消选择 [Alt + n]</el-dropdown-item>
                                         <el-dropdown-item @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))" :disabled="!selectData.selectList.length">复 制 [Alt + c]</el-dropdown-item>
                                         <!-- <el-dropdown-item @click="handleSelect('copy')" disabled>粘 贴 [Alt + v]</el-dropdown-item> -->
                                         <el-dropdown-item @click="handleRemoveSelect" :disabled="!selectData.selectList.length">删 除 [Alt + d]</el-dropdown-item>
-                                        <el-dropdown-item @click="handleSelect('move')" disabled>移 动 [Shift + 鼠标左键]</el-dropdown-item>
+                                        <el-dropdown-item disabled>移 动 [Shift + 鼠标左键]</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>
                             </el-dropdown>
                             
                         </el-tooltip>
-                        <el-tooltip
+                        <!-- <el-tooltip
                         content="魔棒 [p]"
                         placement="right"
                         >
@@ -192,7 +203,7 @@
                             :class="{ 'active': currentTool === 9 }">
                                 <img :src="requireIcon('magicStick')"/>
                             </div>
-                        </el-tooltip>
+                        </el-tooltip> -->
                     </div>
                     <div class="flex-column-end">
                         <el-tooltip
@@ -487,13 +498,17 @@
                             <el-checkbox v-model="isCheckedRatio" size="small" label="保持横纵比" @change="handleChangeRatio" :disabled="pinDouMode"/>
                             <el-checkbox v-model="isShowReferenceLine" size="small" label="参考线" :disabled="pinDouMode"/>
                         </div>
-                        
+                        <div style="margin-top: 10px;" v-show="currentTool === 0">
+                            <el-checkbox v-model="isHorizontal" size="small" label="水平对称" :disabled="pinDouMode" @change="handleChangeTransform($event, 'isHorizontal')"/>
+                            <el-checkbox v-model="isVertical" size="small" label="垂直对称" :disabled="pinDouMode" @change="handleChangeTransform($event, 'isVertical')"/>
+                        </div>
                     </div>
-                    <div class="function-block function-block-between" v-show="[4,9].includes(currentTool)">
+                    <div class="function-block function-block-between" v-show="currentTool === 4 || (currentTool === 8 && selectType === 'quickSelect')">
                         <div class="function-label">
                             容 差
                         </div>
-                        <el-slider v-model="tolerance" :max="200" size="small"/>
+                        <el-input-number v-model="tolerance" :min="0" :max="200" @change="handleChange" />
+                        <!-- <el-slider v-model="tolerance" :max="200" size="small"/> -->
                     </div>
                 </div>
                 <div style="flex: 1;margin-top: 10px;" class="full-w scrollHidden" v-if="drawRecord.length">
