@@ -572,6 +572,34 @@ export default defineComponent({
                         
                     }
                 }
+                methods.handleDrawReferenceLine();
+                // if (data.isShowReferenceLine)
+                // {
+                //     // 绘制参考线
+                //     data.ctx2.globalAlpha = 0.5;
+                //     data.ctx2.lineWidth = 2;
+                //     data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
+                //     data.ctx2.beginPath();
+                //     data.ctx2.setLineDash([5, 3]);
+                //     data.ctx2.moveTo(beginX + (data.canvasWidth * data.scale) / 2, beginY);
+                //     data.ctx2.lineTo(beginX + (data.canvasWidth * data.scale) / 2, beginY + data.canvasHeight * data.scale);
+                //     data.ctx2.stroke();
+
+                //     data.ctx2.beginPath();
+                //     data.ctx2.moveTo(beginX, beginY + (data.canvasHeight * data.scale) / 2);
+                //     data.ctx2.lineTo(beginX + data.canvasWidth * data.scale, beginY + (data.canvasHeight * data.scale) / 2);
+                //     data.ctx2.stroke();
+                // }
+                // 更新帧预览;
+                // const imageData = data.ctx2.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
+                // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+                // data.projectData.frameImg = dataURL;
+                // await editSpaceStore.saveProject(data.projectData);
+                // console.log(data.drawRecord);
+                // if (data.drawAreaList.length >= data.canvasWidth * data.canvasHeight) cancelAnimationFrame(data.AnimationFrameId_1);
+            },
+            handleDrawReferenceLine ()
+            {
                 if (data.isShowReferenceLine)
                 {
                     // 绘制参考线
@@ -580,22 +608,15 @@ export default defineComponent({
                     data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
                     data.ctx2.beginPath();
                     data.ctx2.setLineDash([5, 3]);
-                    data.ctx2.moveTo(beginX + (data.canvasWidth * data.scale) / 2, beginY);
-                    data.ctx2.lineTo(beginX + (data.canvasWidth * data.scale) / 2, beginY + data.canvasHeight * data.scale);
+                    data.ctx2.moveTo(data.canvasBeginPos.x + (data.canvasWidth * data.scale) / 2, data.canvasBeginPos.y);
+                    data.ctx2.lineTo(data.canvasBeginPos.x + (data.canvasWidth * data.scale) / 2, data.canvasBeginPos.y + data.canvasHeight * data.scale);
                     data.ctx2.stroke();
 
                     data.ctx2.beginPath();
-                    data.ctx2.moveTo(beginX, beginY + (data.canvasHeight * data.scale) / 2);
-                    data.ctx2.lineTo(beginX + data.canvasWidth * data.scale, beginY + (data.canvasHeight * data.scale) / 2);
+                    data.ctx2.moveTo(data.canvasBeginPos.x, data.canvasBeginPos.y + (data.canvasHeight * data.scale) / 2);
+                    data.ctx2.lineTo(data.canvasBeginPos.x + data.canvasWidth * data.scale, data.canvasBeginPos.y + (data.canvasHeight * data.scale) / 2);
                     data.ctx2.stroke();
                 }
-                // 更新帧预览;
-                // const imageData = data.ctx2.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
-                // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
-                // data.projectData.frameImg = dataURL;
-                // await editSpaceStore.saveProject(data.projectData);
-                // console.log(data.drawRecord);
-                // if (data.drawAreaList.length >= data.canvasWidth * data.canvasHeight) cancelAnimationFrame(data.AnimationFrameId_1);
             },
             drawLoop () 
             {
@@ -619,7 +640,7 @@ export default defineComponent({
                     let currentSelectData = data.selectData.selectList;
                     for (let i = 0; i < currentSelectData.length; i++)
                     {
-                        if (currentSelectData[i][0] > data.canvasWidth || currentSelectData[i][1] > data.canvasHeight) return;
+                        if (currentSelectData[i][0] >= data.canvasWidth || currentSelectData[i][1] >= data.canvasHeight || currentSelectData[i][0] < 0 || currentSelectData[i][1] < 0) return;
                         let gridX = (currentSelectData[i][0] * data.scale) + data.canvasBeginPos.x;
                         let gridY = (currentSelectData[i][1] * data.scale) + data.canvasBeginPos.y;
                         realCoords.push([gridX, gridY, currentSelectData[i][2]]);
@@ -629,7 +650,7 @@ export default defineComponent({
                 {
                     for (let i = 0; i < currentLayerData2.length; i++)
                     {
-                        if (currentLayerData2[i][0] > data.canvasWidth || currentLayerData2[i][1] > data.canvasHeight) return;
+                        if (currentLayerData2[i][0] >= data.canvasWidth || currentLayerData2[i][1] >= data.canvasHeight || currentLayerData2[i][0] < 0 || currentLayerData2[i][1] < 0) return;
                         let gridX = (currentLayerData2[i][0] * data.scale) + data.canvasBeginPos.x;
                         let gridY = (currentLayerData2[i][1] * data.scale) + data.canvasBeginPos.y;
                         realCoords.push([gridX, gridY, currentLayerData2[i][2]]);
@@ -703,7 +724,14 @@ export default defineComponent({
                 {
                     for (let i = 0; i < realCoords.length; i++)
                     {
-                        if (realCoords[i][2] === data.emptyColor) continue;
+                        // const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        // const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
+                        // let beginIndex = beginCol + beginRow * data.canvasWidth;
+                        // if (realCoords[i][2] === data.emptyColor) 
+                        // {
+                        //     // emptyArr[i] = [currentLayerData2[beginIndex][0], currentLayerData2[beginIndex][1], realCoords[i][2]];
+                        //     continue;
+                        // }
                         let relativeX = realCoords[i][0] - centerX;
                         let relativeY = realCoords[i][1] - centerY;
                         let rotateX = -relativeY;
@@ -711,22 +739,30 @@ export default defineComponent({
                         let endX = rotateX + centerX - data.scale;
                         let endY = rotateY + centerY;
                         
-                        const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
-                        const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
+                        // const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        // const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        let endIndex = col + row * data.canvasWidth;
-                        let beginIndex = beginCol + beginRow * data.canvasWidth;
-                        if (currentLayerData1[endIndex][2] === data.emptyColor)
-                        {
-                            currentLayerData2[endIndex][2] = realCoords[i][2];
-                            currentLayerData2[beginIndex][2] = data.emptyColor;
-                        }
-                        else
-                        {
-                            currentLayerData2[endIndex][2] = realCoords[i][2];
-                            currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
-                        }
+                        // let endIndex = col + row * data.canvasWidth;
+
+                        // emptyArr[endIndex] = [col, row, realCoords[i][2]];
+
+                        // let beginIndex = beginCol + beginRow * data.canvasWidth;
+                        // if (currentLayerData1[endIndex][2] === data.emptyColor)
+                        // {
+                        //     currentLayerData2[endIndex][2] = realCoords[i][2];
+                        //     currentLayerData2[beginIndex][2] = data.emptyColor;
+                        // }
+                        // else
+                        // {
+                        //     currentLayerData2[endIndex][2] = realCoords[i][2];
+                        //     currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
+                        // }
+                        currentLayerData2[i][0] = col;
+                        currentLayerData2[i][1] = row;
+                        
+                        // console.log(beginCol, beginRow, col, row);
+                        
                         if (data.selectData.selectList.length)
                         {
                             data.selectData.selectList[i][0] = col;
@@ -738,7 +774,7 @@ export default defineComponent({
                 {
                     for (let i = 0; i < realCoords.length; i++)
                     {
-                        if (realCoords[i][2] === data.emptyColor) continue;
+                        // if (realCoords[i][2] === data.emptyColor) continue;
                         let relativeX = realCoords[i][0] - centerX;
                         let relativeY = realCoords[i][1] - centerY;
                         let rotateX = relativeY;
@@ -746,22 +782,24 @@ export default defineComponent({
                         let endX = rotateX + centerX;
                         let endY = rotateY + centerY - data.scale;
 
-                        const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
-                        const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
+                        // const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        // const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        let endIndex = col + row * data.canvasWidth;
-                        let beginIndex = beginCol + beginRow * data.canvasWidth;
-                        if (currentLayerData1[endIndex][2] === data.emptyColor)
-                        {
-                            currentLayerData2[endIndex][2] = realCoords[i][2];
-                            currentLayerData2[beginIndex][2] = data.emptyColor;
-                        }
-                        else
-                        {
-                            currentLayerData2[endIndex][2] = realCoords[i][2];
-                            currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
-                        }
+                        currentLayerData2[i][0] = col;
+                        currentLayerData2[i][1] = row;
+                        // let endIndex = col + row * data.canvasWidth;
+                        // let beginIndex = beginCol + beginRow * data.canvasWidth;
+                        // if (currentLayerData1[endIndex][2] === data.emptyColor)
+                        // {
+                        //     currentLayerData2[endIndex][2] = realCoords[i][2];
+                        //     currentLayerData2[beginIndex][2] = data.emptyColor;
+                        // }
+                        // else
+                        // {
+                        //     currentLayerData2[endIndex][2] = realCoords[i][2];
+                        //     currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
+                        // }
                         if (data.selectData.selectList.length)
                         {
                             data.selectData.selectList[i][0] = col;
@@ -769,6 +807,23 @@ export default defineComponent({
                         }
                     }
                 }
+                // 进行排序
+                currentLayerData2.sort((a, b) => 
+                {
+                    if (a[1] < b[1]) 
+                    {
+                        return -1;
+                    } 
+                    else if (a[1] > b[1]) 
+                    {
+                        return 1;
+                    } 
+                    else 
+                    {
+                        return a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0);
+                    }
+                });
+                console.log(currentLayerData2);
                 data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = currentLayerData2;
                 methods.reDraw();
             },
@@ -817,7 +872,7 @@ export default defineComponent({
             {
                 event.preventDefault();
                 // console.log(event);
-                const delta = event.deltaY > 0 ? -0.5 : 0.5;
+                const delta = event.deltaY > 0 ? -1 : 1;
                 data.scale += delta;
                 data.scale = Math.max(1, data.scale);
                 console.log(data.scale);
@@ -1074,7 +1129,7 @@ export default defineComponent({
                     data.selectData.selectList[i][2] = replacementColor;
                     let col = data.selectData.selectList[i][0];
                     let row = data.selectData.selectList[i][1];
-                    let index = col + row * data.canvasHeight;
+                    let index = col + row * data.canvasWidth;
                     data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData[index][2] = replacementColor;
                 }
                 methods.reDraw();
@@ -2226,10 +2281,26 @@ export default defineComponent({
 
             handleFrameImg (ctx, isAddHistory = true)
             {
-                let beginX = data.drawAreaList[0][0];
-                let beginY = data.drawAreaList[0][1];
-                const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
-                const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+                // let beginX = data.drawAreaList[0][0];
+                // let beginY = data.drawAreaList[0][1];
+                // const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
+                // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+                let scale = 5;
+                const imageData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                data.realCanvas.width = data.canvasWidth * scale;
+                data.realCanvas.height = data.canvasHeight * scale;
+                data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                for (let y = 0; y < data.canvasHeight; y++) 
+                {
+                    for (let x = 0; x < data.canvasWidth; x++) 
+                    {
+                        let color = imageData[x + (y * data.canvasWidth)][2];
+                        // 在新的 canvas 上绘制缩小后的像素
+                        data.ctx3.fillStyle = color;
+                        data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                    }
+                }
+                let dataURL = data.realCanvas.toDataURL('image/png');
                 data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
                 // 处理当前帧的颜色统计
                 data.worker.postMessage({
@@ -2353,9 +2424,11 @@ export default defineComponent({
 
             removeDrawRecord (value, isRedraw = true)
             {
+                console.log(value);
+                
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                // console.log(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData);
-                let index = value[0] + value[1] * data.canvasHeight;
+                console.log(arr);
+                let index = value[0] + value[1] * data.canvasWidth;
                 if (arr[index][2] === data.emptyColor) return;
                 arr[index][2] = data.emptyColor;
                 // for (let v = 0; v < arr.length; v++)
@@ -2445,6 +2518,7 @@ export default defineComponent({
                         if (isSelfRender) methods.reDrawSelectData(beginPos);
                     }
                 }
+                // methods.handleDrawReferenceLine();
                 // methods.reDrawSelectData(beginPos);
                 if (isRenderFrameImg)
                 {
@@ -3451,6 +3525,33 @@ export default defineComponent({
                     event.preventDefault();
                     methods.handleScreenFull(); // 全屏
                 }
+                else if (event.ctrlKey && event.altKey && event.key === 'c')
+                {
+                    // 复制颜色
+                    event.preventDefault(); 
+                    methods.handleCopyColor();
+                }
+                else if (event.ctrlKey && event.key === 'ArrowUp')
+                {
+                    // 水平翻转
+                    event.preventDefault();
+                    methods.drawTransform('hReverse');
+                }
+                else if (event.ctrlKey && event.key === 'ArrowDown')
+                {
+                    event.preventDefault();
+                    methods.drawTransform('vReverse');
+                }
+                else if (event.ctrlKey && event.key === 'ArrowLeft')
+                {
+                    event.preventDefault();
+                    methods.drawTransform('nsz');
+                }
+                else if (event.ctrlKey && event.key === 'ArrowRight')
+                {
+                    event.preventDefault();
+                    methods.drawTransform('ssz');
+                }
                 else if (event.ctrlKey && event.key)
                 {
                     
@@ -3504,12 +3605,7 @@ export default defineComponent({
                     // 保存当前颜色
                     methods.handleSaveColor(true);
                 }
-                else if (event.ctrlKey && event.altKey && event.key === 'c')
-                {
-                    // 复制颜色
-                    event.preventDefault(); 
-                    methods.handleCopyColor();
-                }
+                
                 else if (event.key === 'i') 
                 {
                     // 清空画布
@@ -3550,27 +3646,7 @@ export default defineComponent({
                 //     methods.handleChangeTool(3);
                 //     methods.drawShape('curve'); // 打开曲线
                 // }
-                else if (event.ctrlKey && event.key === 'ArrowUp')
-                {
-                    // 水平翻转
-                    event.preventDefault();
-                    methods.drawTransform('hReverse');
-                }
-                else if (event.ctrlKey && event.key === 'ArrowDown')
-                {
-                    event.preventDefault();
-                    methods.drawTransform('vReverse');
-                }
-                else if (event.ctrlKey && event.key === 'ArrowLeft')
-                {
-                    event.preventDefault();
-                    methods.drawTransform('nsz');
-                }
-                else if (event.ctrlKey && event.key === 'ArrowRight')
-                {
-                    event.preventDefault();
-                    methods.drawTransform('ssz');
-                }
+                
                 
                 else if (event.key === 'ArrowUp')
                 {
@@ -3808,6 +3884,8 @@ export default defineComponent({
                 data.widthHeightRatio = 1;
                 data.tolerance = 0;
                 data.selectType = 'select';
+                data.currentDrawShape = 'rect';
+                data.currentDrawTransform = 'hReverse';
                 data.projectData = {
                     projectName:'',
                     projectId:'',

@@ -95,7 +95,7 @@
         >
             <div class="flex-between" style="margin-top: 10px;">
                 <el-input v-model="name" placeholder="请输入" style="width:200px" :disabled="editMask"/>
-                <el-color-picker v-model="color" @change="console.log(color)"/>
+                <el-color-picker v-model="color"/>
             </div>
             <template #footer>
                 <div class="dialog-footer">

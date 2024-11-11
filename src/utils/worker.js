@@ -158,11 +158,12 @@ addEventListener('message', (e) =>
             {
                 return similarColorCache.get(hex);
             }
-            let minDistance = 584970;// 最小色差值（初始值为纯黑和纯白的色差，使用colorDistance(0,0,0,255,255,255)计算而得）
+            let minDistance = 584970;// 584970最小色差值（初始值为纯黑和纯白的色差，使用colorDistance(0,0,0,255,255,255)计算而得）
             let minColor = null;// 最小值对应的颜色组
             for (let object of currentPindouColorList) 
             {
                 let rgba = hexToRgba(object.color);
+                // console.log(object.color);
                 let distance = colorDistance(rgba[0], rgba[1], rgba[2], r, g, b);
                 if (distance === 0) 
                 { // 颜色相等直接返回
