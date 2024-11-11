@@ -78,7 +78,7 @@ export default defineComponent({
                 data.replaceColor = '#000000ff';
                 data.newColor = '';
                 methods.handleChange('', 1);
-                // context.emit('close');
+                context.emit('close');
             },
             handleOpen ()
             {

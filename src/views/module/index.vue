@@ -1,7 +1,7 @@
 <template>
     <div 
     class="full-layout scrollbar routerview flex-center">
-        <div class="full-layout" v-loading="isloading" element-loading-background="#00000000">
+        <div class="full-layout flex flex-column" v-loading="isloading" element-loading-background="#00000000">
             <div class="flex-start searchBox">
                 <div class="input-search">
                     <el-icon><Search /></el-icon>
@@ -36,13 +36,12 @@
                     />
                 </div>
             </div>
-            <div class="full-layout scrollbar flex-start flex-warp"
+            <div class="full-layout scrollbar flex-start flex-warp scrollAuto"
             v-if="searchData.length && !isloading" 
-            style="height: calc(100% - 90px);
-            align-content: flex-start;
+            style="align-content: flex-start;
             align-items:flex-start;
-            overflow: auto;
-            padding:0 10px">
+            gap:10px;
+            padding:10px 18px">
                 <div v-for="item in searchData" :key="item.id" class="download-item">
                     <div class="frameImg">
                         <img :src="getFrameImg(item.data.frameImg)"/>
@@ -78,7 +77,8 @@
                 </div>
                 
             </div>
-            <div v-else-if="!isloading && !searchData.length" class="full-layout flex-center">
+            <div v-else-if="!isloading && !searchData.length" 
+            class="full-layout flex-center scrollbar scrollAuto">
                 <el-empty
                 :image="require('@/assets/empty.png')"
                 description="空空如也"

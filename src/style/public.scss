@@ -257,6 +257,10 @@ body,html{
     pointer-events: none !important;
 }
 
+.el-input__inner {
+    @extend .pixelFont;
+}
+
 // .el-dialog .el-dialog__body {
 //     max-height: 500px;
 //     overflow: auto;

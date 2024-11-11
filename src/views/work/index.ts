@@ -427,7 +427,8 @@ export default defineComponent({
             {
                 data.worker.postMessage({
                     type:6,
-                    currentPindouBrand:brand,
+                    // currentPindouBrand:brand,
+                    currentPindouBrandColorList:JSON.parse(JSON.stringify(editSpaceStore.pindouMaps[brand])),
                     variables:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer))
                 });
                 data.worker.onmessage = (event) => 
@@ -437,6 +438,7 @@ export default defineComponent({
                     methods.handleDrawPindou(data.ctx1);
                     data.pinDouMode = true;
                     proxy.$refs.PindouDialog.handleOpen(event.data);
+                    methods.handleCancelKeyboardEvent();
                 };
             },
             handleChangeCanvasSize (e, key)
@@ -3361,11 +3363,13 @@ export default defineComponent({
             handleOpenMyColorDialog ()
             {
                 proxy.$refs.MyColorDialog.handleOpen();
+                methods.handleCancelKeyboardEvent();
             },
             handleOpenReplaceColorDialog ()
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 proxy.$refs.ReplaceColorDialog.handleOpen();
+                methods.handleCancelKeyboardEvent();
             },
             handleOpenPreviewDialog ()
             {
@@ -3382,10 +3386,13 @@ export default defineComponent({
                 });
                 data.previewLoading = false;
             },
-            handlekeyBoardEvent (event)
+            handlekeyDownEvent (event)
             {
+                if (!proxy.$route.path.includes('/work')) return;
                 if (event.key === ' ')
                 {
+                    console.log('空格');
+                    
                     event.preventDefault();
                     data.isSpace = true;
                     // data.canvas.style.cursor = 'grabbing';
@@ -3428,14 +3435,12 @@ export default defineComponent({
                 else if (event.ctrlKey && event.key === 'p')
                 {
                     event.preventDefault(); // 打开导出项目
-                    data.exportVisible = true;
-                    data.isExportProject = true;
+                    methods.handleExportDialog(true);
                 }
                 else if (event.ctrlKey && event.key === 'i')
                 {
                     event.preventDefault(); 
-                    data.exportVisible = true;
-                    data.isExportProject = false;
+                    methods.handleExportDialog(false);
                 }
                 else if (event.altKey && event.key === 'p') 
                 {
@@ -3445,6 +3450,10 @@ export default defineComponent({
                 {
                     event.preventDefault();
                     methods.handleScreenFull(); // 全屏
+                }
+                else if (event.ctrlKey && event.key)
+                {
+                    
                 }
                 else if (event.key === 'q') 
                 {
@@ -3613,6 +3622,7 @@ export default defineComponent({
             },
             handleKeyUpEvent (event)
             {
+                if (!proxy.$route.path.includes('/work')) return;
                 if (event.key === ' ')
                 {
                     data.isSpace = false;
@@ -3632,8 +3642,8 @@ export default defineComponent({
             },
             addKeyBoardEvent ()
             {
-                document.addEventListener('keydown', methods.handlekeyBoardEvent);
-                document.addEventListener('keyup', methods.handleKeyUpEvent);
+                window.addEventListener('keydown', methods.handlekeyDownEvent);
+                window.addEventListener('keyup', methods.handleKeyUpEvent);
             },
             handleResizeWindowEvent (event)
             {
@@ -3781,6 +3791,7 @@ export default defineComponent({
             },
             handleInitData ()
             {
+                data.currentTool = 0;
                 data.historyRecord = [];
                 data.currentFrameIndex = 0;
                 data.currentLayerIndex = 0;
@@ -3790,8 +3801,13 @@ export default defineComponent({
                 data.brushColor = '#000000ff';
                 data.isCheckedRatio = true;
                 data.isShowReferenceLine = false;
+                data.isVertical = false;
+                data.isHorizontal = false;
+                data.brushSize = 1;
+                data.eraserSize = 1;
                 data.widthHeightRatio = 1;
-                data.currentTool = 0;
+                data.tolerance = 0;
+                data.selectType = 'select';
                 data.projectData = {
                     projectName:'',
                     projectId:'',
@@ -3806,6 +3822,7 @@ export default defineComponent({
                     tip:''
                 };
                 data.pinDouMode = false;
+                methods.handleCancelSelect();
             },
             handleReadProjectData ()
             {
@@ -3887,6 +3904,22 @@ export default defineComponent({
                     editSpaceStore.saveProjectId('0');
                     proxy.$router.replace('/project');
                 }
+            },
+            handleCancelKeyboardEvent ()
+            {
+                window.removeEventListener('keydown', methods.handlekeyDownEvent);
+                window.removeEventListener('keyup', methods.handleKeyUpEvent);
+            },
+            handleExportDialog (flag)
+            {
+                data.exportVisible = true;
+                data.isExportProject = flag;
+                methods.handleCancelKeyboardEvent();
+            },
+            handleCloseDialog (value)
+            {
+                data[value] = false;
+                methods.addKeyBoardEvent();
             }
         };
 
@@ -3923,6 +3956,7 @@ export default defineComponent({
                 if (data.pinDouMode)
                 {
                     proxy.$refs.PindouDialog.handleOpen(data.pinDouData);
+                    methods.handleCancelKeyboardEvent();
                 }
             }
         });
@@ -3931,13 +3965,15 @@ export default defineComponent({
         {
             if (data.canvas)
             {
+                console.log('清空了键盘事件');
+                
                 data.canvas.removeEventListener('mousedown', methods.start);
                 data.canvas.removeEventListener('mousemove', methods.draw);
                 data.canvas.removeEventListener('mouseup', methods.stop);
                 data.canvas.removeEventListener('mouseout', methods.leave);
                 data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
-                document.removeEventListener('keydown', methods.handlekeyBoardEvent);
-                document.removeEventListener('keyup', methods.handleKeyUpEvent);
+                window.removeEventListener('keydown', methods.handlekeyDownEvent);
+                window.removeEventListener('keyup', methods.handleKeyUpEvent);
                 window.removeEventListener('resize', methods.handleResizeWindowEvent);
                 proxy.$refs.ReplaceColorDialog.handleClose();
                 proxy.$refs.MyColorDialog.handleClose();

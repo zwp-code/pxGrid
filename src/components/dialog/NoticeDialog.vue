@@ -4,12 +4,12 @@
     :before-close="handleClose"
     class="z-dialog" center>
         <div class="notice-content">{{notice.content}}</div>
-        <!-- <template #footer>
+        <template #footer>
             <span class="dialog-footer">
-                <el-button type="primary" @click="handleClose"
-                >{{ $t('message.close') }}</el-button>
+                <el-button type="primary" @click="handleHidden"
+                >不再提示</el-button>
             </span>
-        </template> -->
+        </template>
     </el-dialog>
 </template>
 
@@ -40,6 +40,12 @@ export default defineComponent({
             {
                 data.dialogVisible = false;
                 context.emit('close');
+                proxy.$utils.cache.isHideNotice.set('0');
+            },
+            handleHidden ()
+            {
+                methods.handleClose();
+                proxy.$utils.cache.isHideNotice.set(props.notice.id);
             }
         };
 
@@ -59,5 +65,7 @@ export default defineComponent({
     padding: 5px 5px 15px;
     font-size: 15px;
     text-align: justify;
+    white-space: pre-wrap;
+    line-height:2;
 }
 </style>

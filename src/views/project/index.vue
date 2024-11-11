@@ -1,6 +1,6 @@
 <template>
     <div class="full-layout flex-center scrollbar routerview">
-        <div class="full-layout" v-loading="isloading" element-loading-background="#00000000">
+        <div class="full-layout flex flex-column" v-loading="isloading" element-loading-background="#00000000">
             <div class="flex-between flex-warp" style="padding:20px 30px 10px;row-gap: 10px;">
                 <h2>{{$t('message.mineProject')}}</h2>
                 <div class="flex-end">
@@ -8,13 +8,12 @@
                     <el-button type="primary"  @click="NewProjectVisible=true">{{ $t('message.newProject') }}</el-button>
                 </div>
             </div>
-            <div class="full-layout scrollbar flex-start flex-warp"
+            <div class="full-layout scrollbar flex-start flex-warp scrollAuto"
             v-if="editSpaceStore.projectList.length && !isloading" 
-            style="height: calc(100% - 90px);
-            align-content: flex-start;
+            style="align-content: flex-start;
             align-items:flex-start;
-            overflow: auto;
-            padding:0 10px">
+            gap:10px;
+            padding:10px 18px">
                 <div v-for="item in editSpaceStore.projectList" :key="item.id" class="project-item">
                     <div class="frameImg">
                         <img :src="getFrameImg(item.data)" v-if="item.data.frameImg!==''"/>
@@ -54,7 +53,9 @@
                     
                 </div>
             </div>
-            <div v-else-if="!isloading && !editSpaceStore.projectList.length" class="full-layout flex-center">
+            <div 
+            v-else-if="!isloading && !editSpaceStore.projectList.length" 
+            class="full-layout flex-center scrollbar scrollAuto">
                 <el-empty
                 :image="require('@/assets/empty.png')"
                 description="空空如也"

@@ -49,8 +49,8 @@
                             <el-dropdown-menu>
                                 <el-dropdown-item @click="handleSaveProject" :disabled="pinDouMode">保存项目 [Ctrl + s]</el-dropdown-item>
                                 <!-- <el-dropdown-item @click="handleImportProject">导入项目</el-dropdown-item> -->
-                                <el-dropdown-item @click="exportVisible=true;isExportProject=true" :disabled="pinDouMode">导出项目 [Ctrl + p]</el-dropdown-item>
-                                <el-dropdown-item @click="exportVisible=true;isExportProject=false" :disabled="pinDouMode">导出图像 [Ctrl + i]</el-dropdown-item>
+                                <el-dropdown-item @click="handleExportDialog(true)" :disabled="pinDouMode">导出项目 [Ctrl + p]</el-dropdown-item>
+                                <el-dropdown-item @click="handleExportDialog(false)" :disabled="pinDouMode">导出图像 [Ctrl + i]</el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
                     </el-dropdown>
@@ -592,9 +592,13 @@
     <teleport to="body">
         <MyColorDialog 
         ref="MyColorDialog"
+        @close="addKeyBoardEvent"
         @select="(color) => brushColor = color">
         </MyColorDialog>
-        <ReplaceColorDialog ref="ReplaceColorDialog" @confirm="handleConfirmReplaceColor"></ReplaceColorDialog>
+        <ReplaceColorDialog
+        @close="addKeyBoardEvent"
+        ref="ReplaceColorDialog" 
+        @confirm="handleConfirmReplaceColor"></ReplaceColorDialog>
         <!-- <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog> -->
         <!-- <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog> -->
         <ExportDialog 
@@ -603,14 +607,14 @@
         :visible="exportVisible"
         :isExportProject="isExportProject"
         @export="handleExport"
-        @close="exportVisible=false">
+        @close="handleCloseDialog('exportVisible')">
         </ExportDialog>
         <PreviewAnimDialog 
         ref="PreviewAnimDialog">
         </PreviewAnimDialog>
         <PindouDialog
         ref="PindouDialog" 
-        @close="pinDouMode = false" 
+        @close="handleCloseDialog('pinDouMode')" 
         @change="handlePindouEvent"
         @replace="handleReplacePindouColor"
         @export="handleExportPindou">

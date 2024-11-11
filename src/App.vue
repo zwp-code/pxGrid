@@ -27,6 +27,7 @@ const getProjectList  = () =>
     //     console.log(editSpaceStore.projectList);
     // }
     editSpaceStore.getProjectList();
+    editSpaceStore.getPindouData();
 };
 
 onMounted(() => 

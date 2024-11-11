@@ -2,14 +2,14 @@ import Zdb from '../../packages/zdb-js/src/Zdb.js';
 import db from '@/config/db';
 const $zdb = Zdb(db);
 const $DB = {
-    findDB (id)
+    findDB (id, tableName = 'pixelGrid')
     {
         return new Promise((resolve, reject) => 
         {
             $zdb.then((res) => 
             {
                 res.query_by_cursor_index({
-                    tableName:'pixelGrid',
+                    tableName,
                     indexName:'id',
                     indexValue:id,
                     success: async (res1) => 
@@ -25,14 +25,14 @@ const $DB = {
             });
         });
     },
-    findAllDB ()
+    findAllDB (tableName = 'pixelGrid')
     {
         return new Promise((resolve, reject) => 
         {
             $zdb.then((res) => 
             {
                 res.queryAll({
-                    tableName:'pixelGrid',
+                    tableName,
                     success: async (res1) => 
                     {
                         console.log(res1);
@@ -47,7 +47,7 @@ const $DB = {
             });
         });
     },
-    exportDB (id)
+    exportDB (id, tableName = 'pixelGrid')
     {
         // 导出某个备份数据
         return new Promise((resolve, reject) => 
@@ -55,7 +55,7 @@ const $DB = {
             $zdb.then((res1) => 
             {
                 res1.query_by_cursor_index({
-                    tableName:'pixelGrid',
+                    tableName,
                     indexName:'id',
                     indexValue:id,
                     success: async (res) => 
@@ -75,14 +75,14 @@ const $DB = {
         });
     },
     
-    clearDB (key)
+    clearDB (key, tableName = 'pixelGrid')
     {
         return new Promise((resolve, reject) => 
         {
             $zdb.then((res) => 
             {
                 res.delete_by_index({
-                    tableName:'pixelGrid',
+                    tableName,
                     indexName:'id',
                     indexValue:key,
                     success:() => 
@@ -99,7 +99,7 @@ const $DB = {
             });
         });
     },
-    updateDB (value)
+    updateDB (value, tableName = 'pixelGrid')
     {
         let valueData = JSON.parse(JSON.stringify(value));
         // 修改
@@ -108,7 +108,7 @@ const $DB = {
             $zdb.then((res) => 
             {
                 res.update({
-                    tableName:'pixelGrid',
+                    tableName,
                     condition:(item) => item.id === valueData.id,
                     handle: (r) => 
                     {
@@ -128,7 +128,7 @@ const $DB = {
         });
     },
 
-    saveDB (key, value)
+    saveDB (key, value, tableName = 'pixelGrid')
     {
         let valueData = JSON.parse(JSON.stringify(value));
         return new Promise((resolve, reject) => 
@@ -137,7 +137,7 @@ const $DB = {
             $zdb.then((res) => 
             {
                 res.insert({
-                    tableName:'pixelGrid',
+                    tableName,
                     data:{
                         id:key,
                         data:valueData

@@ -47,6 +47,7 @@ export default defineComponent({
         let data = reactive({
             locale:zhCn,
             notice:{
+                id:'',
                 title:'',
                 content:''
             },
@@ -131,8 +132,15 @@ export default defineComponent({
                     {
                         if (res.data.length > 0)
                         {
-                            data.noticeVisible = true;
+                            if (!proxy.$utils.cache.isHideNotice.get())
+                            {
+                                proxy.$utils.cache.isHideNotice.set('0');
+                            }
                             data.notice = proxy.$utils.cache.lang.get() === 'zh' ? res.data[0] : res.data[1];
+                            if (proxy.$utils.cache.isHideNotice.get() !== data.notice.id)
+                            {
+                                data.noticeVisible = true;
+                            }
                         }
 
                     })

@@ -3,6 +3,7 @@ import cache from '@/utils/cache';
 import { defineStore } from 'pinia';
 import message from '@/utils/message';
 import { formatTimeStamp } from '@/utils/utils';
+import pindouMap from '@/config/pindou';
 export const useEditSpaceStore = defineStore('editSpace', {
     state: () => 
     {
@@ -15,7 +16,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
             colorModules:[] as any,
             isFullWork:false,
             projectList:[] as any,
-            sort:'updateAt'
+            sort:'updateAt',
+            pindouMaps:{} as any
         };
     },
     getters: {
@@ -28,6 +30,98 @@ export const useEditSpaceStore = defineStore('editSpace', {
         }
     },
     actions: {
+        getPindouData ()
+        {
+            db.findAllDB('pindou').then((res:any) => 
+            {
+                if (res.length)
+                {
+                    for (let i = 0; i < res.length; i++)
+                    {
+                        this.pindouMaps[res[i].id] = res[i].data;
+                    }
+                }
+                else
+                {
+                    const promises = [] as any;
+                    pindouMap.forEach((value, key) => 
+                    {
+                        // this.pindouMaps[key] = value;
+                        promises.push(this.savePindouData({ id:key, value }));
+                    });
+                    Promise.all(promises)
+                        .then(() => 
+                        {
+                            // console.log('All promises resolved');
+                            let arr = Object.keys(this.pindouMaps).map((item) => 
+                            {
+                                return {
+                                    value:item,
+                                    label:item
+                                };
+                            });
+                            cache.pindou.set(JSON.stringify(arr));
+                            
+                        })
+                        .catch((error) => 
+                        {
+                            console.error('Error:', error);
+                        });
+                }
+            }).catch((err) => 
+            {
+                console.error(err);
+                // message.error('获取拼豆列表异常 - ' + err);
+            });
+        },
+        savePindouData (data)
+        {
+            // 新增
+            return new Promise((resolve, reject) => 
+            {
+                db.saveDB(data.id, data.value, 'pindou').then((res) => 
+                {
+                    this.pindouMaps[data.id] = data.value;
+                    resolve(res);
+                }).catch((err) => 
+                {
+                    reject(err);
+                });
+            });
+        },
+        editPindouData (data)
+        {
+            // 编辑
+            return new Promise((resolve, reject) => 
+            {
+                db.updateDB({ id:data.id, data:data.value }, 'pindou').then((res) => 
+                {
+                    this.pindouMaps[data.id] = data.value;
+                    resolve(res);
+                }).catch((err) => 
+                {
+                    reject(err);
+                });
+            });
+        },
+        deletePindouById (id)
+        {
+            return new Promise((resolve, reject) => 
+            {
+                if (this.pindouMaps[id])
+                {
+                    // 更新数据
+                    db.clearDB(id, 'pindou').then((res) => 
+                    {
+                        resolve(this.pindouMaps[id]);
+                        delete this.pindouMaps[id];
+                    }).catch((err) => 
+                    {
+                        reject(err);
+                    });
+                }
+            });
+        },
         setMyColorList (value)
         {
             this.myColorList = value;

@@ -17,10 +17,11 @@
                         :value="item.value"
                     />
                 </el-select>
+                <el-button type="success" @click="$refs.CustomPindouDialog.handleOpen()">自定义拼豆</el-button>
             </div>
             <el-tag type="info">拼豆色板引用自：
-                <el-link href="https://fusebead.sulian-blog.com/#google_vignette" :underline="false" type="success">fusebead.sulian-blog </el-link>
-                作者 - <el-link href="https://github.com/atonasting/fuse-bead-tool" :underline="false" type="primary">苏莉安</el-link></el-tag>
+                <el-link href="https://fusebead.sulian-blog.com/#google_vignette" target="_blank" :underline="false" type="success">fusebead.sulian-blog </el-link>
+                作者 - <el-link href="https://github.com/atonasting/fuse-bead-tool" target="_blank" :underline="false" type="primary">苏莉安</el-link></el-tag>
             <div v-if="selectedObj">
                 <div class="item flex-start">
                     <p>当前选择的颜色</p>
@@ -86,7 +87,11 @@
                 >替换颜色</el-button>
             </span>
         </template>
+        
     </el-dialog>
+    <teleport to="body">
+        <CustomPindouDialog ref="CustomPindouDialog" @update="updateData"></CustomPindouDialog>
+    </teleport>
 </template>
 
 <script lang="ts">
@@ -94,9 +99,12 @@ import { useEditSpaceStore } from '@/store';
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance } from 'vue';
 import pindouMap from '@/config/pindou'; 
 import { getFontColor } from '@/utils/utils'; 
+import CustomPindouDialog from '@/components/dialog/CustomPindouDialog.vue';
 export default defineComponent({
     name: 'PindouDialog',
-    components: {},
+    components: {
+        CustomPindouDialog
+    },
     props: {
         visible:{
             type:Boolean,
@@ -176,6 +184,11 @@ export default defineComponent({
                 data[`checked${type}`] = true;
                 data.type = type;
             },
+            updateData ()
+            {
+                let pindouOptions = JSON.parse(proxy.$utils.cache.pindou.get());
+                data.brandOptions = pindouOptions || [];
+            },
             handleClose ()
             {
                 data.dialogVisible = false;
@@ -217,7 +230,7 @@ export default defineComponent({
             {
                 data.replaceObj = null;
                 data.selectedObj = null;
-                proxy.$emit('change', data.pindouBrand);
+                context.emit('change', data.pindouBrand);
             }
 
             // handleConfirm ()
@@ -235,6 +248,17 @@ export default defineComponent({
         onMounted(() => 
         {
             // methods.getData();
+            // let pindouOptions = JSON.parse(proxy.$utils.cache.pindou.get());
+            // data.brandOptions = pindouOptions || [];
+            // let arr = Object.keys(customData).map((item) => 
+            // {
+            //     return {
+            //         value:item,
+            //         label:item
+            //     };
+            // });
+            methods.updateData();
+
         });
         return {
             ...toRefs(data),
@@ -247,7 +271,7 @@ export default defineComponent({
 <style lang='scss' scoped>
 .content {
     padding:10px;
-    max-height: 700px;
+    max-height: 500px;
     overflow: auto;
     
     :deep(.el-tag__content) {

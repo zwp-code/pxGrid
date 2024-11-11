@@ -1,5 +1,6 @@
 import { rgbaToHex, colorDistance, hexToRgba } from '@/utils/utils';
-import pindouMap from '@/config/pindou';
+// import pindouMap from '@/config/pindou';
+import cache from '@/utils/cache';
 addEventListener('message', (e) => 
 {
     const { data } = e;
@@ -142,7 +143,12 @@ addEventListener('message', (e) =>
     {
         // 处理拼豆的转换
         let variables = data.variables;
-        let currentPindouColorList = pindouMap.get(data.currentPindouBrand);
+        let currentPindouColorList = data.currentPindouBrandColorList;
+        // if (!currentPindouColorList) 
+        // {
+        //     let customMap = JSON.parse(cache.customPindou.get());
+        //     currentPindouColorList = customMap[data.currentPindouBrand];
+        // }
         let similarColorCache = new Map();
         let colorStatList = new Map();
         const findSimilarColor = (r, g, b, a) => 
@@ -180,17 +186,20 @@ addEventListener('message', (e) =>
                 if (variables[i].layerData[j][2] === '#00000000') continue;
                 let rgba = hexToRgba(variables[i].layerData[j][2]);
                 let replaceColorObj = findSimilarColor(rgba[0], rgba[1], rgba[2], rgba[3]);
-                variables[i].layerData[j][2] = '#' + replaceColorObj.color + 'ff';
-                variables[i].layerData[j][3] = replaceColorObj.name;
-                if (colorStatList.has(replaceColorObj.name))
+                if (replaceColorObj)
                 {
-                    let arr = colorStatList.get(replaceColorObj.name);
-                    let count = arr[1] + 1;
-                    colorStatList.set(replaceColorObj.name, [variables[i].layerData[j][2], count]);
-                }
-                else
-                {
-                    colorStatList.set(replaceColorObj.name, [variables[i].layerData[j][2], 1]);
+                    variables[i].layerData[j][2] = '#' + replaceColorObj.color + 'ff';
+                    variables[i].layerData[j][3] = replaceColorObj.name;
+                    if (colorStatList.has(replaceColorObj.name))
+                    {
+                        let arr = colorStatList.get(replaceColorObj.name);
+                        let count = arr[1] + 1;
+                        colorStatList.set(replaceColorObj.name, [variables[i].layerData[j][2], count]);
+                    }
+                    else
+                    {
+                        colorStatList.set(replaceColorObj.name, [variables[i].layerData[j][2], 1]);
+                    }
                 }
             }
         }
