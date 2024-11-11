@@ -60,7 +60,8 @@ export default defineComponent({
             isCopy:false,
             shapeFillColor:'#000000ff',
             brushColor:'#000000ff',
-            brushSize:10,
+            brushSize:1,
+            eraserSize:1,
             canvasWidth:32,
             canvasHeight:32,
             scale:1,
@@ -818,7 +819,7 @@ export default defineComponent({
                 data.scale += delta;
                 data.scale = Math.max(1, data.scale);
                 console.log(data.scale);
-                data.brushSize = data.scale;
+                // data.brushSize = data.scale;
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.drawPixelArea();
                 if (data.pinDouMode) 
@@ -880,7 +881,8 @@ export default defineComponent({
                             return proxy.$message.warning('请先取消选中区域');
                         }
                         data.isErasering = true;
-                        methods.removeDrawRecord([col, row]);
+                        methods.draw(event);
+                        // methods.removeDrawRecord([col, row]);
                     }
                     else if (data.currentTool === 2)
                     {
@@ -986,17 +988,23 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 8 && data.selectType === 'select')
                     {
-                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
-                        if (data.selectData.selectLayerId !== data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId)
+                        let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex];
+                        if (!currentLayerData.isRender) return;
+                        if (data.selectData.selectLayerId !== currentLayerData.layerId)
                         {
-                            // if 
-                            methods.handleCancelSelect();
+                            // console.log('11111');
+                            
+                            if (currentLayerData.layerData[col + row * data.canvasWidth][2] !== data.emptyColor)
+                            {
+                                // console.log('取消了');
+                                methods.handleCancelSelect();
+                                data.selectData.selectLayerId = currentLayerData.layerId;
+                            }
                         }
                         data.isSelecting = true;
-                        data.selectData.selectLayerId = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId;
                         data.selectData.x = col;
                         data.selectData.y = row;
-                        data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
+                        data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(currentLayerData.layerData.map((item) => 
                         {
                             if (item[2] !== data.emptyColor) 
                             {
@@ -1030,16 +1038,20 @@ export default defineComponent({
                     else if (data.currentTool === 8 && data.selectType === 'quickSelect')
                     {
                         // 快速选择
-                        if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
-                        if (data.selectData.selectLayerId !== data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId)
+                        let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex];
+                        if (!currentLayerData.isRender) return;
+                        if (data.selectData.selectLayerId !== currentLayerData.layerId)
                         {
-                            methods.handleCancelSelect();
+                            if (currentLayerData.layerData[col + row * data.canvasWidth][2] !== data.emptyColor)
+                            {
+                                methods.handleCancelSelect();
+                                data.selectData.selectLayerId = currentLayerData.layerId;
+                            }
                         }
                         data.isSelecting = true;
-                        data.selectData.selectLayerId = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerId;
                         data.selectData.x = col;
                         data.selectData.y = row;
-                        data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData.map((item) => 
+                        data.selectData.originList = JSON.parse(JSON.stringify(removeNullArray(currentLayerData.layerData.map((item) => 
                         {
                             if (item[2] !== data.emptyColor) 
                             {
@@ -1136,6 +1148,7 @@ export default defineComponent({
                 console.log(targetColor, replacementColor, data.drawRecord);
                 if (targetColor === replacementColor) return;
                 const stack = [[x, y]];
+                let seeked = [] as any;
                 let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                 const isSameColor = (col, row, color) =>
                 {
@@ -1171,25 +1184,38 @@ export default defineComponent({
                     if (isSameColor(x, y, targetColor)) 
                     {
                         setColor(x, y, replacementColor);
+                        seeked.push([x, y]);
                         if (x > 0)
                         {
                             // 左方
-                            stack.push([x - 1, y]);
+                            if (!seeked.find((v) => v[0] === x - 1 && v[1] === y))
+                            {
+                                stack.push([x - 1, y]);
+                            }
                         }
 
                         if (x < data.canvasWidth - 1) 
                         {
-                            stack.push([x + 1, y]);
+                            if (!seeked.find((v) => v[0] === x + 1 && v[1] === y))
+                            {
+                                stack.push([x + 1, y]);
+                            }
                         }
 
                         if (y > 0) 
                         {
-                            stack.push([x, y - 1]);
+                            if (!seeked.find((v) => v[0] === x && v[1] === y - 1))
+                            {
+                                stack.push([x, y - 1]);
+                            }
                         }
 
                         if (x < data.canvasHeight - 1) 
                         {
-                            stack.push([x, y + 1]);
+                            if (!seeked.find((v) => v[0] === x && v[1] === y + 1))
+                            {
+                                stack.push([x, y + 1]);
+                            }
                         }
                     }
                     // methods.reDraw(true, false);
@@ -1203,33 +1229,26 @@ export default defineComponent({
                 if (targetColor === data.emptyColor) return;
                 if (data.selectData.selectList.find((item) => item[0] === x && item[1] === y)) return;
                 const stack = [[x, y]];
+                let seeked = [] as any;
                 let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                 // console.log(currentLayerData);
                 
                 const isSameColor = (col, row, color) =>
                 {
                     // console.log(col, row, currentLayerData[col + row * data.canvasWidth][2], data.selectData.selectList);
-                    if (data.selectData.selectList.find((item) => item[0] === col && item[1] === row)) 
-                    {
-                        // console.log(currentLayerData[col + row * data.canvasWidth][2], '找不到');
-                        return false;
-                    }
+                    // if (data.selectData.selectList.find((item) => item[0] === col && item[1] === row)) 
+                    // {
+                    //     // console.log(currentLayerData[col + row * data.canvasWidth][2], '找不到');
+                    //     return false;
+                    // }
                     // let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
-                        if (currentLayerData[index][2] === data.emptyColor) 
-                        {
-                            // console.log(currentLayerData[index][2], '空白');
-                            
-                            return false;
-                        }
-                        if (data.tolerance === 0) 
-                        {
-                            // console.log(currentLayerData[index][2]);
-                            
-                            return currentLayerData[index][2] === color;
-                        }
+                        if (currentLayerData[index][2] === data.emptyColor) return false;
+                        
+                        if (data.tolerance === 0) return currentLayerData[index][2] === color;
+                        
                         let rgbaColor1 = hexToRgba(currentLayerData[index][2]);
                         let rgbaColor2 = hexToRgba(color);
                         const diffR = Math.abs(rgbaColor1[0] - rgbaColor2[0]);
@@ -1262,25 +1281,38 @@ export default defineComponent({
                     if (isSameColor(x, y, targetColor)) 
                     {
                         setData(x, y);
+                        seeked.push([x, y]);
                         if (x > 0)
                         {
                             // 左方
-                            stack.push([x - 1, y]);
+                            if (!seeked.find((v) => v[0] === x - 1 && v[1] === y))
+                            {
+                                stack.push([x - 1, y]);
+                            }
                         }
 
                         if (x < data.canvasWidth - 1) 
                         {
-                            stack.push([x + 1, y]);
+                            if (!seeked.find((v) => v[0] === x + 1 && v[1] === y))
+                            {
+                                stack.push([x + 1, y]);
+                            }
                         }
 
                         if (y > 0) 
                         {
-                            stack.push([x, y - 1]);
+                            if (!seeked.find((v) => v[0] === x && v[1] === y - 1))
+                            {
+                                stack.push([x, y - 1]);
+                            }
                         }
 
                         if (x < data.canvasHeight - 1) 
                         {
-                            stack.push([x, y + 1]);
+                            if (!seeked.find((v) => v[0] === x && v[1] === y + 1))
+                            {
+                                stack.push([x, y + 1]);
+                            }
                         }
                     }
                     // methods.reDraw(true, false);
@@ -1318,36 +1350,91 @@ export default defineComponent({
                     data.gridInfo = `[${col}, ${row}]`;
                     if (data.isDrawing)
                     {
-                        
-                        methods.addDrawRecord([col, row, data.brushColor]);
+                        let gridX = (col * data.scale) + data.canvasBeginPos.x;
+                        let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                        for (let i = 0; i < data.brushSize; i++)
+                        {
+                            let y = gridY + (data.scale) * i;
+                            for (let j = 0; j < data.brushSize; j++)
+                            {
+                                let x = gridX + (data.scale) * j;
+                                let col = (x - data.canvasBeginPos.x) / data.scale;
+                                let row = (y - data.canvasBeginPos.y) / data.scale;
+                                if (col < data.canvasWidth && row < data.canvasHeight)
+                                {
+                                    methods.addDrawRecord([col, row, data.brushColor]);
+                                }
+                            }
+                        }
+                        // methods.addDrawRecord([col, row, data.brushColor]);
                         if (data.isHorizontal || data.isVertical)
                         {
-                            methods.addDrawList(col, row, data.brushColor);
+                            for (let i = 0; i < data.brushSize; i++)
+                            {
+                                let y = gridY + (data.scale) * i;
+                                for (let j = 0; j < data.brushSize; j++)
+                                {
+                                    let x = gridX + (data.scale) * j;
+                                    let col = (x - data.canvasBeginPos.x) / data.scale;
+                                    let row = (y - data.canvasBeginPos.y) / data.scale;
+                                    if (col < data.canvasWidth && row < data.canvasHeight)
+                                    {
+                                        methods.addDrawList(col, row, data.brushColor);
+                                    }
+                                }
+                            }
                             let symmetric = data.isHorizontal ? 'hReverse' : 'vReverse';
                             methods.drawTransformSymmetric(symmetric);
                         }
                         if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                         {
-                            let gridX = (col * data.scale) + data.canvasBeginPos.x;
-                            let gridY = (row * data.scale) + data.canvasBeginPos.y;
-                            data.ctx1.lineWidth = data.brushSize;
-                            data.ctx1.strokeStyle = data.brushColor;
-                            data.ctx1.lineCap = 'square';
-                            data.ctx1.beginPath();
-                            data.ctx1.lineTo(gridX + data.scale / 2, gridY + data.scale / 2);
-                            data.ctx1.stroke();
+                            // let gridX = (col * data.scale) + data.canvasBeginPos.x;
+                            // let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                            // data.ctx1.lineWidth = data.scale * data.brushSize;
+                            // data.ctx1.strokeStyle = data.brushColor;
+                            // data.ctx1.lineCap = 'square';
+                            // data.ctx1.beginPath();
+                            // // data.ctx1.lineTo(gridX + data.scale / 2, gridY + data.scale / 2);
+                            // let x = gridX + (data.scale / 2) * data.brushSize;
+                            // let y = gridY + (data.scale / 2) * data.brushSize;
+                            // if (x >= data.canvasWidth * data.scale)
+                            // {
+                            //     x = gridX;
+                            // }
+                            // if (y >= data.canvasHeight * data.scale)
+                            // {
+                            //     y = gridY;
+                            // }
+                            // data.ctx1.lineTo(x, y);
+                            // data.ctx1.stroke();
                             methods.reDraw(false);
                         }
                     }
                     if (data.isErasering)
                     {
-                        methods.removeDrawRecord([col, row]);
+                        let gridX = (col * data.scale) + data.canvasBeginPos.x;
+                        let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                        for (let i = 0; i < data.eraserSize; i++)
+                        {
+                            let y = gridY + (data.scale) * i;
+                            for (let j = 0; j < data.eraserSize; j++)
+                            {
+                                let x = gridX + (data.scale) * j;
+                                let col = (x - data.canvasBeginPos.x) / data.scale;
+                                let row = (y - data.canvasBeginPos.y) / data.scale;
+                                if (col < data.canvasWidth && row < data.canvasHeight)
+                                {
+                                    methods.removeDrawRecord([col, row]);
+                                }
+                            }
+                        }
+                        // methods.removeDrawRecord([col, row]);
                     }
                     if (data.isDrawShape)
                     {
                         data.ctx1.globalAlpha = 1;
                         data.ctx1.strokeStyle = data.brushColor;
-                        data.ctx1.lineWidth = data.brushSize;
+                        data.ctx1.lineWidth = data.scale;
                         data.ctx1.lineCap = 'square';
                         
                         if (data.currentDrawShape === 'rect' || data.currentDrawShape === 'fillRect')
@@ -1415,7 +1502,7 @@ export default defineComponent({
                                 let startY = data.drawShapeList[0][1];
                                 let endX = col;
                                 let endY = row;
-                                let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
+                                let arr = methods.drawCircle(startX, startY, endX, endY, data.scale);
                                 // console.log(arr);
                                 methods.reDraw(false);
                                 for (let i = 0; i < arr.length; i++)
@@ -2359,8 +2446,12 @@ export default defineComponent({
                 // methods.reDrawSelectData(beginPos);
                 if (isRenderFrameImg)
                 {
-                    if (count > 0) methods.handleFrameImg(data.ctx1, isAddHistory);
-                    else methods.handleFrameImg(data.ctx2, isAddHistory);
+                    data.FrameTimer && clearTimeout(data.FrameTimer);
+                    data.FrameTimer = setTimeout(() => 
+                    {
+                        if (count > 0) methods.handleFrameImg(data.ctx1, isAddHistory);
+                        else methods.handleFrameImg(data.ctx2, isAddHistory);
+                    }, 200);
                 }
                 
             },
@@ -2466,7 +2557,7 @@ export default defineComponent({
                         let startY = data.drawShapeList[0][1];
                         let endX = data.drawShapeList[l - 1][0];
                         let endY = data.drawShapeList[l - 1][1];
-                        let arr = methods.drawCircle(startX, startY, endX, endY, data.brushSize);
+                        let arr = methods.drawCircle(startX, startY, endX, endY, data.scale);
                         for (let i = 0; i < arr.length; i++)
                         {
                             methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
@@ -2633,7 +2724,7 @@ export default defineComponent({
                 else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
                 data.scale = Math.round(data.scale);
                 console.log(data.scale);
-                data.brushSize = data.scale;
+                // data.brushSize = data.scale;
                 
             },
             getMyColorList ()
@@ -3445,11 +3536,11 @@ export default defineComponent({
                     methods.handleChangeTool(3);
                     methods.drawShape('fillRect'); // 打开填充矩形
                 }
-                else if (event.key === 'g') 
-                {
-                    methods.handleChangeTool(3);
-                    methods.drawShape('curve'); // 打开曲线
-                }
+                // else if (event.key === 'g') 
+                // {
+                //     methods.handleChangeTool(3);
+                //     methods.drawShape('curve'); // 打开曲线
+                // }
                 else if (event.ctrlKey && event.key === 'ArrowUp')
                 {
                     // 水平翻转
@@ -3512,12 +3603,11 @@ export default defineComponent({
                     }
                     methods.handleChangeFrame(data.currentFrameIndex);
                 }
-                else if (['1', '2', '3', '4'].includes(event.key) && data.isDrawShape)
-                {
-                    data.curveType.isPress = true;
-                    data.curveType.pressKey = event.key;
-                    
-                }
+                // else if (['1', '2', '3', '4'].includes(event.key) && data.isDrawShape)
+                // {
+                //     data.curveType.isPress = true;
+                //     data.curveType.pressKey = event.key;
+                // }
                 data.canvas.className = '';
                 methods.addCursorClass();
             },
@@ -3534,11 +3624,11 @@ export default defineComponent({
                     data.isMoving = false;
                     data.canvas.style.cursor = '';
                 }
-                if (['1', '2', '3', '4'].includes(event.key))
-                {
-                    data.curveType.isPress = false;
+                // if (['1', '2', '3', '4'].includes(event.key))
+                // {
+                //     data.curveType.isPress = false;
                     
-                }
+                // }
             },
             addKeyBoardEvent ()
             {

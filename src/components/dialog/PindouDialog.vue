@@ -18,6 +18,9 @@
                     />
                 </el-select>
             </div>
+            <el-tag type="info">拼豆色板引用自：
+                <el-link href="https://fusebead.sulian-blog.com/#google_vignette" :underline="false" type="success">fusebead.sulian-blog </el-link>
+                作者 - <el-link href="https://github.com/atonasting/fuse-bead-tool" :underline="false" type="primary">苏莉安</el-link></el-tag>
             <div v-if="selectedObj">
                 <div class="item flex-start">
                     <p>当前选择的颜色</p>
@@ -73,6 +76,7 @@
                     </el-collapse-item>
                 </el-collapse>
             </div>
+            
         </div>
         <template #footer>
             <span class="dialog-footer">
@@ -245,6 +249,15 @@ export default defineComponent({
     padding:10px;
     max-height: 700px;
     overflow: auto;
+    
+    :deep(.el-tag__content) {
+        display: flex;
+
+        a {
+            font-size: 12px;
+            margin: 0 5px;
+        }
+    }
 
     .item {
         margin: 10px 0;

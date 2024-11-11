@@ -36,7 +36,7 @@
                                     <el-dropdown-menu>
                                         <el-dropdown-item @click="handleOpenProject(item.data)" icon="Open">{{ $t('message.open')}}</el-dropdown-item>
                                         <el-dropdown-item @click="handleEditProject(item.data)" icon="Edit">{{ $t('message.edit')}}</el-dropdown-item>
-                                        <el-dropdown-item @click="handleTopProject(item.data)" icon="Top">{{ item.data.isTop > 0 ? $t('message.cancelTop') : $t('message.top')}}</el-dropdown-item>
+                                        <el-dropdown-item @click="handleTopProject(item.data)" icon="Upload">{{ item.data.isTop > 0 ? $t('message.cancelTop') : $t('message.top')}}</el-dropdown-item>
                                         <el-dropdown-item @click="handleExportProject(item.data)" :disabled="isExporting" icon="FolderOpened">{{ isExporting ? $t('message.exportLoading') : $t('message.export')}}</el-dropdown-item>
                                         <el-dropdown-item @click="handleDeleteProject(item.data.projectId)" icon="Delete">{{ $t('message.delete')}}</el-dropdown-item>
                                     </el-dropdown-menu>

@@ -60,8 +60,8 @@
                                 </el-dropdown-menu>
                             </template>
                         </el-dropdown>
-                        <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" v-if="!isShowModule">
-                            <el-icon color="#808080" @click="handleAdd(item.id)"><Plus /></el-icon>
+                        <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" v-if="!isShowModule" @click="handleAdd(item.id)">
+                            <el-icon color="#808080"><Plus /></el-icon>
                         </div>
                     </div>
                 </div>
@@ -309,8 +309,8 @@ export default defineComponent({
             },
             hideDiaog ()
             {
-                data.editMyColorMask = null;
                 data.innerVisible = false;
+                // data.editMyColorMask = null;
                 // data.addMyColorVisible = 0;
             }
             

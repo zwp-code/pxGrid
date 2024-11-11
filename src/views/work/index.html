@@ -140,6 +140,7 @@
                                         <el-dropdown-item @click="drawShape('line')" :disabled="pinDouMode">直 线 [d]</el-dropdown-item>
                                         <el-dropdown-item @click="drawShape('fillRect')" :disabled="pinDouMode">填充矩形 [f]</el-dropdown-item>
                                         <el-dropdown-item 
+                                        v-if="false"
                                         @click="drawShape('curve')"
                                         style="flex-direction: column;align-items: flex-start;"
                                         :disabled="pinDouMode">
@@ -269,7 +270,7 @@
                                 <img :src="requireIcon('pindou')"/>
                             </div>
                         </el-tooltip>
-                        <el-tooltip
+                        <!-- <el-tooltip
                             content="AI"
                             placement="right"
                         >
@@ -286,7 +287,7 @@
                                 </template>
                             </el-dropdown>
                             
-                        </el-tooltip>
+                        </el-tooltip> -->
                     </div>
                     
                 </div>
@@ -464,10 +465,14 @@
                             </el-tooltip>
                         </div>
                     </div>
-                    <!-- <div class="function-block">
+                    <div class="function-block" v-if="currentTool===0">
                         <span class="function-label">画笔大小</span>
-                        <el-slider v-model="brushSize" :step="1" :max="40" :min="10"/>
-                    </div> -->
+                        <el-slider v-model="brushSize" :step="1" :max="5" :min="1" size="small" show-stops/>
+                    </div>
+                    <div class="function-block" v-else-if="currentTool===1">
+                        <span class="function-label">橡皮擦大小</span>
+                        <el-slider v-model="eraserSize" :step="1" :max="5" :min="1" size="small" show-stops/>
+                    </div>
                     <div class="function-block-column">
                         <span class="function-label">画布像素</span>
                         <div style="margin-top: 15px;" class="flex-start full-w">
