@@ -15,9 +15,9 @@
                 </el-timeline>
                 
             </div>
-            <div class="pad-2">
-                <h2># {{$t('message.link')}}</h2>
-                <div class="flex-start flex-warp">
+            <div class="full-layout pad-1 scrollAuto scrollbar">
+                <h1># {{$t('message.link')}}</h1>
+                <div class="flex-start flex-warp" style="gap:10px">
                     <el-link
                     :underline="false"
                     class="link"
@@ -31,7 +31,9 @@
                 <div class="flex-warp flex-start thanks-box">
                     <div v-for="item in donates" :key="item.id">
                         <el-link :href="item.link||'#'"  :underline="false" class="flex-center" type="success">
-                            <el-avatar :src="item.avatar || require('@/assets/boy.png')" :size="30"/>
+                            <el-avatar 
+                            :src="item.avatar || require('@/assets/boy.png')" 
+                            :size="30"/>
                             {{ item.name }}(${{item.amount}})
                         </el-link>
                     </div>
@@ -71,7 +73,7 @@ h2 {
 }
 
 .link {
-    margin-bottom: 5px;
+    // margin-bottom: 5px;
     // color: var(--el-text-color-second);
     font-weight: 600;
 }
@@ -87,6 +89,10 @@ h2 {
 
     :deep(.el-link__inner) {
         gap: 0.5rem;
+    }
+
+    .el-avatar--circle {
+        min-width: 30px;
     }
 }
 

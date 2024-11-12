@@ -428,7 +428,7 @@ export default defineComponent({
                 data.worker.postMessage({
                     type:6,
                     // currentPindouBrand:brand,
-                    currentPindouBrandColorList:JSON.parse(JSON.stringify(editSpaceStore.pindouMaps[brand])),
+                    currentPindouBrandColorList:JSON.parse(JSON.stringify(editSpaceStore.pindouMaps[brand].data || editSpaceStore.pindouMaps[brand])),
                     variables:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer))
                 });
                 data.worker.onmessage = (event) => 
@@ -2286,20 +2286,41 @@ export default defineComponent({
                 // const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
                 // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
                 let scale = 5;
-                const imageData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                const imageData = data.drawRecord[data.currentFrameIndex].layer;
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
-                for (let y = 0; y < data.canvasHeight; y++) 
+                for (let i = imageData.length - 1; i >= 0; i--)
                 {
-                    for (let x = 0; x < data.canvasWidth; x++) 
+                    if (imageData[i].isRender)
                     {
-                        let color = imageData[x + (y * data.canvasWidth)][2];
-                        // 在新的 canvas 上绘制缩小后的像素
-                        data.ctx3.fillStyle = color;
-                        data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                        // for (let j = 0; j < imageData[i].layerData.length; j++)
+                        // {
+                        //     layerArr.push(imageData[i].layerData[j]);
+                        // }
+                        for (let y = 0; y < data.canvasHeight; y++) 
+                        {
+                            for (let x = 0; x < data.canvasWidth; x++) 
+                            {
+                                let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
+                                
+                                // 在新的 canvas 上绘制缩小后的像素
+                                data.ctx3.fillStyle = color;
+                                data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                            }
+                        }
                     }
                 }
+                // for (let y = 0; y < data.canvasHeight; y++) 
+                // {
+                //     for (let x = 0; x < data.canvasWidth; x++) 
+                //     {
+                //         let color = imageData[x + (y * data.canvasWidth)][2];
+                //         // 在新的 canvas 上绘制缩小后的像素
+                //         data.ctx3.fillStyle = color;
+                //         data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                //     }
+                // }
                 let dataURL = data.realCanvas.toDataURL('image/png');
                 data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
                 // 处理当前帧的颜色统计
@@ -2915,11 +2936,11 @@ export default defineComponent({
                 };
                 methods.handleAddHistory();
             },
-            handleExportLayer (frameIndex, layerIndex, isDownload = true)
+            handleExportLayer (frameIndex, layerIndex, isDownload = true, scale = 1)
             {
                 const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
-                data.realCanvas.width = data.canvasWidth;
-                data.realCanvas.height = data.canvasHeight;
+                data.realCanvas.width = data.canvasWidth * scale;
+                data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
                 console.log(imageData);
                 // const worker = new Worker();
@@ -2956,7 +2977,7 @@ export default defineComponent({
                         
                         // 在新的 canvas 上绘制缩小后的像素
                         data.ctx3.fillStyle = color;
-                        data.ctx3.fillRect(x, y, 1, 1);
+                        data.ctx3.fillRect(x * scale, y * scale, scale, scale);
                     }
                 }
                 if (isDownload) downloadImage(data.realCanvas, `layer${layerIndex + 1}`);
@@ -3279,7 +3300,7 @@ export default defineComponent({
                 document.body.removeChild(input);
             },
             // 帧结束
-            handleExport (type, filename, isBack = false, scale = 1)
+            handleExport (type, filename, scale = 1, isBack = false)
             {
                 if (!isBack) data.exportLoaidng = true;
                 if (data.isExportProject)
@@ -3322,27 +3343,27 @@ export default defineComponent({
                         let count = 0;
                         for (let j = currentFrameLayerLength - 1; j >= 0; j--)
                         {
-                            methods.handleExportLayer(i, j, false);
-                            canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth, data.canvasHeight);
+                            methods.handleExportLayer(i, j, false, scale);
+                            canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth * scale, data.canvasHeight * scale);
                             count++;
                         }
                     }
                     for (let l = 0; l < maxLayer; l++)
                     {
                         const bigCanvas = document.createElement('canvas');
-                        bigCanvas.width = data.canvasWidth * data.drawRecord.length;
-                        bigCanvas.height = data.canvasHeight;
+                        bigCanvas.width = data.canvasWidth * scale * data.drawRecord.length;
+                        bigCanvas.height = data.canvasHeight * scale;
                         const bigCtx:any = bigCanvas.getContext('2d');
                         for (let i = 0; i < canavsData.length; i++)
                         {
                             if (canavsData[i][l])
                             {
                                 let newCanvas = document.createElement('canvas');
-                                newCanvas.width = data.canvasWidth;
-                                newCanvas.height = data.canvasHeight;
+                                newCanvas.width = data.canvasWidth * scale;
+                                newCanvas.height = data.canvasHeight * scale;
                                 let newCtx:any = newCanvas.getContext('2d');
                                 newCtx.putImageData(canavsData[i][l], 0, 0);
-                                bigCtx.drawImage(newCanvas, i * data.canvasWidth, 0);
+                                bigCtx.drawImage(newCanvas, i * data.canvasWidth * scale, 0);
                                 continue;
                             }
                         }
@@ -3356,7 +3377,7 @@ export default defineComponent({
                     let canavsUrlData = [] as any;
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
-                        methods.handleExportFrame(i, false);
+                        methods.handleExportFrame(i, false, scale);
                         canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
                     }
                     exportImageForZip(`${filename}`, canavsUrlData);
@@ -3370,7 +3391,7 @@ export default defineComponent({
                         let currentFrameLayerLength = data.drawRecord[i].layer.length; // 当前帧的图层长度
                         for (let j = currentFrameLayerLength - 1; j >= 0; j--)
                         {
-                            methods.handleExportLayer(i, j, false);
+                            methods.handleExportLayer(i, j, false, scale);
                             canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
                         }
                     }
@@ -3451,7 +3472,7 @@ export default defineComponent({
                 data.previewLoading = true;
                 let scale = 6; // 放大倍数
                 // methods.handleExport(1, '1111', false, scale);
-                const imgUrl = methods.handleExport(1, '', true, scale);
+                const imgUrl = methods.handleExport(1, '', scale, true);
                 proxy.$refs.PreviewAnimDialog.handleOpen({
                     imgUrl, 
                     width:data.canvasWidth * scale, 
@@ -3501,17 +3522,17 @@ export default defineComponent({
                 {
                     methods.handleRecover(); // 恢复
                 }
-                else if (event.ctrlKey && event.key === 's')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 's')
                 {
                     event.preventDefault(); // 保存项目
                     methods.handleSaveProject();
                 }
-                else if (event.ctrlKey && event.key === 'p')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'p')
                 {
                     event.preventDefault(); // 打开导出项目
                     methods.handleExportDialog(true);
                 }
-                else if (event.ctrlKey && event.key === 'i')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'i')
                 {
                     event.preventDefault(); 
                     methods.handleExportDialog(false);
@@ -3525,36 +3546,36 @@ export default defineComponent({
                     event.preventDefault();
                     methods.handleScreenFull(); // 全屏
                 }
-                else if (event.ctrlKey && event.altKey && event.key === 'c')
+                else if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === 'c')
                 {
                     // 复制颜色
                     event.preventDefault(); 
                     methods.handleCopyColor();
                 }
-                else if (event.ctrlKey && event.key === 'ArrowUp')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowUp')
                 {
                     // 水平翻转
                     event.preventDefault();
                     methods.drawTransform('hReverse');
                 }
-                else if (event.ctrlKey && event.key === 'ArrowDown')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowDown')
                 {
                     event.preventDefault();
                     methods.drawTransform('vReverse');
                 }
-                else if (event.ctrlKey && event.key === 'ArrowLeft')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowLeft')
                 {
                     event.preventDefault();
                     methods.drawTransform('nsz');
                 }
-                else if (event.ctrlKey && event.key === 'ArrowRight')
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowRight')
                 {
                     event.preventDefault();
                     methods.drawTransform('ssz');
                 }
-                else if (event.ctrlKey && event.key)
+                else if ((event.metaKey || event.ctrlKey) && event.key)
                 {
-                    
+                    //
                 }
                 else if (event.key === 'q') 
                 {
@@ -3987,6 +4008,7 @@ export default defineComponent({
             {
                 window.removeEventListener('keydown', methods.handlekeyDownEvent);
                 window.removeEventListener('keyup', methods.handleKeyUpEvent);
+                // data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
             },
             handleExportDialog (flag)
             {
@@ -3998,6 +4020,7 @@ export default defineComponent({
             {
                 data[value] = false;
                 methods.addKeyBoardEvent();
+                // methods.startDrawing();
             }
         };
 
@@ -4044,7 +4067,6 @@ export default defineComponent({
             if (data.canvas)
             {
                 console.log('清空了键盘事件');
-                
                 data.canvas.removeEventListener('mousedown', methods.start);
                 data.canvas.removeEventListener('mousemove', methods.draw);
                 data.canvas.removeEventListener('mouseup', methods.stop);

@@ -143,7 +143,7 @@ addEventListener('message', (e) =>
     {
         // 处理拼豆的转换
         let variables = data.variables;
-        let currentPindouColorList = data.currentPindouBrandColorList;
+        let currentPindouColorList = Array.from(data.currentPindouBrandColorList);
         // if (!currentPindouColorList) 
         // {
         //     let customMap = JSON.parse(cache.customPindou.get());

@@ -8,7 +8,7 @@
     :before-close="handleClose"
     @open="getData"
     :show-close="false"
-    class="z-dialog" center>
+    class="z-dialog z-dialog-1" center>
         <template #header="{ titleId, titleClass }">
             <div class="flex-between">
                 <h4 :id="titleId" :class="titleClass" draggable="false">{{title}}</h4>

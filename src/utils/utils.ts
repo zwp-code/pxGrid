@@ -350,4 +350,7 @@ export function measureTextHeight (width, height)
     if (width >= 15) return newHeight -= 3;
     return newHeight;
 }
-  
+
+
+export const isObject = (data) => Object.prototype.toString.call(data) === '[object Object]';
+export const isArray = (data) => Object.prototype.toString.call(data) === '[object Array]';

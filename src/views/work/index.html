@@ -10,27 +10,27 @@
                 </div>
                 <div class="flex-end">
                     <el-tooltip
-                    content="撤销 [Alt + z]"
+                    content="撤销 [Alt/⌥ + z]"
                     placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleRevoke"><Back /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip
-                    content="恢复 [Alt + x]"
+                    content="恢复 [Alt/⌥ + x]"
                     placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleRecover"><Right /></el-icon>
                     </el-tooltip>
 
-                    <!-- <el-tooltip content="拼豆模式 [Alt + o]" placement="bottom">
+                    <!-- <el-tooltip content="拼豆模式 [Alt/⌥ + o]" placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleOpenPindou"><Grape /></el-icon>
                     </el-tooltip> -->
 
-                    <el-tooltip content="重置 [Alt + v]" placement="bottom">
+                    <el-tooltip content="重置 [Alt/⌥ + v]" placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleResetCanvas"><Refresh /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip
-                    :content="!previewLoading ? '预览动画 [Alt + p]' : '正在加载'"
+                    :content="!previewLoading ? '预览动画 [Alt/⌥ + p]' : '正在加载'"
                     placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleOpenPreviewDialog" v-if="!previewLoading"><VideoPlay /></el-icon>
                         <el-icon style="margin-right: 25px;" class="is-loading" v-else><Loading /></el-icon>
@@ -47,16 +47,16 @@
                         <!-- <i style="width:16px;height:16px; margin-right: 25px;" v-html="$iconSvg['save']"></i> -->
                         <template #dropdown>
                             <el-dropdown-menu>
-                                <el-dropdown-item @click="handleSaveProject" :disabled="pinDouMode">保存项目 [Ctrl + s]</el-dropdown-item>
+                                <el-dropdown-item @click="handleSaveProject" :disabled="pinDouMode">保存项目 [Ctrl/⌘ + s]</el-dropdown-item>
                                 <!-- <el-dropdown-item @click="handleImportProject">导入项目</el-dropdown-item> -->
-                                <el-dropdown-item @click="handleExportDialog(true)" :disabled="pinDouMode">导出项目 [Ctrl + p]</el-dropdown-item>
-                                <el-dropdown-item @click="handleExportDialog(false)" :disabled="pinDouMode">导出图像 [Ctrl + i]</el-dropdown-item>
+                                <el-dropdown-item @click="handleExportDialog(true)" :disabled="pinDouMode">导出项目 [Ctrl/⌘ + p]</el-dropdown-item>
+                                <el-dropdown-item @click="handleExportDialog(false)" :disabled="pinDouMode">导出图像 [Ctrl/⌘ + i]</el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
                     </el-dropdown>
 
                     <el-tooltip
-                    content="全屏 [Alt + f]"
+                    content="全屏 [Alt/⌥ + f]"
                     placement="bottom">
                         <el-icon style="margin-right: 0px;" @click="handleScreenFull"><FullScreen /></el-icon>
                     </el-tooltip>
@@ -186,10 +186,10 @@
                                     <el-dropdown-menu>
                                         <el-dropdown-item @click="selectType='select'">手动选择 [y]</el-dropdown-item>
                                         <el-dropdown-item @click="selectType='quickSelect'">快速选择 [p]</el-dropdown-item>
-                                        <el-dropdown-item @click="handleCancelSelect" :disabled="!selectData.selectList.length">取消选择 [Alt + n]</el-dropdown-item>
-                                        <el-dropdown-item @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))" :disabled="!selectData.selectList.length">复 制 [Alt + c]</el-dropdown-item>
-                                        <!-- <el-dropdown-item @click="handleSelect('copy')" disabled>粘 贴 [Alt + v]</el-dropdown-item> -->
-                                        <el-dropdown-item @click="handleRemoveSelect" :disabled="!selectData.selectList.length">删 除 [Alt + d]</el-dropdown-item>
+                                        <el-dropdown-item @click="handleCancelSelect" :disabled="!selectData.selectList.length">取消选择 [Alt/⌥ + n]</el-dropdown-item>
+                                        <el-dropdown-item @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))" :disabled="!selectData.selectList.length">复 制 [Alt/⌥ + c]</el-dropdown-item>
+                                        <!-- <el-dropdown-item @click="handleSelect('copy')" disabled>粘 贴 [Alt/⌥ + v]</el-dropdown-item> -->
+                                        <el-dropdown-item @click="handleRemoveSelect" :disabled="!selectData.selectList.length">删 除 [Alt/⌥ + d]</el-dropdown-item>
                                         <el-dropdown-item disabled>移 动 [Shift + 鼠标左键]</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>
@@ -217,10 +217,10 @@
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
-                                        <el-dropdown-item @click="drawTransform('hReverse')" :disabled="pinDouMode">水平翻转 [Ctrl + ↑]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('vReverse')" :disabled="pinDouMode">垂直翻转 [Ctrl + ↓]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('ssz')" :disabled="pinDouMode || canvasWidth!==canvasHeight">顺时针旋转90度 [Ctrl + →]</el-dropdown-item>
-                                        <el-dropdown-item @click="drawTransform('nsz')" :disabled="pinDouMode || canvasWidth!==canvasHeight">逆时针旋转90度 [Ctrl + ←]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('hReverse')" :disabled="pinDouMode">水平翻转 [Ctrl/⌘ + ↑]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('vReverse')" :disabled="pinDouMode">垂直翻转 [Ctrl/⌘ + ↓]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('ssz')" :disabled="pinDouMode || canvasWidth!==canvasHeight">顺时针旋转90度 [Ctrl/⌘ + →]</el-dropdown-item>
+                                        <el-dropdown-item @click="drawTransform('nsz')" :disabled="pinDouMode || canvasWidth!==canvasHeight">逆时针旋转90度 [Ctrl/⌘ + ←]</el-dropdown-item>
                                         <!-- <el-dropdown-item @click="drawShape('fillCircle')">填充圆形</el-dropdown-item> -->
                                     </el-dropdown-menu>
                                 </template>
@@ -379,12 +379,12 @@
                         </div>
                         <div class="flex-center">
                             <el-tooltip
-                            content="保存颜色 [Alt + s]"
+                            content="保存颜色 [Alt/⌥ + s]"
                             placement="top">
                                 <el-link type="info" :underline="false" @click="handleSaveColor(false)">保存</el-link>
                             </el-tooltip>
                             <el-tooltip
-                            content="复制颜色 [Ctrl + Alt + c]"
+                            content="复制颜色 [Ctrl/⌘ + Alt/⌥ + c]"
                             placement="top">
                                 <el-link type="info" :underline="false" style="margin-left: 10px;" @click="handleCopyColor">复制</el-link>
                             </el-tooltip>
@@ -456,7 +456,7 @@
                                 </el-popover>
                             </div>
                             <el-tooltip
-                            content="全部颜色 [Alt + g]"
+                            content="全部颜色 [Alt/⌥ + g]"
                             placement="bottom"
                             >
                                 <div class="mycolor flex-center" style="background-color: var(--el-bg-color-second);" @click="handleOpenMyColorDialog">

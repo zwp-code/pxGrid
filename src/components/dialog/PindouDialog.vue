@@ -5,8 +5,9 @@
     :modal="false"
     :close-on-click-modal="false"
     :before-close="handleClose"
-    class="z-dialog" center>
+    class="z-dialog z-dialog-1" center>
         <div class="content">
+            <el-tag type="info">颜色仅供参考，以实际为准</el-tag>
             <div class="item flex-start">
                 <p>拼豆品牌</p>
                 <el-select v-model="pindouBrand" @change="handleChangeBrand" placeholder="请选择" style="width:200px">

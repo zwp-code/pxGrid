@@ -253,7 +253,7 @@ body,html{
     }
 }
 
-:has(> .el-overlay-dialog .z-dialog) {
+:has(> .el-overlay-dialog .z-dialog-1) {
     pointer-events: none !important;
 }
 

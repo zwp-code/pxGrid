@@ -2,7 +2,7 @@ import db from '@/utils/db';
 import cache from '@/utils/cache';
 import { defineStore } from 'pinia';
 import message from '@/utils/message';
-import { formatTimeStamp } from '@/utils/utils';
+import { formatTimeStamp, isArray } from '@/utils/utils';
 import pindouMap from '@/config/pindou';
 export const useEditSpaceStore = defineStore('editSpace', {
     state: () => 
@@ -30,43 +30,87 @@ export const useEditSpaceStore = defineStore('editSpace', {
         }
     },
     actions: {
+        batchSavePindouData (data, isUpdate = false)
+        {
+            const promises = [] as any;
+            data.forEach((value, key) => 
+            {
+                // this.pindouMaps[key] = value;
+                if (isUpdate)
+                {
+                    promises.push(this.editPindouData({ id:key, value }));
+                }
+                else
+                {
+                    promises.push(this.savePindouData({ id:key, value }));
+                }
+            });
+            Promise.all(promises)
+                .then(() => 
+                {
+                    // console.log('All promises resolved');
+                    let arr = Object.keys(this.pindouMaps).map((key) => 
+                    {
+                        return {
+                            value:key,
+                            label:this.pindouMaps[key].label
+                        };
+                    });
+                    cache.pindou.set(JSON.stringify(arr));
+                    
+                })
+                .catch((error) => 
+                {
+                    console.error('Error:', error);
+                });
+        },
         getPindouData ()
         {
             db.findAllDB('pindou').then((res:any) => 
             {
                 if (res.length)
                 {
+                    if (!cache.forceUpdate.get())
+                    {
+                        // 强制更新数据
+                        this.batchSavePindouData(pindouMap, true);
+                        cache.forceUpdate.set('1');
+                        return;
+                    }
                     for (let i = 0; i < res.length; i++)
                     {
-                        this.pindouMaps[res[i].id] = res[i].data;
+                        this.pindouMaps[res[i].id] = {
+                            data:res[i].data.data || res[i].data,
+                            label:res[i].data.label || res[i].id
+                        };
                     }
+                    let diffKeys = Array.from(pindouMap.keys()).filter((item) => 
+                    {
+                        return !this.pindouMaps[item];
+                    });
+                    if (diffKeys.length)
+                    {
+                        let maps = new Map();
+                        diffKeys.forEach((key) => 
+                        {
+                            let value = pindouMap.get(key);
+                            maps.set(key, value);
+                        });
+                        this.batchSavePindouData(maps, false);
+                    }
+                    let arr = Object.keys(this.pindouMaps).map((key) => 
+                    {
+                        return {
+                            value:key,
+                            label:this.pindouMaps[key].label
+                        };
+                    });
+                    cache.pindou.set(JSON.stringify(arr));
+                    
                 }
                 else
                 {
-                    const promises = [] as any;
-                    pindouMap.forEach((value, key) => 
-                    {
-                        // this.pindouMaps[key] = value;
-                        promises.push(this.savePindouData({ id:key, value }));
-                    });
-                    Promise.all(promises)
-                        .then(() => 
-                        {
-                            // console.log('All promises resolved');
-                            let arr = Object.keys(this.pindouMaps).map((item) => 
-                            {
-                                return {
-                                    value:item,
-                                    label:item
-                                };
-                            });
-                            cache.pindou.set(JSON.stringify(arr));
-                            
-                        })
-                        .catch((error) => 
-                        {
-                            console.error('Error:', error);
-                        });
+                    this.batchSavePindouData(pindouMap, false);
                 }
             }).catch((err) => 
             {
@@ -79,12 +123,33 @@ export const useEditSpaceStore = defineStore('editSpace', {
             // 新增
             return new Promise((resolve, reject) => 
             {
-                db.saveDB(data.id, data.value, 'pindou').then((res) => 
+                let obj = {} as any;
+                if (isArray(data.value)) 
                 {
-                    this.pindouMaps[data.id] = data.value;
+                    obj.data = data.value;
+                    obj.label = data.id;
+                }
+                else
+                {
+                    obj = data.value;
+                }
+                db.saveDB(data.id, obj, 'pindou').then((res) => 
+                {
+                    if (isArray(data.value))
+                    {
+                        this.pindouMaps[data.id] = {
+                            data:data.value,
+                            label:data.id
+                        };
+                    }
+                    else
+                    {
+                        this.pindouMaps[data.id] = data.value;
+                    }
                     resolve(res);
                 }).catch((err) => 
                 {
+                    message.error('新增失败 - ' + err);
                     reject(err);
                 });
             });
@@ -94,12 +159,33 @@ export const useEditSpaceStore = defineStore('editSpace', {
             // 编辑
             return new Promise((resolve, reject) => 
             {
-                db.updateDB({ id:data.id, data:data.value }, 'pindou').then((res) => 
+                let obj = {} as any;
+                if (isArray(data.value)) 
                 {
-                    this.pindouMaps[data.id] = data.value;
+                    obj.data = data.value;
+                    obj.label = data.id;
+                }
+                else
+                {
+                    obj = data.value;
+                }
+                db.updateDB({ id:data.id, data:obj }, 'pindou').then((res) => 
+                {
+                    if (isArray(data.value))
+                    {
+                        this.pindouMaps[data.id] = {
+                            data:data.value,
+                            label:data.id
+                        };
+                    }
+                    else
+                    {
+                        this.pindouMaps[data.id] = data.value;
+                    }
                     resolve(res);
                 }).catch((err) => 
                 {
+                    message.error('保存失败 - ' + err);
                     reject(err);
                 });
             });
@@ -113,10 +199,11 @@ export const useEditSpaceStore = defineStore('editSpace', {
                     // 更新数据
                     db.clearDB(id, 'pindou').then((res) => 
                     {
-                        resolve(this.pindouMaps[id]);
+                        resolve(res);
                         delete this.pindouMaps[id];
                     }).catch((err) => 
                     {
+                        message.error('删除失败 - ' + err);
                         reject(err);
                     });
                 }

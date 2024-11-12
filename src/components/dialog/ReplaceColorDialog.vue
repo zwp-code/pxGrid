@@ -5,7 +5,7 @@
     :modal="false"
     :close-on-click-modal="false"
     :before-close="handleClose"
-    class="z-dialog" center>
+    class="z-dialog z-dialog-1" center>
         <div class="content">
             <div class="color flex-start">
                 <p>替换颜色</p>

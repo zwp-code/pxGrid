@@ -8,14 +8,28 @@
                 <p>文件名称</p>
                 <el-input v-model="fileName" placeholder="请输入文件名称" />
             </div>
-            <div v-if="!isExportProject">
-                <el-checkbox v-model="checked1" label="精灵图（不区分图层）" @change="handleChange($evnet, 1)"/>
-                <el-checkbox v-model="checked2" label="精灵图（区分图层）" @change="handleChange($evnet, 2)"/>
-            </div>
-            <div v-if="!isExportProject">
-                <el-checkbox v-model="checked3" label="单张图（不区分图层）" @change="handleChange($evnet, 3)"/>
-                <el-checkbox v-model="checked4" label="单张图（区分图层）" @change="handleChange($evnet, 4)"/>
-            </div>
+            <template v-if="!isExportProject">
+                <div>
+                    <el-checkbox v-model="checked1" label="精灵图（不区分图层）" @change="handleChange($evnet, 1)"/>
+                    <el-checkbox v-model="checked2" label="精灵图（区分图层）" @change="handleChange($evnet, 2)"/>
+                </div>
+                <div>
+                    <el-checkbox v-model="checked3" label="单张图（不区分图层）" @change="handleChange($evnet, 3)"/>
+                    <el-checkbox v-model="checked4" label="单张图（区分图层）" @change="handleChange($evnet, 4)"/>
+                </div>
+                <div class="flex-start" style="gap:10px">
+                    <p>倍图</p>
+                    <div>
+                        <el-radio-group v-model="radio">
+                            <el-radio :value="1">x1</el-radio>
+                            <el-radio :value="2">x2</el-radio>
+                            <el-radio :value="3">x3</el-radio>
+                            <el-radio :value="4">x4</el-radio>
+                            <el-radio :value="5">x5</el-radio>
+                        </el-radio-group>
+                    </div>
+                </div>
+            </template>
         </div>
         <template #footer>
             <span class="dialog-footer">
@@ -60,7 +74,8 @@ export default defineComponent({
             checked2:false,
             checked3:false,
             checked4:false,
-            type:1
+            type:1,
+            radio:1
         });
         let methods = {
             clearStatus ()
@@ -85,7 +100,7 @@ export default defineComponent({
             handleConfirm ()
             {
                 if (data.fileName.trim() === '') return proxy.$message.warning('请输入文件名称');
-                context.emit('export', data.type, data.fileName);
+                context.emit('export', data.type, data.fileName, data.radio);
             }
         };
 

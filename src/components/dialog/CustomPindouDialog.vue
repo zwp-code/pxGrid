@@ -20,13 +20,43 @@
                         :label="item.label"
                         :value="item.value"
                     />
+                    <template #footer>
+                        <el-button v-if="!isAddPindou" text bg size="small" @click="isAddPindou=true">
+                            新建拼豆色卡
+                        </el-button>
+                        <template v-else>
+                            <div class="flex-column-start">
+                                <el-input
+                                v-model="customPindouKey"
+                                class="option-input"
+                                placeholder="请输入拼豆属性[仅支持数字和英文]"
+                                size="small"
+                                maxlength="20"
+                                @input="handleInput"
+                                />
+                                <el-input
+                                v-model="customPindouName"
+                                class="option-input"
+                                placeholder="请输入拼豆名称"
+                                size="small"
+                                maxlength="15"
+                                />
+                            </div>
+                            <div class="flex-end">
+                                <el-button size="small" @click="customPindouKey='';customPindouName='';isAddPindou=false">取消</el-button>
+                                <el-button type="primary" size="small" @click="handleSavePindou('save')">保存</el-button>  
+                            </div>
+                            
+                        </template>
+                    </template>
                 </el-select>
-                <el-input v-model="customPindouName" placeholder="请输入" style="width:200px"/>
+                <el-input v-model="customPindouLabel"
+                placeholder="请输入拼豆名称" style="width:200px" :disabled="pindouBrand===''"/>
                 <el-tooltip
                     content="保存"
                     placement="top"
                     >
-                        <el-button type="primary" :icon="Edit" @click="handleSavePindou"/>
+                        <el-button type="primary" :icon="Edit" @click="handleSavePindou('edit')" :disabled="pindouBrand===''"/>
                     </el-tooltip>
 
                 <el-popconfirm title="确定删除?" @confirm="handleDeletePindou">
@@ -41,6 +71,7 @@
                             <el-dropdown-item @click="importFile">导入文件</el-dropdown-item>
                             <el-dropdown-item @click="exportFile(false)">导出文件</el-dropdown-item>
                             <el-dropdown-item @click="exportFile(true)">下载模板</el-dropdown-item>
+                            <el-dropdown-item @click="exportJSONFile">导出为JSON</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -52,12 +83,13 @@
                 </el-tooltip>
             </div>
             <div>
-                <el-table :data="list" style="width: 100%" max-height="500">
+                <el-table :data="list ? (list.data || list) : []" style="width: 100%" max-height="500">
                     <el-table-column prop="name" label="标 识" width="150" />
                     <el-table-column prop="color" label="颜 色">
                         <template #default="scope">
                             <div
-                            class="flex-center color-item" 
+                            class="flex-center color-item pointer"
+                            @click="copyText(`#${scope.row.color}`)"
                             :style="{backgroundColor:'#' + scope.row.color,color:getFontColor('#' + scope.row.color)}">
                             #{{scope.row.color}}
                             </div>
@@ -117,9 +149,11 @@ import {
 import { useEditSpaceStore } from '@/store';
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance, watchEffect, watch } from 'vue';
 import pindouMap from '@/config/pindou'; 
-import { getFontColor } from '@/utils/utils';
+import { getFontColor, copyText } from '@/utils/utils';
 import * as XLSX from 'xlsx';
 import { ElMessageBox } from 'element-plus';
+import FileSaver from 'file-saver';
+
 export default defineComponent({
     name: 'CustomPindouDialog',
     components: {},
@@ -134,15 +168,18 @@ export default defineComponent({
         let data = reactive({
             dialogVisible:false,
             loading:false,
-            list:[] as any,
+            list:null as any,
             myCustom:[] as any,
             pindouBrand:'',
+            customPindouKey:'',
             customPindouName:'',
+            customPindouLabel:'',
             innerVisible:false,
             name:'',
             color:'',
             editMask:false,
-            customData:{} as any
+            customData:{} as any,
+            isAddPindou:false
         });
         
         let methods = {
@@ -168,11 +205,11 @@ export default defineComponent({
             },
             getList (key = data.pindouBrand)
             {
-                if (key !== '')
+                if (key && key !== '')
                 {
-                    return editSpaceStore.pindouMaps[key];
+                    return JSON.parse(JSON.stringify(editSpaceStore.pindouMaps[key])) || null;
                 }
-                return [];
+                return null;
             },
             saveData ()
             {
@@ -183,8 +220,8 @@ export default defineComponent({
             {
                 if (data.pindouBrand === '') 
                 {
-                    data.list = [];
-                    
+                    data.list = null;
+                    console.log(data.pindouBrand);
                 }
                 else
                 {
@@ -192,44 +229,47 @@ export default defineComponent({
                 }
             },
 
-            async handleSavePindou ()
+            async handleSavePindou (type)
             {
                 // 保存自定义拼豆
-                if (data.customPindouName.trim() === '') return proxy.$message.warning('请输入自定义拼豆名称');
-                if (Object.keys(editSpaceStore.pindouMaps).find((v) => v === data.customPindouName)) return proxy.$message.warning('拼豆名称不能重复');
-                if (data.myCustom.find((v) => v.value === data.pindouBrand))
+                // if (data.customPindouName.trim() === '' || data.customPindouKey.trim() === '') return proxy.$message.warning('请输入拼豆属性和名称');
+                // if (Object.keys(editSpaceStore.pindouMaps).find((v) => v === data.customPindouKey)) return proxy.$message.warning('拼豆属性不能重复');
+                if (type === 'edit')
                 {
                     // 编辑
                     if (pindouMap.has(data.pindouBrand)) return proxy.$message.warning('该拼豆不能编辑');
-                    const deleteData = await editSpaceStore.deletePindouById(data.pindouBrand);
-                    const flag = await editSpaceStore.savePindouData({id:data.customPindouName, value:deleteData});
+                    // const deleteData = await editSpaceStore.deletePindouById(data.pindouBrand);
+                    const flag = await editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list});
                     if (flag) 
                     {
                         data.myCustom.forEach((item) => 
                         {
                             if (item.value === data.pindouBrand)
                             {
-                                item.value = data.customPindouName;
-                                item.label = data.customPindouName;
+                                item.label = data.customPindouLabel;
                             }
                         });
                         methods.saveData();
-                        data.pindouBrand = data.customPindouName;
                         proxy.$message.success('已保存');
                     }
                     return;
                 }
-                const flag = await editSpaceStore.savePindouData({id:data.customPindouName, value:[]});
+                if (data.customPindouName.trim() === '' || data.customPindouKey.trim() === '') return proxy.$message.warning('请输入拼豆属性和名称');
+                if (Object.keys(editSpaceStore.pindouMaps).find((v) => v === data.customPindouKey)) return proxy.$message.warning('拼豆属性不能重复');
+                const flag = await editSpaceStore.savePindouData({id:data.customPindouKey, value:{data:[], label:data.customPindouName}});
                 if (flag) 
                 {
                     data.myCustom.push({
                         label:data.customPindouName,
-                        value:data.customPindouName
+                        value:data.customPindouKey
                     });
-                    data.pindouBrand = data.customPindouName;
-                    data.list = [];
+                    data.pindouBrand = data.customPindouKey;
+                    data.list = null;
                     methods.saveData();
                     proxy.$message.success('已新增');
+                    data.isAddPindou = false;
+                    data.customPindouKey = '';
+                    data.customPindouName = '';
                 }
             },
             async handleDeletePindou ()
@@ -264,7 +304,7 @@ export default defineComponent({
             {
                 if (data.editMask)
                 {
-                    data.list.forEach((item) => 
+                    data.list.data.forEach((item) => 
                     {
                         if (item.name === data.name)
                         {
@@ -274,18 +314,18 @@ export default defineComponent({
                 }
                 else
                 {
-                    let flag = data.list.find((item) => item.name === data.name);
+                    let flag = data.list.data.find((item) => item.name === data.name);
                     if (flag) 
                     {
                         return proxy.$message.warning('标识不能重复');
                     }
-                    data.list.push({
+                    data.list.data.push({
                         name:data.name,
                         color:data.color.slice(1)
                     });
                 }
                 // data.customData[data.pindouBrand] = data.list;
-                editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list}).then((res) => 
+                editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list }).then((res) => 
                 {
                     // methods.saveData();
                     proxy.$message.success('已保存');
@@ -298,12 +338,12 @@ export default defineComponent({
             },
             handleDelete (row)
             {
-                let index = data.list.findIndex((item) => item.name === row.name);
+                let index = data.list.data.findIndex((item) => item.name === row.name);
                 if (index >= 0) 
                 {
-                    data.list.splice(index, 1);
+                    data.list.data.splice(index, 1);
                 }
-                editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list}).then((res) => 
+                editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list }).then((res) => 
                 {
                     // methods.saveData();
                     proxy.$message.success('已删除');
@@ -315,10 +355,17 @@ export default defineComponent({
             },
             exportFile (isTemplate = false)
             { 
+                let filename = isTemplate ? '拼豆色卡模板' : `${data.pindouBrand}-${data.customPindouLabel}`;
                 const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(isTemplate ? [{ name:'A1', color:'000000' }] : data.list);
+                const ws = XLSX.utils.json_to_sheet(isTemplate ? [{ name:'A1', color:'000000' }] : data.list.data);
                 XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-                XLSX.writeFile(wb, `${data.pindouBrand}.xlsx`);
+                XLSX.writeFile(wb, `${filename}.xlsx`);
+            },
+            exportJSONFile ()
+            {
+                const d = JSON.stringify(data.list.data);
+                const blob = new Blob([d], {type: ''});
+                FileSaver.saveAs(blob, `${data.pindouBrand}-${data.customPindouLabel}.json`);
             },
             importFile ()
             {
@@ -366,8 +413,8 @@ export default defineComponent({
                 )
                     .then(() => 
                     {
-                        data.list = newList;
-                        editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list}).then((res) => 
+                        data.list.data = newList;
+                        editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list, label:data.customPindouLabel}).then((res) => 
                         {
                             // methods.saveData();
                             proxy.$message.success('已覆盖');
@@ -381,6 +428,10 @@ export default defineComponent({
                     {
                         //
                     });
+            },
+            handleInput (e)
+            {
+                data.customPindouKey = data.customPindouKey.replace(/[\u4E00-\u9FA5]/g, '');
             }
         };
 
@@ -394,12 +445,24 @@ export default defineComponent({
             console.log(newValue, oldValue);
             if (newValue)
             {
-                data.customPindouName = newValue;
+                let obj = data.myCustom.find((item) => item.value === newValue);
+                if (obj) data.customPindouLabel = obj.label;
+                else data.customPindouLabel = '';
             }
             else
             {
-                data.customPindouName = '';
+                data.customPindouLabel = '';
                 data.pindouBrand = '';
+            }
+            
+        });
+
+        watch(() => data.customPindouLabel, (newValue, oldValue) => 
+        {
+            console.log(newValue, oldValue);
+            if (data.list)
+            {
+                data.list.label = newValue;
             }
             
         });
@@ -410,7 +473,8 @@ export default defineComponent({
             Plus,
             Delete,
             Edit,
-            getFontColor
+            getFontColor,
+            copyText
         };
     }
 });
@@ -418,7 +482,7 @@ export default defineComponent({
 <style lang='scss' scoped>
 .content {
     padding:10px;
-    max-height: 500px;
+    max-height: 600px;
     overflow: hidden;
 
     .item {
@@ -437,5 +501,10 @@ export default defineComponent({
         border-radius: 5px;
         box-shadow: 0px 0px 4px 2px var(--el-shadow-color);
     }
+}
+
+.option-input {
+    width: 250px;
+    margin-bottom: 8px;
 }
 </style>
