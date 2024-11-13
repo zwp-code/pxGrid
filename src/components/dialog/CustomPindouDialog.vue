@@ -84,8 +84,11 @@
                 </el-tooltip>
             </div>
             <div>
-                <el-table :data="list ? (list.data || list) : []" style="width: 100%" max-height="500">
-                    <el-table-column prop="name" label="标 识" width="150" />
+                <el-input v-model="searchValue" placeholder="搜索标识" @keyup.enter="handleSearch"/>
+            </div>
+            <div>
+                <el-table :data="searchData.length ? searchData : list ? (list.data || list) : []" style="width: 100%" max-height="500">
+                    <el-table-column prop="name" label="标 识" width="150" sortable/>
                     <el-table-column prop="color" label="颜 色">
                         <template #default="scope">
                             <div
@@ -180,11 +183,21 @@ export default defineComponent({
             color:'',
             editMask:false,
             customData:{} as any,
-            isAddPindou:false
+            isAddPindou:false,
+            searchValue:'',
+            searchData:[] as any
         });
         
         let methods = {
-            
+            handleSearch ()
+            {
+                if (data.searchValue.trim() === '') return proxy.$message.warning('请输入内容');
+                let reg = new RegExp(data.searchValue, 'i');
+                data.searchData = data.list.data.filter((item) => 
+                {
+                    return reg.test(item.name);
+                });
+            },
             handleClose ()
             {
                 data.dialogVisible = false;
@@ -467,6 +480,15 @@ export default defineComponent({
             }
             
         });
+
+        watchEffect(() => 
+        {
+            if (data.searchValue.trim() === '')
+            {
+                data.searchData = [];
+            }
+        });
+
         return {
             ...toRefs(data),
             ...methods,

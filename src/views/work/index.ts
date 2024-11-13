@@ -2525,7 +2525,10 @@ export default defineComponent({
                 // }
                 if (isRedraw) methods.reDraw();
             },
-
+            handlePindouHighlight ()
+            {
+                //
+            },
             handleDrawPindou (ctx, beginPos = data.canvasBeginPos)
             {
                 // 画拼豆

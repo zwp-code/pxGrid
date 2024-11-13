@@ -56,6 +56,7 @@
                 <div>
                     <el-checkbox v-model="checked1" label="单独像素" @change="handleChange($evnet, 1)"/>
                     <el-checkbox v-model="checked2" label="所有像素" @change="handleChange($evnet, 2)"/>
+                    <el-checkbox v-model="isHighlight" label="高亮显示" @change="handleHighLight"/>
                 </div>
             </div>
             <div class="item">
@@ -113,7 +114,7 @@ export default defineComponent({
             default:false
         }
     },
-    emits: ['close', 'replace', 'change', 'export'],
+    emits: ['close', 'replace', 'change', 'export', 'highlight'],
     setup (props, context) 
     {
         let { proxy }:any = getCurrentInstance();
@@ -168,10 +169,15 @@ export default defineComponent({
             checked1:true,
             checked2:false,
             type:1,
-            loading:false
+            loading:false,
+            isHighlight:false
         });
         
         let methods = {
+            handleHighLight ()
+            {
+                context.emit('highlight', { col:data.selectedObj.col, row:data.selectedObj.row, type:data.type, isHighlight:data.isHighlight })
+            },
             clearStatus ()
             {
                 for (let i = 0; i < 2; i++)
