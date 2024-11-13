@@ -84,12 +84,12 @@
                 </el-tooltip>
             </div>
             <div>
-                <el-input v-model="searchValue" placeholder="搜索标识" @keyup.enter="handleSearch"/>
+                <el-input v-model="searchValue" placeholder="搜索色号" @keyup.enter="handleSearch"/>
             </div>
             <div>
                 <el-table :data="searchData.length ? searchData : list ? (list.data || list) : []" style="width: 100%" max-height="500">
-                    <el-table-column prop="name" label="标 识" width="150" sortable/>
-                    <el-table-column prop="color" label="颜 色">
+                    <el-table-column prop="name" label="色 号" width="150" sortable/>
+                    <el-table-column prop="color" label="色 值">
                         <template #default="scope">
                             <div
                             class="flex-center color-item pointer"
@@ -318,11 +318,12 @@ export default defineComponent({
             {
                 if (data.editMask)
                 {
+                    if (data.color === '') return proxy.$message.warning('颜色不能为空');
                     data.list.data.forEach((item) => 
                     {
                         if (item.name === data.name)
                         {
-                            item.color = data.color.slice(1);
+                            item.color = data.color.slice(1).toLowerCase();
                         }
                     });
                 }
@@ -331,11 +332,12 @@ export default defineComponent({
                     let flag = data.list.data.find((item) => item.name === data.name);
                     if (flag) 
                     {
-                        return proxy.$message.warning('标识不能重复');
+                        return proxy.$message.warning('色号不能重复');
                     }
+                    if (data.color === '') return proxy.$message.warning('颜色不能为空');
                     data.list.data.push({
                         name:data.name,
-                        color:data.color.slice(1)
+                        color:data.color.slice(1).toLowerCase()
                     });
                 }
                 // data.customData[data.pindouBrand] = data.list;

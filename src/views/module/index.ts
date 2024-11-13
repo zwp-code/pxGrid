@@ -90,7 +90,7 @@ export default defineComponent({
                     .then((res) => 
                     {
                         console.log(res.data);
-                        data.isloading = false;
+                        // data.isloading = false;
                         data.total = res.data.total;
                         data.moduleList = sortList(res.data.data, 'createAt');
                         methods.handleFilter(data.filterValue);
@@ -195,7 +195,6 @@ export default defineComponent({
                     });
                 }
                 data.isloading = false;
-
             },
             handleReset ()
             {

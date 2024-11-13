@@ -2,11 +2,21 @@
     {
         "url":"https://space.bilibili.com/3493130575808580?spm_id_from=333.1007.0.0", 
         "label":"Bilibili", 
-        "type":"success" 
+        "type":"#FC8BAB"
     },
     {
         "url":"https://github.com/zwp-code", 
         "label":"Github", 
-        "type":"primary" 
-    }      
+        "type":"#808080" 
+    },
+    {
+        "url":"https://www.xiaohongshu.com/user/profile/6443b44e0000000010026025", 
+        "label":"小红书", 
+        "type":"#FF2E4D" 
+    },
+    {
+        "url":"http://afdian.com/a/zwpyyds",
+        "label":"爱发电",
+        "type":"#916AE4"
+    }
 ]

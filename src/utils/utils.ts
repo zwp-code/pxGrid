@@ -20,8 +20,7 @@ export function rgbaToHex (arr)
     let hexG = g.toString(16).padStart(2, '0');
     let hexB = b.toString(16).padStart(2, '0');
     let hexA = a.toString(16).padStart(2, '0');
-  
-    return `#${hexR}${hexG}${hexB}${hexA}`.toLocaleLowerCase();
+    return `#${hexR}${hexG}${hexB}${hexA}`.toLowerCase();
 }
 
 export function hexToRgba (hex) 

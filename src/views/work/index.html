@@ -264,12 +264,22 @@
                             </div>
                         </el-tooltip>
                         <el-tooltip
-                            content="拼豆模式 [o]"
+                            content="拼豆模式"
                             placement="right"
                         >
-                            <div class="pointer toolItem" @click="handleChangeTool(5)" :class="{ 'active': currentTool === 5 }">
-                                <img :src="requireIcon('pindou')"/>
-                            </div>
+                            <el-dropdown placement="top-start" trigger="hover">
+                                <div class="pointer toolItem" @click="handleChangeTool(5)" :class="{ 'active': currentTool === 5 }">
+                                    <img :src="requireIcon('pindou')"/>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="handlePindouMode('preview')" :disabled="pinDouMode">预览模式 [o]</el-dropdown-item>
+                                        <el-dropdown-item @click="handlePindouMode('draw')" :disabled="pinDouMode">绘图模式 [k]</el-dropdown-item>
+                                       
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                            
                         </el-tooltip>
                         <!-- <el-tooltip
                             content="AI"
@@ -569,9 +579,9 @@
                         style="gap: 10px;"
                         :class="{ 'active': currentLayerIndex === index, 'select': selectLayerList.includes(index) }"
                         @contextmenu.prevent="handleMenu($event, 'LayerMenu', {layerData:item, index, currentFrameIndex})"
-                        @click.self="handleChangeLayer(index)">
+                        @click="handleChangeLayer(index)">
                             <div class="flex-start" style="gap: 10px;">
-                                <div class="pointer layer-pic" @click="handleChangeLayerVisible(index)">
+                                <div class="pointer layer-pic" @click.stop="handleChangeLayerVisible(index)">
                                     <img :src="requireVisibleImg(item.isRender)" />
                                 </div>
                                 <div class="layer-img flex-center" v-if="item.currentLayerImg">
@@ -591,10 +601,10 @@
                                 <div @dblclick="handleDoubleClickLayer(index, item.layerName)" v-else>{{ item.layerName }}</div>
                             </div>
                             <div class="flex-end">
-                                <el-icon style="margin-right:10px" class="pointer" @click="handleCopyLayer(index)"><CopyDocument /></el-icon>
+                                <el-icon style="margin-right:10px" class="pointer" @click.stop="handleCopyLayer(index)"><CopyDocument /></el-icon>
                                 <el-popconfirm title="确认删除该图层？" width="200" @confirm="handleDeleteLayer(index)">
                                     <template #reference>
-                                        <el-icon class="pointer" v-if="index!==drawRecord[currentFrameIndex].layer.length - 1"><Delete /></el-icon>
+                                        <el-icon class="pointer" @click.stop v-if="index!==drawRecord[currentFrameIndex].layer.length - 1"><Delete /></el-icon>
                                     </template>
                                 </el-popconfirm>
                             </div>
@@ -637,10 +647,11 @@
         </PreviewAnimDialog>
         <PindouDialog
         ref="PindouDialog" 
-        @close="handleCloseDialog('pinDouMode')" 
+        @close="handleCloseDialog" 
         @change="handlePindouEvent"
         @replace="handleReplacePindouColor"
         @highlight="handlePindouHighlight"
+        @select="(color) => brushColor = color"
         @export="handleExportPindou">
         </PindouDialog>
         <LayerMenu

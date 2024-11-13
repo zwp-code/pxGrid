@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="dialogVisible" title="拼豆"
+    <el-dialog v-model="dialogVisible" :title="`拼豆 - ${isDrawMode ? '绘图模式' : '预览模式'}`"
     :width="500"
     draggable="true"
     :modal="false"
@@ -24,16 +24,16 @@
             <el-tag type="info">拼豆色板引用自：
                 <el-link href="https://fusebead.sulian-blog.com/#google_vignette" target="_blank" :underline="false" type="success">fusebead.sulian-blog </el-link>
                 作者 - <el-link href="https://github.com/atonasting/fuse-bead-tool" target="_blank" :underline="false" type="primary">苏莉安</el-link></el-tag>
-            <div v-if="selectedObj">
-                <div class="item flex-start">
+            <div>
+                <div class="item flex-start" v-if="selectedObj">
                     <p>当前选择的颜色</p>
                     <div class="flex-center color-item" 
                     :style="{backgroundColor:selectedObj.color, color:getFontColor(selectedObj.color)}">
                         {{selectedObj.name}}
                     </div>
                 </div>
-                <div class="item flex-start" style="gap:10px">
-                    <p>替换颜色</p>
+                <div class="item flex-start" style="gap:10px" v-if="selectedObj || isDrawMode">
+                    <p>{{ isDrawMode ? '拼豆色卡' : '替换颜色'}}</p>
                     <el-select v-model="replaceObj" value-key="name" filterable
                     @change="handleChangeColor" placeholder="请选择" style="width:200px">
                         <el-option
@@ -53,13 +53,13 @@
                     :style="{backgroundColor:replaceObj.color}">
                     </div>
                 </div>
-                <div>
+                <div v-if="selectedObj">
                     <el-checkbox v-model="checked1" label="单独像素" @change="handleChange($evnet, 1)"/>
                     <el-checkbox v-model="checked2" label="所有像素" @change="handleChange($evnet, 2)"/>
                     <el-checkbox v-model="isHighlight" label="高亮显示" @change="handleHighLight"/>
                 </div>
             </div>
-            <div class="item">
+            <div class="item" v-if="!isDrawMode">
                 <el-collapse accordion>
                     <el-collapse-item name="1">
                         <template #title>
@@ -83,7 +83,7 @@
             
         </div>
         <template #footer>
-            <span class="dialog-footer">
+            <span class="dialog-footer" v-if="!isDrawMode">
                 <el-button type="success" @click="handleExport" :disabled="loading"
                 >导出拼豆图</el-button>
                 <el-button type="primary" @click="handleReplace" :loading="loading" v-if="selectedObj"
@@ -114,7 +114,7 @@ export default defineComponent({
             default:false
         }
     },
-    emits: ['close', 'replace', 'change', 'export', 'highlight'],
+    emits: ['close', 'replace', 'change', 'export', 'highlight', 'select'],
     setup (props, context) 
     {
         let { proxy }:any = getCurrentInstance();
@@ -170,13 +170,14 @@ export default defineComponent({
             checked2:false,
             type:1,
             loading:false,
-            isHighlight:false
+            isHighlight:false,
+            isDrawMode:false
         });
         
         let methods = {
             handleHighLight ()
             {
-                context.emit('highlight', { col:data.selectedObj.col, row:data.selectedObj.row, type:data.type, isHighlight:data.isHighlight })
+                context.emit('highlight', { selectedObj:data.selectedObj, type:data.type, isHighlight:data.isHighlight });
             },
             clearStatus ()
             {
@@ -191,6 +192,7 @@ export default defineComponent({
                 methods.clearStatus();
                 data[`checked${type}`] = true;
                 data.type = type;
+                if (data.isHighlight) methods.handleHighLight();
             },
             updateData ()
             {
@@ -200,16 +202,19 @@ export default defineComponent({
             handleClose ()
             {
                 data.dialogVisible = false;
+                data.isHighlight = false;
                 data.pindouBrand = 'mard';
                 data.replaceObj = null;
                 data.selectedObj = null;
                 methods.handleChange('', 1);
-                context.emit('close');
+                context.emit('close', data.isDrawMode ? 'pinDouDrawMode' : 'pinDouMode');
             },
             handleOpen (value)
             {
                 data.dialogVisible = true;
                 data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                if (value === 'draw') return data.isDrawMode = true;
+                data.isDrawMode = false;
                 data.colorStatList = value.colorStatList;
                 data.colorTotal = 0;
                 data.colorStatList.forEach((v, k) => 
@@ -219,6 +224,10 @@ export default defineComponent({
             },
             handleChangeColor (e)
             {
+                if (data.isDrawMode) 
+                {
+                    context.emit('select', `#${e.color}ff`);
+                }
                 data.replaceObj.color = '#' + e.color + 'ff';
             },
             handleExport ()

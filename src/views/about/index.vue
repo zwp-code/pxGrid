@@ -17,13 +17,14 @@
             </div>
             <div class="full-layout pad-1 scrollAuto scrollbar">
                 <h1># {{$t('message.link')}}</h1>
-                <div class="flex-start flex-warp" style="gap:10px">
+                <div class="flex-start flex-warp" style="gap:15px">
                     <el-link
                     :underline="false"
                     class="link"
                     v-for="item in links"
                     :key="item.url"
-                    :type="item.type"
+                    :type="item.type.slice(0,1) === '#' ? '' : item.type"
+                    :style="{color:item.type.slice(0,1) === '#' ? item.type : ''}"
                     @click="handleOpen(item.url)">{{item.label}}</el-link>
                 </div>
 
@@ -79,7 +80,7 @@ h2 {
 }
 
 .link, .thank+.thank {
-    margin-left: 10px;
+    // margin-left: 10px;
 }
 
 .thanks-box {

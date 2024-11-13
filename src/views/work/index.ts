@@ -166,6 +166,7 @@ export default defineComponent({
             },
             isSaveProject:true,
             pinDouMode:false,
+            pinDouDrawMode:false,
             pinDouData:null as any,
 
             tolerance:0, // 容差，适用于油漆桶和魔棒工具
@@ -185,7 +186,8 @@ export default defineComponent({
                 left:0,
                 contextData:null
             },
-            selectLayerList:[] as any
+            selectLayerList:[] as any,
+            pindouHighlight:null as any
 
             
         });
@@ -408,7 +410,7 @@ export default defineComponent({
             },
             handleChangeTool (index)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (index === 6)
                 {
                     // 清空当前选择的图层绘画信息
@@ -427,12 +429,29 @@ export default defineComponent({
                 }
                 else if (index === 5)
                 {
-                    if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                    if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return proxy.$message.warning('请将图层设置显示状态');
+                    methods.handlePindouMode('preview');
+                }
+                data.currentTool = index;
+            },
+            handlePindouMode (mode)
+            {
+                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return proxy.$message.warning('请将图层设置显示状态');
+                if (mode === 'preview') 
+                {
+                    if (data.pinDouDrawMode) return proxy.$message.warning('请先退出拼豆绘图模式');
+                    data.currentTool = 5;
                     data.loading = true;
                     methods.handlePindouEvent();
                 }
-                data.currentTool = index;
+                else
+                {
+                    console.log(data.pinDouMode);
+                    
+                    if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                    data.pinDouDrawMode = true;
+                    proxy.$refs.PindouDialog.handleOpen(mode);
+                }
             },
             handlePindouEvent (brand = 'mard')
             {
@@ -830,10 +849,7 @@ export default defineComponent({
                     {
                         return 1;
                     } 
-                    else 
-                    {
-                        return a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0);
-                    }
+                    return a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0);
                 });
                 console.log(currentLayerData2);
                 data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = currentLayerData2;
@@ -1008,7 +1024,7 @@ export default defineComponent({
                         methods.fillChunk(col, row, rgbaToHex(targetColor), replacementColor);
 
                     }
-                    else if (data.currentTool === 5)
+                    else if (data.currentTool === 5 && data.pinDouMode)
                     {
                         // 选择拼豆
                         let index = col + row * data.canvasWidth;
@@ -1754,16 +1770,16 @@ export default defineComponent({
                         if (thresholdX >= 0 && thresholdX <= data.scale / 2)
                         {
                             data.ctx2.beginPath();
-                            data.ctx2.moveTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y);
-                            data.ctx2.lineTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y + data.canvasHeight * data.scale);
+                            data.ctx2.moveTo(data.canvasBeginPos.centerX, 0);
+                            data.ctx2.lineTo(data.canvasBeginPos.centerX, data.bgCanvas.height);
                             data.ctx2.stroke();
                         }
                         
                         if (thresholdY >= 0 && thresholdY <= data.scale / 2)
                         {
                             data.ctx2.beginPath();
-                            data.ctx2.moveTo(data.canvasBeginPos.x, data.canvasBeginPos.centerY);
-                            data.ctx2.lineTo(data.canvasBeginPos.x + data.canvasWidth * data.scale, data.canvasBeginPos.centerY);
+                            data.ctx2.moveTo(0, data.canvasBeginPos.centerY);
+                            data.ctx2.lineTo(data.bgCanvas.width, data.canvasBeginPos.centerY);
                             data.ctx2.stroke();
                         }
 
@@ -1774,16 +1790,16 @@ export default defineComponent({
                             {
                                 data.ctx2.globalAlpha = 0.8;
                                 data.ctx2.beginPath();
-                                data.ctx2.moveTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y);
-                                data.ctx2.lineTo(data.canvasBeginPos.centerX, data.canvasBeginPos.y + data.canvasHeight * data.scale);
+                                data.ctx2.moveTo(data.canvasBeginPos.centerX, 0);
+                                data.ctx2.lineTo(data.canvasBeginPos.centerX, data.bgCanvas.height);
                                 data.ctx2.stroke();
                             }
                             if (thresholdY >= 0 && thresholdY <= data.scale / 2)
                             {
                                 data.ctx2.globalAlpha = 0.8;
                                 data.ctx2.beginPath();
-                                data.ctx2.moveTo(data.canvasBeginPos.x, data.canvasBeginPos.centerY);
-                                data.ctx2.lineTo(data.canvasBeginPos.x + data.canvasWidth * data.scale, data.canvasBeginPos.centerY);
+                                data.ctx2.moveTo(0, data.canvasBeginPos.centerY);
+                                data.ctx2.lineTo(data.bgCanvas.width, data.canvasBeginPos.centerY);
                                 data.ctx2.stroke();
                             }
                         }
@@ -2525,11 +2541,19 @@ export default defineComponent({
                 // }
                 if (isRedraw) methods.reDraw();
             },
-            handlePindouHighlight ()
+            handlePindouHighlight (value)
             {
-                //
+                if (!value.isHighlight) 
+                {
+                    data.pindouHighlight = null;
+                    methods.handleDrawPindou(data.ctx1);
+                    return;
+                }
+                data.pindouHighlight = value;
+                methods.handleDrawPindou(data.ctx1, data.canvasBeginPos, value);
+
             },
-            handleDrawPindou (ctx, beginPos = data.canvasBeginPos)
+            handleDrawPindou (ctx, beginPos = data.canvasBeginPos, highlight = data.pindouHighlight)
             {
                 // 画拼豆
                 ctx.clearRect(0, 0, data.canvas.width, data.canvas.height);
@@ -2549,7 +2573,7 @@ export default defineComponent({
                                 let gridY = (arr[i].layerData[v][1] * data.scale) + beginPos.y;
                                 ctx.fillStyle = arr[i].layerData[v][2];
                                 ctx.fillRect(gridX, gridY, data.scale, data.scale);
-                                if (arr[i].layerData[v][3])
+                                if (arr[i].layerData[v][3] && !highlight)
                                 {
                                     let textHeight = ~~(data.scale / 2);
                                     ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
@@ -2564,6 +2588,44 @@ export default defineComponent({
                                     const x = gridX + (data.scale - textWidth) / 2;
                                     const y = gridY + (data.scale - textHeight) / 2 + textHeight;
                                     ctx.fillText(arr[i].layerData[v][3], ~~(x), ~~(y));
+                                }
+                                if (arr[i].layerData[v][3] && highlight)
+                                {
+                                    if (highlight.type === 1)
+                                    {
+                                        // 单个像素显示
+                                        if (arr[i].layerData[v][0] === highlight.selectedObj.col && arr[i].layerData[v][1] === highlight.selectedObj.row)
+                                        {
+                                            let textHeight = ~~(data.scale / 2);
+                                            ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                            let textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                            textHeight = measureTextHeight(textWidth, textHeight);
+                                            ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                            textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                            ctx.fillStyle = getFontColor(arr[i].layerData[v][2]);
+                                            const x = gridX + (data.scale - textWidth) / 2;
+                                            const y = gridY + (data.scale - textHeight) / 2 + textHeight;
+                                            ctx.fillText(arr[i].layerData[v][3], ~~(x), ~~(y));
+                                        }
+                                    }
+                                    else if (highlight.type === 2)
+                                    {
+                                        // 所有像素显示
+                                        if (arr[i].layerData[v][3] === highlight.selectedObj.name)
+                                        {
+                                            let textHeight = ~~(data.scale / 2);
+                                            ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                            let textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                            textHeight = measureTextHeight(textWidth, textHeight);
+                                            ctx.font = `${textHeight}px sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial Narrow, Times, Arial, "Times New Roman"`;
+                                            textWidth = ~~(ctx.measureText(arr[i].layerData[v][3]).width);
+                                            ctx.fillStyle = getFontColor(arr[i].layerData[v][2]);
+                                            const x = gridX + (data.scale - textWidth) / 2;
+                                            const y = gridY + (data.scale - textHeight) / 2 + textHeight;
+                                            ctx.fillText(arr[i].layerData[v][3], ~~(x), ~~(y));
+                                        }
+                                    }
+                                    
                                 }
                             }
                         }
@@ -2847,7 +2909,7 @@ export default defineComponent({
                     else if (data.currentDrawShape.toLowerCase().indexOf('circle') !== -1) data.canvas.classList.add('circle-cursor');
                 }
                 else if (data.currentTool === 4) data.canvas.classList.add('bucket-cursor');
-                else if (data.currentTool === 5) data.canvas.classList.add('pindou-cursor');
+                else if (data.currentTool === 5 && data.pinDouMode) data.canvas.classList.add('pindou-cursor');
                 else if (data.currentTool === 7) data.canvas.classList.add('move-cursor');
                 else if (data.currentTool === 8) data.canvas.classList.add('select-cursor');
                 // else if (data.currentTool === 9) data.canvas.classList.add('magicStick-cursor');
@@ -2922,7 +2984,7 @@ export default defineComponent({
             // 图层开始
             handleAddLayer ()
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 // 新建图层
                 if (data.drawRecord[data.currentFrameIndex].layer.length > data.maxLayer) return proxy.$message.warning('图层数量达到上限');
                 let layerArr = [] as any;
@@ -2942,7 +3004,7 @@ export default defineComponent({
                     layerData:layerArr // 绘画信息
                 };
                 data.drawRecord[data.currentFrameIndex].layer.unshift(obj);
-                data.currentLayerIndex = 0;
+                methods.handleChangeLayer(0);
                 methods.handleAddHistory();
             },
             handleLayerMerge ()
@@ -2951,7 +3013,7 @@ export default defineComponent({
                 if (data.selectLayerList.length > 1)
                 {
                     data.selectLayerList.sort((a, b) => b - a);
-                    console.log(data.selectLayerList);
+                    // console.log(data.selectLayerList);
                     // let minLayerData = data.drawRecord[data.currentFrameIndex].layer[data.selectLayerList[data.selectLayerList.length - 1]];
                     let maxLayerData = data.drawRecord[data.currentFrameIndex].layer[data.selectLayerList[0]];
                     for (let i = 1; i < data.selectLayerList.length; i++)
@@ -2965,10 +3027,10 @@ export default defineComponent({
                         data.drawRecord[data.currentFrameIndex].layer.splice(data.selectLayerList[i], 1);
                         // data.selectLayerList.splice(i, 1);
                     }
-                    console.log(maxLayerData);
+                    // console.log(maxLayerData);
                     
                     let index = data.drawRecord[data.currentFrameIndex].layer.findIndex((item) => item.layerId === maxLayerData.layerId);
-                    console.log(index);
+                    // console.log(index);
                     
                     methods.handleChangeLayer(index);
                     methods.reDraw();
@@ -2978,8 +3040,10 @@ export default defineComponent({
             handleChangeLayer (index)
             {
                 // 切换图层
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
-                if (data.isSpace)
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                console.log(index, data.isShift);
+                
+                if (data.isShift)
                 {
                     // 多选状态
                     if (!data.selectLayerList.includes(index))
@@ -2989,12 +3053,14 @@ export default defineComponent({
                     return;
                 }
                 // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                console.log(index);
+                
                 data.currentLayerIndex = index;
                 data.selectLayerList = [data.currentLayerIndex];
             },
             handleChangeLayerVisible (index)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (index < 0)
                 {
                     for (let i = 0; i < data.drawRecord[data.currentFrameIndex].layer.length; i++)
@@ -3012,7 +3078,7 @@ export default defineComponent({
             },
             handleDeleteLayer (index)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
                 data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
                 methods.reDraw();
@@ -3021,23 +3087,24 @@ export default defineComponent({
             },
             handleCopyLayer (index)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 let copyData = JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[index]));
                 let length = data.drawRecord[data.currentFrameIndex].layer.length;
                 copyData.layerId = uuid.v4();
-                copyData.layerName = `图层${length + 1}`;
+                copyData.layerName = `${copyData.layerName} Copy`;
                 // data.drawRecord[data.currentFrameIndex].layer.unshift(copyData);
                 // let i = index;
                 // console.log(i, data.drawRecord[data.currentFrameIndex].layer);
                 
                 // if (i <= 0) i = 0;
                 data.drawRecord[data.currentFrameIndex].layer.splice(index, 0, copyData);
-                data.currentLayerIndex = index;
+                // data.currentLayerIndex = index;
+                methods.handleChangeLayer(index);
                 methods.handleAddHistory();
             },
             handleDoubleClickLayer (index, layerName)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 data.currentEditLayer.index = index;
                 data.currentEditLayer.name = layerName;
                 
@@ -3204,8 +3271,9 @@ export default defineComponent({
             // 帧开始
             handleAddFrame ()
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧数量达到上限');
+                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 let layerArr = [] as any;
                 for (let i = 0; i < data.canvasHeight; i++) 
                 {
@@ -3233,16 +3301,19 @@ export default defineComponent({
             },
             handleChangeFrame (index)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 // data.selectData.selectList = [];
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 data.currentFrameIndex = index;
-                data.currentLayerIndex = 0;
+                // data.currentLayerIndex = 0;
+                methods.handleChangeLayer(0);
                 methods.reDraw(true, false);
 
             },
             handleCopyFrame (index, type = 'copy')
             {
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 if (type === 'copyData')
                 {
                     editSpaceStore.frameCopyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
@@ -3278,7 +3349,7 @@ export default defineComponent({
             },
             handleDeleteFrame (index)
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 data.drawRecord.splice(index, 1);
                 methods.handleChangeFrame(index - 1);
                 methods.handleAddHistory();
@@ -3548,7 +3619,7 @@ export default defineComponent({
             },
             handleRevoke ()
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 // 撤销操作
                 data.currentHistoryIndex = data.currentHistoryIndex - 1;
                 if (data.currentHistoryIndex < 0) proxy.$message.warning('暂无更多记录');
@@ -3563,7 +3634,7 @@ export default defineComponent({
             },
             handleRecover ()
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 // 恢复操作
                 data.currentHistoryIndex = data.currentHistoryIndex + 1;
                 if (data.currentHistoryIndex > data.historyRecord.length - 1) proxy.$message.warning('暂无更多记录');
@@ -3581,13 +3652,13 @@ export default defineComponent({
             },
             handleOpenReplaceColorDialog ()
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 proxy.$refs.ReplaceColorDialog.handleOpen();
                 methods.handleCancelKeyboardEvent();
             },
             handleOpenPreviewDialog ()
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 data.previewLoading = true;
                 let scale = 6; // 放大倍数
                 // methods.handleExport(1, '1111', false, scale);
@@ -3611,6 +3682,10 @@ export default defineComponent({
                     data.isSpace = true;
                     // data.canvas.style.cursor = 'grabbing';
                     return;
+                }
+                if (event.shiftKey)
+                {
+                    data.isShift = true;
                 }
                 if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
                 {
@@ -3678,7 +3753,7 @@ export default defineComponent({
                 }
                 else if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === 't')
                 {
-                    // 复制图层
+                    // 新建图层
                     event.preventDefault(); 
                     methods.handleAddLayer();
                 }
@@ -3767,6 +3842,16 @@ export default defineComponent({
                 {
                     // 清空画布
                     methods.handleChangeTool(6);
+                }
+                else if (event.key === 'o')
+                {
+                    // 打开拼豆预览模式
+                    methods.handlePindouMode('preview');
+                }
+                else if (event.key === 'k')
+                {
+                    // 打开拼豆绘图模式
+                    methods.handlePindouMode('draw');
                 }
                 else if (event.altKey && event.key === 'v') 
                 {
@@ -3865,7 +3950,11 @@ export default defineComponent({
                     data.isSpace = false;
                     data.canvas.style.cursor = '';
                 }
-                if (event.shiftKey && data.isSelecting && data.selectData.selectList.length)
+                if (event.key === 'Shift')
+                {
+                    data.isShift = false;
+                }
+                if (event.key === 'Shift' && data.isSelecting && data.selectData.selectList.length)
                 {
                     data.isShift = false;
                     data.isMoving = false;
@@ -4062,6 +4151,7 @@ export default defineComponent({
                 };
                 data.pinDouMode = false;
                 data.selectLayerList = [data.currentLayerIndex];
+                data.pindouHighlight = null;
                 methods.handleCancelSelect();
             },
             handleReadProjectData ()
@@ -4179,7 +4269,7 @@ export default defineComponent({
                     data[key].left = e.pageX;
                     data[key].top = e.pageY;
                     data[key].contextData = contextData;
-                    data.currentLayerIndex = contextData.index;
+                    methods.handleChangeLayer(contextData.index);
                 }, 100);
             }
         };
@@ -4195,6 +4285,7 @@ export default defineComponent({
             if (newValue === false)
             {
                 data.currentTool = 0;
+                data.pindouHighlight = null;
                 methods.reDraw(false);
             }
         });
