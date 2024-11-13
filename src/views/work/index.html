@@ -1,6 +1,6 @@
 <div class="container full-h" :style="checkzIndex">
     <el-container class="full-h flex-warp">
-        <el-main class="flex-column-center" style="display: flex;padding: 0;">
+        <el-main class="flex-column-center" style="display: flex;padding: 0;min-width: 500px">
             <el-header class="flex-between">
                 <div class="back flex-start">
                     <el-icon @click="handleBack"><ArrowLeftBold /></el-icon>
@@ -47,6 +47,7 @@
                         <!-- <i style="width:16px;height:16px; margin-right: 25px;" v-html="$iconSvg['save']"></i> -->
                         <template #dropdown>
                             <el-dropdown-menu>
+                                <el-dropdown-item @click="handleImportLayer(currentLayerIndex)" :disabled="pinDouMode">导入图像 [Ctrl/⌘ + m]</el-dropdown-item>
                                 <el-dropdown-item @click="handleSaveProject" :disabled="pinDouMode">保存项目 [Ctrl/⌘ + s]</el-dropdown-item>
                                 <!-- <el-dropdown-item @click="handleImportProject">导入项目</el-dropdown-item> -->
                                 <el-dropdown-item @click="handleExportDialog(true)" :disabled="pinDouMode">导出项目 [Ctrl/⌘ + p]</el-dropdown-item>
@@ -340,7 +341,7 @@
                     :data-key="item.frameId"
                     data-node="LI"
                     :disabled="pinDouMode"
-                    :key="item.frameId" trigger="contextmenu">
+                    :key="item.frameId" trigger="hover">
                         <div
                         @click="handleChangeFrame(index)"
                         class="frame-item pointer"
@@ -526,7 +527,17 @@
                             v-if="currentFrameLayerVisible"><View />
                             </el-icon>
                             <el-icon style="margin-right: 15px;" class="pointer" @click="handleChangeLayerVisible(-1)" v-else><Hide /></el-icon>
-                            <el-icon style="margin-right: 10px;" class="pointer" @click="handleAddLayer"><CirclePlus /></el-icon>
+                            <el-tooltip
+                            content="合并图层 [Ctrl/⌘ + Alt/⌥ + h]"
+                            placement="top">
+                                <el-icon style="margin-right: 15px;" class="pointer" @click="handleLayerMerge"><DocumentAdd /></el-icon>
+                            </el-tooltip>
+                            <el-tooltip
+                            content="新建图层 [Ctrl/⌘ + Alt/⌥ + t]"
+                            placement="top">
+                                <el-icon style="margin-right: 10px;" class="pointer" @click="handleAddLayer"><CirclePlus /></el-icon>
+                            </el-tooltip>
+                            
                         </div>
                     </h1>
                     <el-divider border-style="dashed" />
@@ -538,7 +549,7 @@
                     @dragover="onDragOver($event, 'layerBox')"
                     @dragend="onDragLayerEnd($event, 'layerBox')"
                     style="height: calc(100% - 70px);">
-                        <el-dropdown
+                        <!-- <el-dropdown
                         draggable="true"
                         class="full-w"
                         trigger="contextmenu"
@@ -546,46 +557,55 @@
                         :data-key="item.layerId"
                         :disabled="pinDouMode"
                         data-node="LI"
-                        :key="item.layerId" >
-                            <div
-                            class="layer-item flex-between pointer full-w"  style="gap: 10px;"
-                            :class="{ 'active': currentLayerIndex === index }" @click.self="handleChangeLayer(index)">
-                                <div class="flex-start" style="gap: 10px;">
-                                    <div class="pointer layer-pic" @click="handleChangeLayerVisible(index)">
-                                        <img :src="requireVisibleImg(item.isRender)" />
-                                    </div>
-                                    <div class="layer-img flex-center" v-if="item.currentLayerImg">
-                                        <img draggable="false" :src="item.currentLayerImg">
-                                    </div>
-                                    <div v-if="currentEditLayer.index===index">
-                                        <el-input
-                                        v-model="currentEditLayer.name" 
-                                        :maxlength="10"
-                                        @click.stop="null"
-                                        @blur="handleEditLayerName"
-                                        @keyup.enter="handleEditLayerName"
-                                        placeholder="请输入图层名称" 
-                                        size="small">
-                                        </el-input>
-                                    </div>
-                                    <div @dblclick="handleDoubleClickLayer(index, item.layerName)" v-else>{{ item.layerName }}</div>
+                        :key="item.layerId" > -->
+                        <div
+                        v-for="(item, index) in drawRecord[currentFrameIndex].layer"
+                        draggable="true"
+                        :data-key="item.layerId"
+                        :disabled="pinDouMode"
+                        data-node="LI"
+                        :key="item.layerId"
+                        class="layer-item flex-between pointer full-w"  
+                        style="gap: 10px;"
+                        :class="{ 'active': currentLayerIndex === index, 'select': selectLayerList.includes(index) }"
+                        @contextmenu.prevent="handleMenu($event, 'LayerMenu', {layerData:item, index, currentFrameIndex})"
+                        @click.self="handleChangeLayer(index)">
+                            <div class="flex-start" style="gap: 10px;">
+                                <div class="pointer layer-pic" @click="handleChangeLayerVisible(index)">
+                                    <img :src="requireVisibleImg(item.isRender)" />
                                 </div>
-                                <div class="flex-end">
-                                    <el-icon style="margin-right:10px" class="pointer" @click="handleCopyLayer(index)"><CopyDocument /></el-icon>
-                                    <el-popconfirm title="确认删除该图层？" width="200" @confirm="handleDeleteLayer(index)">
-                                        <template #reference>
-                                            <el-icon class="pointer" v-if="index!==drawRecord[currentFrameIndex].layer.length - 1"><Delete /></el-icon>
-                                        </template>
-                                    </el-popconfirm>
+                                <div class="layer-img flex-center" v-if="item.currentLayerImg">
+                                    <img draggable="false" :src="item.currentLayerImg">
                                 </div>
+                                <div v-if="currentEditLayer.index===index">
+                                    <el-input
+                                    v-model="currentEditLayer.name" 
+                                    :maxlength="10"
+                                    @click.stop="null"
+                                    @blur="handleEditLayerName"
+                                    @keyup.enter="handleEditLayerName"
+                                    placeholder="请输入图层名称" 
+                                    size="small">
+                                    </el-input>
+                                </div>
+                                <div @dblclick="handleDoubleClickLayer(index, item.layerName)" v-else>{{ item.layerName }}</div>
                             </div>
-                            <template #dropdown>
+                            <div class="flex-end">
+                                <el-icon style="margin-right:10px" class="pointer" @click="handleCopyLayer(index)"><CopyDocument /></el-icon>
+                                <el-popconfirm title="确认删除该图层？" width="200" @confirm="handleDeleteLayer(index)">
+                                    <template #reference>
+                                        <el-icon class="pointer" v-if="index!==drawRecord[currentFrameIndex].layer.length - 1"><Delete /></el-icon>
+                                    </template>
+                                </el-popconfirm>
+                            </div>
+                        </div>
+                            <!-- <template #dropdown>
                                 <el-dropdown-menu>
-                                    <el-dropdown-item @click="handleImportLayer(currentFrameIndex, index)">导入图像</el-dropdown-item>
+                                    <el-dropdown-item @click="handleImportLayer(index)">导入图像</el-dropdown-item>
                                     <el-dropdown-item @click="handleExportLayer(currentFrameIndex, index)">导出为图像</el-dropdown-item>
                                 </el-dropdown-menu>
                             </template>
-                        </el-dropdown>
+                        </el-dropdown> -->
                         
                     </div>
                 </div>
@@ -622,6 +642,16 @@
         @replace="handleReplacePindouColor"
         @export="handleExportPindou">
         </PindouDialog>
+        <LayerMenu
+        v-if="LayerMenu.visible"
+        :visible="LayerMenu.visible"
+        :left="LayerMenu.left"
+        :top="LayerMenu.top"
+        :contextData="LayerMenu.contextData"
+        @import="handleImportLayer"
+        @export="handleExportLayer"
+        >
+        </LayerMenu>
         <!-- <img ref="originalImage" :src="require('@/assets/keji.png')" style="display: none;"> -->
     </teleport>
     

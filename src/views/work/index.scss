@@ -268,17 +268,21 @@
 }
 
 .layer-list {
+    overflow-x: hidden;
+
     .layer-item {
         // height: 40px;
+        width: auto !important;
         background-color: var(--el-bg-color);
-        margin: 5px 10px 5px 0;
-        padding: 10px;
+        margin: 5px 5px 10px 0;
+        padding: 5px 10px;
         border-radius: 5px;
         font-size: 14px;
     
         .layer-pic {
             width: 20px;
             height: 20px;
+            min-width: 20px;
             // margin-right: 10px;
         }
 
@@ -302,6 +306,11 @@
     }
     .active {
         background-color: var(--el-bg-color-tool);
+    }
+
+
+    .select {
+        border: 2px solid var(--el-color-primary);
     }
 }
 

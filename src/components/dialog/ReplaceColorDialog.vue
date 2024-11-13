@@ -3,6 +3,7 @@
     :width="300"
     draggable="true"
     :modal="false"
+    :lock-scroll="false"
     :close-on-click-modal="false"
     :before-close="handleClose"
     class="z-dialog z-dialog-1" center>

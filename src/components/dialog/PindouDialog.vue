@@ -3,6 +3,7 @@
     :width="500"
     draggable="true"
     :modal="false"
+    :lock-scroll="false"
     :close-on-click-modal="false"
     :before-close="handleClose"
     class="z-dialog z-dialog-1" center>
@@ -33,7 +34,7 @@
                 </div>
                 <div class="item flex-start" style="gap:10px">
                     <p>替换颜色</p>
-                    <el-select v-model="replaceObj" value-key="name"
+                    <el-select v-model="replaceObj" value-key="name" filterable
                     @change="handleChangeColor" placeholder="请选择" style="width:200px">
                         <el-option
                             v-for="item in pindouColorList"
@@ -202,7 +203,7 @@ export default defineComponent({
             handleOpen (value)
             {
                 data.dialogVisible = true;
-                data.pindouColorList = pindouMap.get(data.pindouBrand);
+                data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
                 data.colorStatList = value.colorStatList;
                 data.colorTotal = 0;
                 data.colorStatList.forEach((v, k) => 

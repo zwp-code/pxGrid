@@ -2,6 +2,7 @@
     <el-dialog v-model="dialogVisible" :title="notice.title"
     :width="500"
     :before-close="handleClose"
+    :lock-scroll="false"
     class="z-dialog" center>
         <div class="notice-content">{{notice.content}}</div>
         <template #footer>

@@ -57,7 +57,7 @@ img {
 }
 
 body,html{
-    width: 100%;
+    width: 100% !important;
     height: 100%;
     overflow: hidden;
     font-family: $fontFamily_1;
@@ -280,6 +280,31 @@ body,html{
     display: block !important;
     visibility: visible !important;
     pointer-events: auto !important;
+}
+
+.contextmenu {
+    margin: 0;
+    background: $BackgroundColor;
+    z-index: 3000;
+    position: absolute;
+    list-style-type: none;
+    padding: 5px 0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 400;
+    color: $TextColor;
+    box-shadow: 0 0px 10px 0px $ShadowColor;
+    width: 125px;
+
+    li {
+        margin: 0;
+        padding: 7px 16px;
+        cursor: pointer;
+
+        &:hover {
+            background: $ShadowColor;
+        }
+    }
 }
 
 @keyframes Hide {

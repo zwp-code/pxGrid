@@ -5,6 +5,7 @@
     :width="600"
     append-to-body
     :before-close="handleClose"
+    :lock-scroll="false"
     class="z-dialog" center>
         <div class="content">
             <div class="item flex-start">

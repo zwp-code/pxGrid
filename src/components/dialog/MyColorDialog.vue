@@ -3,6 +3,7 @@
     v-model="dialogVisible"
     :width="500"
     :modal="false"
+    :lock-scroll="false"
     :close-on-click-modal="false"
     draggable="true"
     :before-close="handleClose"

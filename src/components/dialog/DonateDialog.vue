@@ -1,6 +1,7 @@
 <template>
     <el-dialog v-model="dialogVisible" :title="$t('message.donate')"
     :width="500"
+    :lock-scroll="false"
     :before-close="handleClose"
     class="z-dialog" center>
         <div class="flex-column-center price-content scrollbar">

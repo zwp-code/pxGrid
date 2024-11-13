@@ -2,6 +2,7 @@
     <el-dialog v-model="dialogVisible" :title="editInfo ? $t('message.editProject') : $t('message.newProject')"
     :width="500"
     :before-close="handleClose"
+    :lock-scroll="false"
     class="z-dialog" center>
         <el-form
             ref="form"

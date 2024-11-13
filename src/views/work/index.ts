@@ -3,6 +3,7 @@ import MyColorDialog from '@/components/dialog/MyColorDialog.vue';
 import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
 import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
+import LayerMenu from '@/components/menu/LayerMenu.vue';
 import { useEditSpaceStore } from '@/store';
 import { copyText, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, measureTextHeight, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
@@ -20,7 +21,8 @@ export default defineComponent({
         ExportDialog,
         PreviewAnimDialog,
         ReplaceColorDialog,
-        PindouDialog
+        PindouDialog,
+        LayerMenu
     },
     props:{},
     emits:[],
@@ -175,7 +177,15 @@ export default defineComponent({
             curveEndPos:[] as any,
             isHorizontal:false,
             isVertical:false,
-            drawList:[] as any
+            drawList:[] as any,
+
+            LayerMenu:{
+                visible:false,
+                top:0,
+                left:0,
+                contextData:null
+            },
+            selectLayerList:[] as any
 
             
         });
@@ -2929,14 +2939,55 @@ export default defineComponent({
                     layerData:layerArr // 绘画信息
                 };
                 data.drawRecord[data.currentFrameIndex].layer.unshift(obj);
+                data.currentLayerIndex = 0;
                 methods.handleAddHistory();
+            },
+            handleLayerMerge ()
+            {
+                // 合并图层
+                if (data.selectLayerList.length > 1)
+                {
+                    data.selectLayerList.sort((a, b) => b - a);
+                    console.log(data.selectLayerList);
+                    // let minLayerData = data.drawRecord[data.currentFrameIndex].layer[data.selectLayerList[data.selectLayerList.length - 1]];
+                    let maxLayerData = data.drawRecord[data.currentFrameIndex].layer[data.selectLayerList[0]];
+                    for (let i = 1; i < data.selectLayerList.length; i++)
+                    {
+                        let value = data.drawRecord[data.currentFrameIndex].layer[data.selectLayerList[i]].layerData;
+                        for (let j = 0; j < value.length; j++)
+                        {
+                            if (value[j][2] === data.emptyColor) continue;
+                            maxLayerData.layerData[j][2] = value[j][2];
+                        }
+                        data.drawRecord[data.currentFrameIndex].layer.splice(data.selectLayerList[i], 1);
+                        // data.selectLayerList.splice(i, 1);
+                    }
+                    console.log(maxLayerData);
+                    
+                    let index = data.drawRecord[data.currentFrameIndex].layer.findIndex((item) => item.layerId === maxLayerData.layerId);
+                    console.log(index);
+                    
+                    methods.handleChangeLayer(index);
+                    methods.reDraw();
+                    // methods.handleAddHistory();
+                }
             },
             handleChangeLayer (index)
             {
                 // 切换图层
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
+                if (data.isSpace)
+                {
+                    // 多选状态
+                    if (!data.selectLayerList.includes(index))
+                    {
+                        data.selectLayerList.push(index);
+                    }
+                    return;
+                }
                 // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 data.currentLayerIndex = index;
+                data.selectLayerList = [data.currentLayerIndex];
             },
             handleChangeLayerVisible (index)
             {
@@ -2961,7 +3012,8 @@ export default defineComponent({
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆模式');
                 data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
                 data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
-                methods.handleAddHistory();
+                methods.reDraw();
+                // methods.handleAddHistory();
                 
             },
             handleCopyLayer (index)
@@ -2971,7 +3023,13 @@ export default defineComponent({
                 let length = data.drawRecord[data.currentFrameIndex].layer.length;
                 copyData.layerId = uuid.v4();
                 copyData.layerName = `图层${length + 1}`;
-                data.drawRecord[data.currentFrameIndex].layer.unshift(copyData);
+                // data.drawRecord[data.currentFrameIndex].layer.unshift(copyData);
+                // let i = index;
+                // console.log(i, data.drawRecord[data.currentFrameIndex].layer);
+                
+                // if (i <= 0) i = 0;
+                data.drawRecord[data.currentFrameIndex].layer.splice(index, 0, copyData);
+                data.currentLayerIndex = index;
                 methods.handleAddHistory();
             },
             handleDoubleClickLayer (index, layerName)
@@ -2990,7 +3048,7 @@ export default defineComponent({
                 };
                 methods.handleAddHistory();
             },
-            handleExportLayer (frameIndex, layerIndex, isDownload = true, scale = 1)
+            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1)
             {
                 const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
                 data.realCanvas.width = data.canvasWidth * scale;
@@ -3037,8 +3095,9 @@ export default defineComponent({
                 if (isDownload) downloadImage(data.realCanvas, `layer${layerIndex + 1}`);
                 
             },
-            handleImportLayer ()
+            handleImportLayer (layerIndex = data.currentLayerIndex)
             {
+                console.log(layerIndex);
                 // 导入图片资源，需要保证图片大小与画布大小一致
                 const input:any = document.createElement('input');
                 input.type = 'file';
@@ -3067,10 +3126,10 @@ export default defineComponent({
                                 // data.loading = false;
                                 // URL.revokeObjectURL(url);
                                 // return proxy.$message.warning('导入图片尺寸须小于等于画布大小');
-                                methods.handleTransfromPngToPixel(img, url, true);
+                                methods.handleTransfromPngToPixel(img, url, layerIndex, true);
                                 return;
                             }
-                            methods.handleTransfromPngToPixel(img, url);
+                            methods.handleTransfromPngToPixel(img, url, layerIndex);
                         };
                     }
                 });
@@ -3078,8 +3137,10 @@ export default defineComponent({
                 input.click();
                 document.body.removeChild(input);
             },
-            handleTransfromPngToPixel (img, url, isScale = false)
+            handleTransfromPngToPixel (img, url, layerIndex, isScale = false)
             {
+                console.log(layerIndex);
+                
                 const imgCanvas = document.createElement('canvas');
                 imgCanvas.width = data.canvasWidth;
                 imgCanvas.height = data.canvasHeight;
@@ -3099,12 +3160,12 @@ export default defineComponent({
                             data.worker.postMessage({
                                 type:2, 
                                 variables:imageData.data, 
-                                currentLayerData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData))
+                                currentLayerData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[layerIndex].layerData))
                             });
                             data.worker.onmessage = (event) => 
                             {
                                 URL.revokeObjectURL(url);
-                                data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = event.data;
+                                data.drawRecord[data.currentFrameIndex].layer[layerIndex].layerData = event.data;
                                 data.loading = false;
                                 methods.reDraw();
                             };
@@ -3125,12 +3186,12 @@ export default defineComponent({
                 data.worker.postMessage({
                     type:2, 
                     variables:imageData.data, 
-                    currentLayerData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData))
+                    currentLayerData:JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[layerIndex].layerData))
                 });
                 data.worker.onmessage = (event) => 
                 {
                     URL.revokeObjectURL(url);
-                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = event.data;
+                    data.drawRecord[data.currentFrameIndex].layer[layerIndex].layerData = event.data;
                     data.loading = false;
                     methods.reDraw();
                 };
@@ -3541,7 +3602,7 @@ export default defineComponent({
                 if (!proxy.$route.path.includes('/work')) return;
                 if (event.key === ' ')
                 {
-                    console.log('空格');
+                    // console.log('空格');
                     
                     event.preventDefault();
                     data.isSpace = true;
@@ -3601,11 +3662,28 @@ export default defineComponent({
                     event.preventDefault();
                     methods.handleScreenFull(); // 全屏
                 }
+                else if ((event.metaKey || event.ctrlKey) && event.key === 'm')
+                {
+                    event.preventDefault();
+                    methods.handleImportLayer();
+                }
                 else if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === 'c')
                 {
                     // 复制颜色
                     event.preventDefault(); 
                     methods.handleCopyColor();
+                }
+                else if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === 't')
+                {
+                    // 复制图层
+                    event.preventDefault(); 
+                    methods.handleAddLayer();
+                }
+                else if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === 'h')
+                {
+                    // 合并图层
+                    event.preventDefault();
+                    methods.handleLayerMerge();
                 }
                 else if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowUp')
                 {
@@ -3727,20 +3805,24 @@ export default defineComponent({
                 else if (event.key === 'ArrowUp')
                 {
                     // 切换图层
+                    if (data.isSpace) return;
                     data.currentLayerIndex--;
                     if (data.currentLayerIndex < 0)
                     {
                         data.currentLayerIndex = 0;
                     }
+                    data.selectLayerList = [data.currentLayerIndex];
                 }
                 else if (event.key === 'ArrowDown')
                 {
                     // 切换图层
+                    if (data.isSpace) return;
                     data.currentLayerIndex++;
                     if (data.currentLayerIndex > data.drawRecord[data.currentFrameIndex].layer.length - 1)
                     {
                         data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
                     }
+                    data.selectLayerList = [data.currentLayerIndex];
                 }
                 else if (event.key === 'ArrowLeft')
                 {
@@ -3976,6 +4058,7 @@ export default defineComponent({
                     tip:''
                 };
                 data.pinDouMode = false;
+                data.selectLayerList = [data.currentLayerIndex];
                 methods.handleCancelSelect();
             },
             handleReadProjectData ()
@@ -4076,6 +4159,25 @@ export default defineComponent({
                 data[value] = false;
                 methods.addKeyBoardEvent();
                 // methods.startDrawing();
+            },
+            closeMenu ()
+            {
+                data.LayerMenu.visible = false;
+            },
+            handleMenu (e, key, contextData)
+            {
+                if (data.pinDouMode) return;
+                methods.closeMenu();
+                console.log(e);
+                
+                setTimeout(() => 
+                {
+                    data[key].visible = true;
+                    data[key].left = e.pageX;
+                    data[key].top = e.pageY;
+                    data[key].contextData = contextData;
+                    data.currentLayerIndex = contextData.index;
+                }, 100);
             }
         };
 
@@ -4102,6 +4204,7 @@ export default defineComponent({
         onMounted(() => 
         {
             data.worker = new Worker();
+            document.addEventListener('click', methods.closeMenu);
             console.log(data.worker);
             
         });

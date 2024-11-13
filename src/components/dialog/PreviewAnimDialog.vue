@@ -4,6 +4,7 @@
     :width="600"
     :before-close="handleClose"
     @open="initSpirit"
+    :lock-scroll="false"
     class="z-dialog" center>
         <div class="content flex-center">
             <canvas id="Preview" width="512" height="512"></canvas>

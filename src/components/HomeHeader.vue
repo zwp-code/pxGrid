@@ -105,7 +105,7 @@ export default defineComponent({
     z-index: 12;
     background-color: var(--el-bg-color);
     box-shadow: 0px 0px 4px 4px var(--el-shadow-nav);
-    padding: 0 30px;
+    padding: 0 20px;
 
     img {
         width: 35px;
