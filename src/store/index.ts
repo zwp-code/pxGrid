@@ -70,13 +70,6 @@ export const useEditSpaceStore = defineStore('editSpace', {
             {
                 if (res.length)
                 {
-                    if (!cache.forceUpdate.get())
-                    {
-                        // 强制更新数据
-                        this.batchSavePindouData(pindouMap, true);
-                        cache.forceUpdate.set('1');
-                        return;
-                    }
                     for (let i = 0; i < res.length; i++)
                     {
                         this.pindouMaps[res[i].id] = {
@@ -97,6 +90,12 @@ export const useEditSpaceStore = defineStore('editSpace', {
                             maps.set(key, value);
                         });
                         this.batchSavePindouData(maps, false);
+                    }
+                    if (!cache.forceUpdate.get())
+                    {
+                        // 强制更新数据
+                        this.batchSavePindouData(pindouMap, true);
+                        cache.forceUpdate.set('1');
                     }
                     let arr = Object.keys(this.pindouMaps).map((key) => 
                     {

@@ -36,7 +36,14 @@ export default defineComponent({
                     {
                         return `${import.meta.env.VITE_APP_API_URL}moduleImg${value.frameImg}`;
                     }
-                    return value.data[0].currentFrameImg !== '' ? value.data[0].currentFrameImg : value.frameImg;
+                    if (value.data[0].currentFrameImg !== '')
+                    {
+                        return value.data[0].currentFrameImg;
+                    }
+                    // if (value.frameImg === '@')
+                    // {
+                    //     return require('@/assets/grid.png');
+                    // }
                 };
             })
         };

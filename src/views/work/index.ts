@@ -273,7 +273,8 @@ export default defineComponent({
                 data.projectData.width = data.canvasWidth;
                 data.projectData.tip = '最近编辑';
                 data.projectData.data = methods.compressDrawRecordData();
-                data.projectData.frameImg = '@';
+                if (data.drawRecord[0].currentFrameImg === '') data.projectData.frameImg = '';
+                else data.projectData.frameImg = '@';
                 // data.projectData.frameImg = methods.getCurrentFrameImg()
                 editSpaceStore.saveProject(data.projectData).then((res) => 
                 {
@@ -505,6 +506,7 @@ export default defineComponent({
                             {
                                 layerId:uuid.v4(),
                                 layerName:'图层1',
+                                currentLayerImg:methods.handleGridImg(),
                                 isRender:true, // 是否渲染
                                 layerData:layerArr // 绘画信息
                             }
@@ -572,7 +574,7 @@ export default defineComponent({
                         
                     }
                 }
-                methods.handleDrawReferenceLine();
+                methods.handleDrawReferenceLine(beginX, beginY);
                 // if (data.isShowReferenceLine)
                 // {
                 //     // 绘制参考线
@@ -598,7 +600,7 @@ export default defineComponent({
                 // console.log(data.drawRecord);
                 // if (data.drawAreaList.length >= data.canvasWidth * data.canvasHeight) cancelAnimationFrame(data.AnimationFrameId_1);
             },
-            handleDrawReferenceLine ()
+            handleDrawReferenceLine (beginX, beginY)
             {
                 if (data.isShowReferenceLine)
                 {
@@ -608,13 +610,13 @@ export default defineComponent({
                     data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
                     data.ctx2.beginPath();
                     data.ctx2.setLineDash([5, 3]);
-                    data.ctx2.moveTo(data.canvasBeginPos.x + (data.canvasWidth * data.scale) / 2, data.canvasBeginPos.y);
-                    data.ctx2.lineTo(data.canvasBeginPos.x + (data.canvasWidth * data.scale) / 2, data.canvasBeginPos.y + data.canvasHeight * data.scale);
+                    data.ctx2.moveTo(beginX + (data.canvasWidth * data.scale) / 2, 0);
+                    data.ctx2.lineTo(beginX + (data.canvasWidth * data.scale) / 2, data.bgCanvas.height);
                     data.ctx2.stroke();
 
                     data.ctx2.beginPath();
-                    data.ctx2.moveTo(data.canvasBeginPos.x, data.canvasBeginPos.y + (data.canvasHeight * data.scale) / 2);
-                    data.ctx2.lineTo(data.canvasBeginPos.x + data.canvasWidth * data.scale, data.canvasBeginPos.y + (data.canvasHeight * data.scale) / 2);
+                    data.ctx2.moveTo(0, beginY + (data.canvasHeight * data.scale) / 2);
+                    data.ctx2.lineTo(data.bgCanvas.width, beginY + (data.canvasHeight * data.scale) / 2);
                     data.ctx2.stroke();
                 }
             },
@@ -1674,7 +1676,7 @@ export default defineComponent({
                             }
                         }
                     }
-                    if (data.isMoving && !data.isSelecting)
+                    if (data.isMoving && !data.isSelecting && data.moveData.list.length)
                     {
                         // if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return;
                         let difX = col - data.moveData.x;
@@ -2278,6 +2280,60 @@ export default defineComponent({
                 }
                 return unique2DArray(arr);
             },
+            handleLayerImg ()
+            {
+                let scale = 1;
+                if (data.canvasWidth > data.canvasHeight) scale = Math.floor(Math.max(1, 40 / data.canvasWidth));
+                else scale = Math.floor(Math.max(1, 40 / data.canvasHeight));
+                let layerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                let isEmpty = 0;
+                data.realCanvas.width = data.canvasWidth * scale;
+                data.realCanvas.height = data.canvasHeight * scale;
+                data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                for (let y = 0; y < data.canvasHeight; y++) 
+                {
+                    for (let x = 0; x < data.canvasWidth; x++) 
+                    {
+                        let color = layerData[x + (y * data.canvasWidth)][2];
+                        if (color === data.emptyColor) isEmpty++;
+                        data.ctx3.fillStyle = color;
+                        data.ctx3.fillRect(x * scale, y * scale, scale, scale);
+                    }
+                }
+                if (isEmpty >= data.canvasHeight * data.canvasWidth) 
+                {
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].currentLayerImg = methods.handleGridImg();
+                    return;
+                }
+                data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].currentLayerImg = data.realCanvas.toDataURL('image/png');
+            },
+
+            handleGridImg ()
+            {
+                data.realCanvas.width = 40;
+                data.realCanvas.height = 40;
+                data.ctx3.globalAlpha = 0.25;
+                data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                for (let y = 0; y < data.realCanvas.height; y++) 
+                {
+                    for (let x = 0; x < data.realCanvas.width; x++) 
+                    {
+                        if ((y + x) % 2 === 0) 
+                        {
+                            // 深色格子
+                            data.ctx3.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                        } 
+                        else 
+                        {
+                            // 浅色格子
+                            data.ctx3.fillStyle = 'rgba(100, 100, 100, 0.5)';
+                        }
+                        data.ctx3.fillRect(x * 6, y * 6, 6, 6);
+                        
+                    }
+                }
+                return data.realCanvas.toDataURL('image/png');
+            },
 
             handleFrameImg (ctx, isAddHistory = true)
             {
@@ -2285,7 +2341,10 @@ export default defineComponent({
                 // let beginY = data.drawAreaList[0][1];
                 // const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
                 // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
+                // console.log('执行了');
+                
                 let scale = 5;
+                let count = 0;
                 const imageData = data.drawRecord[data.currentFrameIndex].layer;
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
@@ -2294,16 +2353,12 @@ export default defineComponent({
                 {
                     if (imageData[i].isRender)
                     {
-                        // for (let j = 0; j < imageData[i].layerData.length; j++)
-                        // {
-                        //     layerArr.push(imageData[i].layerData[j]);
-                        // }
                         for (let y = 0; y < data.canvasHeight; y++) 
                         {
                             for (let x = 0; x < data.canvasWidth; x++) 
                             {
                                 let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
-                                
+                                if (color === data.emptyColor) count++;
                                 // 在新的 canvas 上绘制缩小后的像素
                                 data.ctx3.fillStyle = color;
                                 data.ctx3.fillRect(x * scale, y * scale, scale, scale);
@@ -2311,18 +2366,16 @@ export default defineComponent({
                         }
                     }
                 }
-                // for (let y = 0; y < data.canvasHeight; y++) 
-                // {
-                //     for (let x = 0; x < data.canvasWidth; x++) 
-                //     {
-                //         let color = imageData[x + (y * data.canvasWidth)][2];
-                //         // 在新的 canvas 上绘制缩小后的像素
-                //         data.ctx3.fillStyle = color;
-                //         data.ctx3.fillRect(x * scale, y * scale, scale, scale);
-                //     }
-                // }
-                let dataURL = data.realCanvas.toDataURL('image/png');
-                data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
+                if (count >= data.canvasHeight * data.canvasHeight * imageData.length) 
+                {
+                    data.drawRecord[data.currentFrameIndex].currentFrameImg = '';
+                }
+                else 
+                {
+                    let dataURL = data.realCanvas.toDataURL('image/png');
+                    data.drawRecord[data.currentFrameIndex].currentFrameImg = dataURL;
+                }
+                methods.handleLayerImg();
                 // 处理当前帧的颜色统计
                 data.worker.postMessage({
                     type:3,
@@ -2438,17 +2491,17 @@ export default defineComponent({
                     data.FrameTimer = setTimeout(() => 
                     {
                         methods.handleFrameImg(data.ctx1);
-                    }, 200);
+                    }, 300);
                 }
                 
             },
 
             removeDrawRecord (value, isRedraw = true)
             {
-                console.log(value);
+                // console.log(value);
                 
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                console.log(arr);
+                // console.log(arr);
                 let index = value[0] + value[1] * data.canvasWidth;
                 if (arr[index][2] === data.emptyColor) return;
                 arr[index][2] = data.emptyColor;
@@ -2548,7 +2601,7 @@ export default defineComponent({
                     {
                         if (count > 0) methods.handleFrameImg(data.ctx1, isAddHistory);
                         else methods.handleFrameImg(data.ctx2, isAddHistory);
-                    }, 200);
+                    }, 300);
                 }
                 
             },
@@ -2871,6 +2924,7 @@ export default defineComponent({
                 let obj = {
                     layerId:uuid.v4(),
                     layerName: `图层${length + 1}`,
+                    currentLayerImg:methods.handleGridImg(),
                     isRender:true, // 是否渲染
                     layerData:layerArr // 绘画信息
                 };
@@ -3103,6 +3157,7 @@ export default defineComponent({
                         {
                             layerId:uuid.v4(),
                             layerName: '图层1',
+                            currentLayerImg:methods.handleGridImg(),
                             isRender:true, // 是否渲染
                             layerData:layerArr // 绘画信息
                         }
@@ -4037,6 +4092,11 @@ export default defineComponent({
                 data.currentTool = 0;
                 methods.reDraw(false);
             }
+        });
+
+        watch(() => editSpaceStore.themeValue, (newValue, oldValue) => 
+        {
+            methods.handleDrawReferenceLine(data.canvasBeginPos.x, data.canvasBeginPos.y);
         });
         
         onMounted(() => 

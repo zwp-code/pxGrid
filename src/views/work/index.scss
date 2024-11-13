@@ -140,10 +140,11 @@
 }
 
 .el-main {
+    height: auto;
     flex: 3;
     flex-basis: auto;
     overflow: hidden;
-    min-height: 600px;
+    min-height: 700px;
 }
 
 .el-header, .el-footer {
@@ -268,17 +269,35 @@
 
 .layer-list {
     .layer-item {
-        height: 40px;
+        // height: 40px;
         background-color: var(--el-bg-color);
         margin: 5px 10px 5px 0;
-        padding: 5px;
+        padding: 10px;
         border-radius: 5px;
         font-size: 14px;
     
         .layer-pic {
             width: 20px;
             height: 20px;
-            margin-right: 10px;
+            // margin-right: 10px;
+        }
+
+        .layer-img {
+            height: 40px;
+            width: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            overflow: hidden;
+            border-radius: 5px;
+            object-fit: contain;
+            border: 1px solid;
+
+            img {
+                width: auto;
+                height: auto;
+                max-width: 100%;
+                max-height: 100%;
+            }
         }
     }
     .active {

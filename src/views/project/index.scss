@@ -17,8 +17,12 @@
         border-radius: 10px 10px 0 0;
         border-bottom:1px solid var(--el-menu-active-bg-color);
 
-        img {
+        .previewImg {
             object-fit: contain;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         .emptyImg {
@@ -39,10 +43,8 @@
 
         .top {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            top: -6px;
-            left: -6px;
+            left: 5px;
+            top: 5px;
         }
     }
 
