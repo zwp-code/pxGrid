@@ -449,6 +449,11 @@ export default defineComponent({
                 else
                 {
                     if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                    if (data.isHidePindouMode)
+                    {
+                        methods.handleShowPindou();
+                        return;
+                    }
                     data.pinDouDrawMode = true;
                     proxy.$refs.PindouDialog.handleOpen(mode);
                 }
@@ -4156,8 +4161,11 @@ export default defineComponent({
                     tip:''
                 };
                 data.pinDouMode = false;
+                data.pinDouDrawMode = false;
                 data.selectLayerList = [data.currentLayerIndex];
                 data.pindouHighlight = null;
+                data.pindouBrand = 'mard';
+                data.isHidePindouMode = false;
                 methods.handleCancelSelect();
             },
             handleReadProjectData ()
@@ -4317,10 +4325,13 @@ export default defineComponent({
                 methods.startDrawing();
                 methods.addKeyBoardEvent();
                 methods.handleResizeWindow();
-                if (data.pinDouMode)
+                if (!data.isHidePindouMode && (data.pinDouMode || data.pinDouDrawMode))
                 {
-                    proxy.$refs.PindouDialog.handleOpen(data.pinDouData);
-                    methods.handleCancelKeyboardEvent();
+                    methods.handleShowPindou();
+                    if (data.pinDouMode)
+                    {
+                        methods.handleCancelKeyboardEvent();
+                    }
                 }
             }
         });
@@ -4342,6 +4353,10 @@ export default defineComponent({
                 proxy.$refs.MyColorDialog.handleClose();
                 proxy.$refs.PreviewAnimDialog.handleClose();
                 proxy.$refs.PindouDialog.dialogVisible = false;
+                // if (proxy.$refs.PindouDialog.dialogVisible)
+                // {
+                //     proxy.$refs.PindouDialog.handleHide();
+                // }
             }
         });
 
