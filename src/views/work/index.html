@@ -329,6 +329,7 @@
                         <div class="color-body scrollbar full-layout">
                             <div class="colorItem" v-for="item in colorStatList"
                             :key="item"
+                            :class="{ 'active': handleTransformColorAsHex(brushColor) === item }"
                             @click="brushColor=item"
                             :style="{backgroundColor:item}">
                             </div>

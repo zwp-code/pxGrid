@@ -189,7 +189,7 @@ addEventListener('message', (e) =>
                 let replaceColorObj = findSimilarColor(rgba[0], rgba[1], rgba[2], rgba[3]);
                 if (replaceColorObj)
                 {
-                    variables[i].layerData[j][2] = '#' + replaceColorObj.color.toLowerCase() + 'ff';
+                    variables[i].layerData[j][2] = '#' + String(replaceColorObj.color).toLowerCase() + 'ff';
                     variables[i].layerData[j][3] = replaceColorObj.name;
                     if (colorStatList.has(replaceColorObj.name))
                     {

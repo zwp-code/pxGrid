@@ -135,6 +135,12 @@
                 box-shadow: 0px 0px 0px 2px var(--el-shadow-color);
                 cursor: pointer;
             }
+
+            .active {
+                background-image: url('../../../public/icon/brush_cursor.png');
+                background-repeat: no-repeat;
+                background-position: center;
+            }
         }
     }
 }

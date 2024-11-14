@@ -446,8 +446,6 @@ export default defineComponent({
                 }
                 else
                 {
-                    console.log(data.pinDouMode);
-                    
                     if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                     data.pinDouDrawMode = true;
                     proxy.$refs.PindouDialog.handleOpen(mode);

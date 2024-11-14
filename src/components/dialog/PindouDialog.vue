@@ -32,7 +32,7 @@
                         {{selectedObj.name}}
                     </div>
                 </div>
-                <div class="item flex-start" style="gap:10px" v-if="selectedObj || isDrawMode">
+                <div class="item flex-start" style="gap:15px" v-if="selectedObj || isDrawMode">
                     <p>{{ isDrawMode ? '拼豆色卡' : '替换颜色'}}</p>
                     <el-select v-model="replaceObj" value-key="name" filterable
                     @change="handleChangeColor" placeholder="请选择" style="width:200px">
@@ -247,6 +247,7 @@ export default defineComponent({
             {
                 data.replaceObj = null;
                 data.selectedObj = null;
+                if (data.isDrawMode) return data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
                 context.emit('change', data.pindouBrand);
             }
 
