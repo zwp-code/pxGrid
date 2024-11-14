@@ -50,10 +50,12 @@ export function hexToRgba (hex)
 }
 
 
-export function extractRgbaValues (rgbaString) 
+export function extractRgbaValues (colorString) 
 {
+    let rgbaString = colorString;
     if (isHexColor(rgbaString)) return hexToRgba(rgbaString);
     const regex = /rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/;
+    console.log(rgbaString);
     const matches = rgbaString.match(regex);
     if (matches) 
     {
@@ -67,6 +69,12 @@ export function extractRgbaValues (rgbaString)
         
     }
     return [];
+}
+
+export function handleTransformColorAsHex (value)
+{
+    let color = value;
+    return isHexColor(color) ? rgbaToHex(hexToRgba(color)) : rgbaToHex(extractRgbaValues(color));
 }
 
 export function getColumnsList (list, columnsNum = 2) 

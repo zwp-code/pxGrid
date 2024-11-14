@@ -277,6 +277,15 @@ export default defineComponent({
         };
         
         let methods = {
+            handleChangeBrushColor (value)
+            {
+                let color = value;
+                if (color.length <= 6 && color.slice(0, 1) !== '#')
+                {
+                    color = `#${color}ff`.toLowerCase();
+                }
+                data.brushColor = color;
+            },
             handleSaveProject ()
             {
                 // 保存到indexdb
@@ -927,13 +936,42 @@ export default defineComponent({
                     methods.reDraw(false);
                 }
             },
+            handleResizeCanvas (delta)
+            {
+                data.scale += delta;
+                data.scale = Math.max(1, data.scale);
+                methods.drawPixelArea();
+                if (data.pinDouMode) 
+                {
+                    methods.handleDrawPindou(data.ctx1);
+                }
+                else
+                {
+                    methods.reDraw(false);
+                }
+            },
             startDrawing () 
             {
                 data.canvas.addEventListener('mousedown', methods.start);
                 data.canvas.addEventListener('mousemove', methods.draw);
                 data.canvas.addEventListener('mouseup', methods.stop);
+
+                data.canvas.addEventListener('touchstart', methods.mobileStart);
+                data.canvas.addEventListener('touchmove', methods.mobileDraw);
+                data.canvas.addEventListener('touchend', methods.stop);
+
                 data.canvas.addEventListener('mouseout', methods.leave);
                 data.canvas.addEventListener('wheel', methods.handleWheelEvent);
+            },
+            mobileStart (event)
+            {
+                console.log(event);
+                
+                let obj = {
+                    offsetX:event.touches[0].clientX - data.canvas.getBoundingClientRect().left,
+                    offsetY:event.touches[0].clientY - data.canvas.getBoundingClientRect().top
+                };
+                methods.start(obj);
             },
             start (event) 
             {
@@ -1177,7 +1215,8 @@ export default defineComponent({
             handleReplacePindouColor (value, callback)
             {
                 // let replaceColor = methods.handleTransformColorAsHex(value.originObj.color);
-                let newColor = methods.handleTransformColorAsHex(value.replaceObj.color);
+                // let newColor = methods.handleTransformColorAsHex(value.replaceObj.color);
+                let newColor = rgbaToHex(hexToRgba(value.replaceObj.color));
                 let arr = data.pinDouData.variables;
                 if (value.type === 1)
                 {
@@ -1331,13 +1370,7 @@ export default defineComponent({
                 
                 const isSameColor = (col, row, color) =>
                 {
-                    // console.log(col, row, currentLayerData[col + row * data.canvasWidth][2], data.selectData.selectList);
-                    // if (data.selectData.selectList.find((item) => item[0] === col && item[1] === row)) 
-                    // {
-                    //     // console.log(currentLayerData[col + row * data.canvasWidth][2], '找不到');
-                    //     return false;
-                    // }
-                    // let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    
                     if (col >= 0 && col < data.canvasWidth && row >= 0 && row < data.canvasHeight)
                     {
                         let index = col + row * data.canvasWidth;
@@ -1417,13 +1450,14 @@ export default defineComponent({
             },
             draw (event) 
             {
+                console.log(event);
+                
                 // data.test.add([event.offsetX, event.offsetY]);
                 if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
                 {
                     const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
                     const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                     // console.log(col, row);
-                    
                     if (data.isSpace)
                     {
                         // 处理拖拽的逻辑
@@ -1446,19 +1480,21 @@ export default defineComponent({
                     data.gridInfo = `[${col}, ${row}]`;
                     if (data.isDrawing)
                     {
+                        
                         let gridX = (col * data.scale) + data.canvasBeginPos.x;
                         let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                        console.log(col, row, gridX, gridY);
                         for (let i = 0; i < data.brushSize; i++)
                         {
                             let y = gridY + (data.scale) * i;
                             for (let j = 0; j < data.brushSize; j++)
                             {
                                 let x = gridX + (data.scale) * j;
-                                let col = (x - data.canvasBeginPos.x) / data.scale;
-                                let row = (y - data.canvasBeginPos.y) / data.scale;
-                                if (col < data.canvasWidth && row < data.canvasHeight)
+                                let col1 = (x - data.canvasBeginPos.x) / data.scale;
+                                let row1 = (y - data.canvasBeginPos.y) / data.scale;
+                                if (col1 < data.canvasWidth && row1 < data.canvasHeight)
                                 {
-                                    methods.addDrawRecord([col, row, data.brushColor]);
+                                    methods.addDrawRecord([col1, row1, data.brushColor]);
                                 }
                             }
                         }
@@ -1471,11 +1507,11 @@ export default defineComponent({
                                 for (let j = 0; j < data.brushSize; j++)
                                 {
                                     let x = gridX + (data.scale) * j;
-                                    let col = (x - data.canvasBeginPos.x) / data.scale;
-                                    let row = (y - data.canvasBeginPos.y) / data.scale;
-                                    if (col < data.canvasWidth && row < data.canvasHeight)
+                                    let col1 = (x - data.canvasBeginPos.x) / data.scale;
+                                    let row1 = (y - data.canvasBeginPos.y) / data.scale;
+                                    if (col1 < data.canvasWidth && row1 < data.canvasHeight)
                                     {
-                                        methods.addDrawList(col, row, data.brushColor);
+                                        methods.addDrawList(col1, row1, data.brushColor);
                                     }
                                 }
                             }
@@ -1516,11 +1552,11 @@ export default defineComponent({
                             for (let j = 0; j < data.eraserSize; j++)
                             {
                                 let x = gridX + (data.scale) * j;
-                                let col = (x - data.canvasBeginPos.x) / data.scale;
-                                let row = (y - data.canvasBeginPos.y) / data.scale;
-                                if (col < data.canvasWidth && row < data.canvasHeight)
+                                let col1 = (x - data.canvasBeginPos.x) / data.scale;
+                                let row1 = (y - data.canvasBeginPos.y) / data.scale;
+                                if (col1 < data.canvasWidth && row1 < data.canvasHeight)
                                 {
-                                    methods.removeDrawRecord([col, row]);
+                                    methods.removeDrawRecord([col1, row1]);
                                 }
                             }
                         }
@@ -1925,6 +1961,15 @@ export default defineComponent({
                     data.canvas.classList = '';
                 }
                 
+            },
+
+            mobileDraw (event)
+            {
+                let obj = {
+                    offsetX:event.touches[0].clientX - data.canvas.getBoundingClientRect().left,
+                    offsetY:event.touches[0].clientY - data.canvas.getBoundingClientRect().top
+                };
+                methods.draw(obj);
             },
 
             // handleDrawSelect
@@ -2434,7 +2479,7 @@ export default defineComponent({
                 bigCanvas.width = data.canvasWidth * scale + ruler * 2;
                 bigCanvas.height = data.canvasHeight * scale + ruler * 2;
                 const bigCtx:any = bigCanvas.getContext('2d');
-                bigCtx.imageSmoothingEnabled = false;
+                bigCtx.imageSmoothingEnabled = true;
                 const imageData = data.pinDouData.variables;
                 // 先绘制标尺
                 for (let y = 0; y < data.canvasHeight; y++) 
@@ -2463,6 +2508,9 @@ export default defineComponent({
                     bigCtx.fillText((x + 1).toString(), x1, y1);
                     bigCtx.fillText((x + 1).toString(), x2, y2);
                 }
+                console.log(imageData);
+                let fillPixel = new Map();
+                
                 for (let i = imageData.length - 1; i >= 0; i--)
                 {
                     if (imageData[i].isRender)
@@ -2475,13 +2523,21 @@ export default defineComponent({
                                 
                                 if (color === data.emptyColor)
                                 {
-                                    bigCtx.fillStyle = 'black';
-                                    bigCtx.beginPath();
-                                    bigCtx.arc((x * scale + ruler) + (scale / 2), (y * scale + ruler) + (scale / 2), 3, 0, 2 * Math.PI);
-                                    bigCtx.fill();
+                                    if (!fillPixel.has(`${x}${y}`))
+                                    {
+                                        bigCtx.fillStyle = 'black';
+                                        bigCtx.beginPath();
+                                        bigCtx.arc((x * scale + ruler) + (scale / 2), (y * scale + ruler) + (scale / 2), 3, 0, 2 * Math.PI);
+                                        bigCtx.fill();
+                                    }
+                                    
                                 }
                                 else
                                 {
+                                    if (!fillPixel.has(`${x}${y}`))
+                                    {
+                                        fillPixel.set(`${x}${y}`, true);
+                                    }
                                     bigCtx.fillStyle = color;
                                     bigCtx.fillRect(x * scale + ruler, y * scale + ruler, scale, scale);
                                 }
@@ -2511,15 +2567,19 @@ export default defineComponent({
                         }
                     }
                 }
+                console.log(fillPixel);
+                
                 downloadImage(bigCanvas, '拼豆图 - ' + data.projectData.projectName);
                 callback();
             },
 
             addDrawRecord (value, isUpdate = true)
             {
-                value[2] = methods.handleTransformColorAsHex(value[2]);
+                console.log(data.isDrawing);
+                let color = value[2];
+                let newColor = methods.handleTransformColorAsHex(color).toLowerCase();
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                arr[value[0] + (value[1] * data.canvasWidth)][2] = value[2];
+                arr[value[0] + (value[1] * data.canvasWidth)][2] = newColor;
                 // console.log(data.drawRecord);
                 if (isUpdate)
                 {
@@ -2927,24 +2987,25 @@ export default defineComponent({
             },
             handleCopyColor ()
             {
-                if (isHexColor(data.brushColor))
-                {
-                    copyText(data.brushColor);
-                    return;
-                }
-                copyText(rgbaToHex(extractRgbaValues(data.brushColor)));
+                copyText(methods.handleTransformColorAsHex(data.brushColor));
+                // if (isHexColor(data.brushColor))
+                // {
+                //     copyText(data.brushColor);
+                //     return;
+                // }
+                // copyText(rgbaToHex(extractRgbaValues(data.brushColor)));
             },
             handleSaveColor (isAuto = false)
             {
                 // 保存颜色
                 if (isAuto)
                 {
-                    data.myColor = data.brushColor;
+                    data.myColor = methods.handleTransformColorAsHex(data.brushColor);
                     methods.handleAddColor();
                     return;
                 }
                 data.addMyColorVisible = true;
-                data.myColor = data.brushColor;
+                data.myColor = methods.handleTransformColorAsHex(data.brushColor);
 
             },
             exportPng ()
@@ -3795,6 +3856,16 @@ export default defineComponent({
                     event.preventDefault();
                     methods.drawTransform('ssz');
                 }
+                else if ((event.metaKey || event.ctrlKey) && event.key === '=')
+                {
+                    event.preventDefault();
+                    methods.handleResizeCanvas(1);
+                }
+                else if ((event.metaKey || event.ctrlKey) && event.key === '-')
+                {
+                    event.preventDefault();
+                    methods.handleResizeCanvas(-1);
+                }
                 else if ((event.metaKey || event.ctrlKey) && event.key)
                 {
                     //
@@ -3904,7 +3975,7 @@ export default defineComponent({
                 else if (event.key === 'ArrowUp')
                 {
                     // 切换图层
-                    if (data.isSpace) return;
+                    if (data.isShift) return;
                     data.currentLayerIndex--;
                     if (data.currentLayerIndex < 0)
                     {
@@ -3915,7 +3986,7 @@ export default defineComponent({
                 else if (event.key === 'ArrowDown')
                 {
                     // 切换图层
-                    if (data.isSpace) return;
+                    if (data.isShift) return;
                     data.currentLayerIndex++;
                     if (data.currentLayerIndex > data.drawRecord[data.currentFrameIndex].layer.length - 1)
                     {
@@ -4067,8 +4138,11 @@ export default defineComponent({
                     dom1.children[0].style.transform = 'rotate(180deg)';
                 }
             },
-            handleTransformColorAsHex (color)
+            handleTransformColorAsHex (value)
             {
+                let color = value;
+                console.log(color);
+                
                 return isHexColor(color) ? rgbaToHex(hexToRgba(color)) : rgbaToHex(extractRgbaValues(color));
             },
             handleConfirmReplaceColor (value, callback)
@@ -4225,11 +4299,21 @@ export default defineComponent({
                             });
                             data.worker.onmessage = (event) => 
                             {
-                                data.drawRecord = event.data;
-                                editSpaceStore.saveProjectId(data.projectData.projectId);
-                                methods.reDraw();
-                                // methods.handleRenderAllFrameImg(data.ctx1);
-                                data.loading = false;
+                                try
+                                {
+                                    data.drawRecord = event.data;
+                                    editSpaceStore.saveProjectId(data.projectData.projectId);
+                                    methods.reDraw();
+                                    // methods.handleRenderAllFrameImg(data.ctx1);
+                                    data.loading = false;
+                                }
+                                catch (err)
+                                {
+                                    console.log(err);
+                                    
+                                    proxy.$message.error('项目异常，请重新刷新');
+                                    location.reload();
+                                }
                             };
                         }
                         else
@@ -4344,6 +4428,9 @@ export default defineComponent({
                 data.canvas.removeEventListener('mousedown', methods.start);
                 data.canvas.removeEventListener('mousemove', methods.draw);
                 data.canvas.removeEventListener('mouseup', methods.stop);
+                data.canvas.removeEventListener('touchstart', methods.mobileStart);
+                data.canvas.removeEventListener('touchmove', methods.mobileDraw);
+                data.canvas.removeEventListener('touchend', methods.stop);
                 data.canvas.removeEventListener('mouseout', methods.leave);
                 data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
                 window.removeEventListener('keydown', methods.handlekeyDownEvent);

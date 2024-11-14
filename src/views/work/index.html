@@ -24,9 +24,22 @@
                     <!-- <el-tooltip content="拼豆模式 [Alt/⌥ + o]" placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleOpenPindou"><Grape /></el-icon>
                     </el-tooltip> -->
+                    <el-tooltip content="放大画布 [滚轮/Ctrl/⌘ + =]" placement="bottom">
+                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(1)"><ZoomIn /></el-icon>
+                    </el-tooltip>
 
-                    <el-tooltip content="重置 [Alt/⌥ + v]" placement="bottom">
+                    <el-tooltip content="缩小画布 [滚轮/Ctrl/⌘ + -]" placement="bottom">
+                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(-1)"><ZoomOut /></el-icon>
+                    </el-tooltip>
+                    
+
+                    <el-tooltip content="重置画布 [Alt/⌥ + v]" placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleResetCanvas"><Refresh /></el-icon>
+                    </el-tooltip>
+
+                    <el-tooltip content="移动画布 [Space/空格]" placement="bottom">
+                        <el-icon style="margin-right: 25px; color: orange;" v-if="isSpace" @click="isSpace=false"><Pointer /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="isSpace=true" v-else><Pointer /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip
@@ -329,7 +342,7 @@
                         <div class="color-body scrollbar full-layout">
                             <div class="colorItem" v-for="item in colorStatList"
                             :key="item"
-                            :class="{ 'active': handleTransformColorAsHex(brushColor) === item }"
+                            :class="{ 'active': brushColor === item }"
                             @click="brushColor=item"
                             :style="{backgroundColor:item}">
                             </div>
@@ -414,7 +427,7 @@
                         <span class="function-label">常用颜色</span>
                         <div  class="flex-start flex-warp common-color scrollbar">
                             <el-dropdown v-for="(item, index) in myColorList[0].list" :key="item" trigger="contextmenu">
-                                <div :style="{backgroundColor: item}" class="mycolor" @click="brushColor=item"></div>
+                                <div :style="{backgroundColor: item}" class="mycolor" @click="brushColor=handleTransformColorAsHex(item)"></div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
                                     <el-dropdown-item @click="copyText(item)">复 制</el-dropdown-item>
@@ -526,7 +539,7 @@
                         <div class="function-label">
                             容 差
                         </div>
-                        <el-input-number v-model="tolerance" :min="0" :max="200" @change="handleChange" />
+                        <el-input-number v-model="tolerance" :min="0" :max="200" />
                         <!-- <el-slider v-model="tolerance" :max="200" size="small"/> -->
                     </div>
                 </div>
@@ -658,7 +671,9 @@
         @change="handlePindouEvent"
         @replace="handleReplacePindouColor"
         @highlight="handlePindouHighlight"
-        @select="(color) => brushColor = color"
+        @select="handleChangeBrushColor"
+        @removeKeyBoard="handleCancelKeyboardEvent"
+        @addKeyBoard="addKeyBoardEvent"
         @hide="isHidePindouMode=true"
         @export="handleExportPindou">
         </PindouDialog>

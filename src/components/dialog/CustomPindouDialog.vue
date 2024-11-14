@@ -85,11 +85,14 @@
                 </el-tooltip>
             </div>
             <div class="flex" style="gap: 10px;">
-                <el-input v-model="searchValue" placeholder="搜索色号" @keyup.enter="handleSearch" :disabled="pindouBrand===''"/>
+                <el-input v-model="searchValue" placeholder="搜索色号" clearable @keyup.enter="handleSearch" :disabled="pindouBrand===''"/>
                 <el-button type="danger" @click="handleBatchDelete" :disabled="pindouBrand===''">批量删除</el-button>
             </div>
             <div>
-                <el-table :data="searchData.length ? searchData : list ? (list.data || list) : []" style="width: 100%" max-height="500">
+                <el-table 
+                :data="searchData.length ? searchData : list ? (list.data || list) : []" 
+                style="width: 100%" max-height="500"
+                @selection-change="handleSelectionChange">
                     <el-table-column type="selection" :selectable="selectable" width="55" />
                     <el-table-column prop="name" label="色 号" width="150" sortable/>
                     <el-table-column prop="color" label="色 值">
@@ -104,7 +107,7 @@
                     </el-table-column>
                     <el-table-column fixed="right" label="操 作" width="120">
                         <template #default="scope">
-                            <el-popconfirm title="确定删除?" @confirm="handleDelete(scope.$index)">
+                            <el-popconfirm title="确定删除?" @confirm="handleDelete(scope.row)">
                                 <template #reference>
                                     <el-button link type="primary" size="small">删 除</el-button>
                                 </template>
@@ -133,7 +136,7 @@
         class="z-dialog"
         >
             <div class="flex-between" style="margin-top: 10px;">
-                <el-input v-model="name" placeholder="请输入" style="width:200px"/>
+                <el-input v-model="name" placeholder="请输入" style="width:200px" :disabled="editMask >= 0"/>
                 <el-color-picker v-model="color"/>
             </div>
             <template #footer>
@@ -156,7 +159,7 @@ import {
 import { useEditSpaceStore } from '@/store';
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance, watchEffect, watch } from 'vue';
 import pindouMap from '@/config/pindou'; 
-import { getFontColor, copyText } from '@/utils/utils';
+import { getFontColor, copyText, isHexColor, isRgbaColor } from '@/utils/utils';
 import * as XLSX from 'xlsx';
 import { ElMessageBox } from 'element-plus';
 import FileSaver from 'file-saver';
@@ -189,15 +192,23 @@ export default defineComponent({
             isAddPindou:false,
             searchValue:'',
             searchData:[] as any,
-            selectable:[]
+            selectRows:[]
         });
         
         let methods = {
+            selectable (row)
+            {
+                return true;
+            },
+            handleSelectionChange (val)
+            {
+                data.selectRows = val;
+            },
             handleSearch ()
             {
                 if (data.searchValue.trim() === '') return proxy.$message.warning('请输入内容');
                 let reg = new RegExp(data.searchValue, 'i');
-                data.searchData = data.list.data.filter((item) => 
+                data.searchData = data.list && data.list.data.filter((item) => 
                 {
                     return reg.test(item.name);
                 });
@@ -205,6 +216,7 @@ export default defineComponent({
             handleClose ()
             {
                 data.dialogVisible = false;
+                context.emit('close');
             },
             handleOpen ()
             {
@@ -256,6 +268,7 @@ export default defineComponent({
                 {
                     // 编辑
                     if (pindouMap.has(data.pindouBrand)) return proxy.$message.warning('该拼豆不能编辑');
+                    if (data.customPindouLabel.trim() === '') return proxy.$message.warning('请输入拼豆名称');
                     // const deleteData = await editSpaceStore.deletePindouById(data.pindouBrand);
                     const flag = await editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list});
                     if (flag) 
@@ -282,7 +295,7 @@ export default defineComponent({
                         value:data.customPindouKey
                     });
                     data.pindouBrand = data.customPindouKey;
-                    data.list = null;
+                    data.list = methods.getList();
                     methods.saveData();
                     proxy.$message.success('已新增');
                     data.isAddPindou = false;
@@ -322,29 +335,29 @@ export default defineComponent({
             {
                 if (data.name === '') return proxy.$message.warning('色号不能为空');
                 if (data.color === '') return proxy.$message.warning('颜色不能为空');
+                if (!isHexColor(data.color) && !isRgbaColor(data.color)) return proxy.$message.warning('颜色不规范，请输入十六进制的颜色值');
                 if (data.editMask >= 0)
                 {
-                    data.list.data[data.editMask] = { name: data.name, color: data.color.slice(1).toLowerCase() };
-                    // data.list.data.forEach((item) => 
-                    // {
-                    //     if (item.name === data.name)
-                    //     {
-                    //         item.
-                    //         item.color = data.color.slice(1).toLowerCase();
-                    //     }
-                    // });
+                    // data.list.data[data.editMask] = { name: data.name, color: data.color.slice(1).toLowerCase() };
+                    data.list && data.list.data.forEach((item) => 
+                    {
+                        if (item.name === data.name)
+                        {
+                            item.color = data.color.slice(1, 7).toLowerCase();
+                        }
+                    });
                 }
                 else
                 {
-                    // let flag = data.list.data.find((item) => item.name === data.name);
-                    // if (flag) 
-                    // {
-                    //     return proxy.$message.warning('色号不能重复');
-                    // }
+                    let flag = data.list && data.list.data.find((item) => item.name === data.name);
+                    if (flag) 
+                    {
+                        return proxy.$message.warning('色号不能重复');
+                    }
                     // if (data.color === '') return proxy.$message.warning('颜色不能为空');
                     data.list.data.push({
                         name:data.name,
-                        color:data.color.slice(1).toLowerCase()
+                        color:data.color.slice(1, 7).toLowerCase()
                     });
                 }
                 // data.customData[data.pindouBrand] = data.list;
@@ -359,14 +372,13 @@ export default defineComponent({
                     proxy.$message.error('保存失败');
                 });
             },
-            handleDelete (index)
+            handleDelete (row)
             {
-                // let index = data.list.data.findIndex((item) => item.name === row.name);
-                // if (index >= 0) 
-                // {
-                //     data.list.data.splice(index, 1);
-                // }
-                data.list.data.splice(index, 1);
+                let index = data.list && data.list.data.findIndex((item) => item.name === row.name);
+                if (index >= 0) 
+                {
+                    data.list.data.splice(index, 1);
+                }
                 editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list }).then((res) => 
                 {
                     // methods.saveData();
@@ -379,19 +391,37 @@ export default defineComponent({
             },
             handleBatchDelete ()
             {
-                //
+                if (!data.selectRows.length) return;
+                data.selectRows.forEach((row:any) => 
+                {
+                    let index = data.list && data.list.data.findIndex((item) => item.name === row.name);
+                    if (index >= 0) 
+                    {
+                        data.list.data.splice(index, 1);
+                    }
+                });
+                editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list }).then((res) => 
+                {
+                    // methods.saveData();
+                    methods.handleSearch();
+                    proxy.$message.success('已删除');
+                }).catch((err) => 
+                {
+                    console.error(err);
+                    proxy.$message.error('删除失败');
+                });
             },
             exportFile (isTemplate = false)
             { 
                 let filename = isTemplate ? '拼豆色卡模板' : `${data.pindouBrand}-${data.customPindouLabel}`;
                 const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(isTemplate ? [{ name:'A1', color:'000000' }] : data.list.data);
+                const ws = XLSX.utils.json_to_sheet(isTemplate ? [{ name:'A1', color:'000000' }] : data.list ? data.list.data : []);
                 XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
                 XLSX.writeFile(wb, `${filename}.xlsx`);
             },
             exportJSONFile ()
             {
-                const d = JSON.stringify(data.list.data);
+                const d = JSON.stringify(data.list ? data.list.data : []);
                 const blob = new Blob([d], {type: ''});
                 FileSaver.saveAs(blob, `${data.pindouBrand}-${data.customPindouLabel}.json`);
             },
@@ -466,7 +496,19 @@ export default defineComponent({
                 )
                     .then(() => 
                     {
-                        data.list.data = newList;
+                        if (data.list)
+                        {
+                            data.list.data = newList;
+                        }
+                        else
+                        {
+                            data.list = {
+                                data:newList,
+                                label:data.pindouBrand
+                            };
+                        }
+                        
+                        // data.list.data = newList;
                         editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list, label:data.customPindouLabel}).then((res) => 
                         {
                             // methods.saveData();

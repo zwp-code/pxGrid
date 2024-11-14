@@ -29,7 +29,7 @@
                         :value="item.value"
                     />
                 </el-select>
-                <el-button type="success" @click="$refs.CustomPindouDialog.handleOpen()">自定义拼豆</el-button>
+                <el-button type="success" @click="handleCustomPindou">自定义拼豆</el-button>
             </div>
             <el-tag type="info">拼豆色板引用自：
                 <el-link href="https://fusebead.sulian-blog.com/#google_vignette" target="_blank" :underline="false" type="success">fusebead.sulian-blog </el-link>
@@ -60,7 +60,7 @@
                         </el-option>
                     </el-select>
                     <div class="flex-center color-item" v-if="replaceObj" style="width:40px; height:30px"
-                    :style="{backgroundColor:replaceObj.color}">
+                    :style="{backgroundColor:'#' + replaceObj.color}">
                     </div>
                 </div>
                 <div v-if="selectedObj">
@@ -103,7 +103,7 @@
         
     </el-dialog>
     <teleport to="body">
-        <CustomPindouDialog ref="CustomPindouDialog" @update="updateData"></CustomPindouDialog>
+        <CustomPindouDialog ref="CustomPindouDialog" @update="updateData" @close="$emit('addKeyBoard')"></CustomPindouDialog>
     </teleport>
 </template>
 
@@ -124,7 +124,7 @@ export default defineComponent({
             default:false
         }
     },
-    emits: ['close', 'replace', 'change', 'export', 'highlight', 'select', 'hide'],
+    emits: ['close', 'replace', 'change', 'export', 'highlight', 'select', 'hide', 'removeKeyBoard', 'addKeyBoard'],
     setup (props, context) 
     {
         let { proxy }:any = getCurrentInstance();
@@ -244,11 +244,15 @@ export default defineComponent({
             },
             handleChangeColor (e)
             {
+                // console.log(data.pindouColorList);
+                // let color = '#' + e.color + 'ff';
                 if (data.isDrawMode) 
                 {
-                    context.emit('select', `#${e.color}ff`);
+                    console.log(11111);
+                    
+                    context.emit('select', e.color);
                 }
-                data.replaceObj.color = '#' + e.color + 'ff';
+                // data.replaceObj.color = color.toLowerCase();
             },
             handleExport ()
             {
@@ -267,8 +271,14 @@ export default defineComponent({
             {
                 data.replaceObj = null;
                 data.selectedObj = null;
-                if (data.isDrawMode) return data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
-                context.emit('change', data.pindouBrand);
+                data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                // if (data.isDrawMode) return data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                if (!data.isDrawMode) context.emit('change', data.pindouBrand);
+            },
+            handleCustomPindou ()
+            {
+                context.emit('removeKeyBoard');
+                proxy.$refs.CustomPindouDialog.handleOpen();
             }
 
             // handleConfirm ()
