@@ -84,11 +84,13 @@
                     <el-button type="success" :icon="Plus" @click="handleAdd" :disabled="pindouBrand===''"/>
                 </el-tooltip>
             </div>
-            <div>
-                <el-input v-model="searchValue" placeholder="搜索色号" @keyup.enter="handleSearch"/>
+            <div class="flex" style="gap: 10px;">
+                <el-input v-model="searchValue" placeholder="搜索色号" @keyup.enter="handleSearch" :disabled="pindouBrand===''"/>
+                <el-button type="danger" @click="handleBatchDelete" :disabled="pindouBrand===''">批量删除</el-button>
             </div>
             <div>
                 <el-table :data="searchData.length ? searchData : list ? (list.data || list) : []" style="width: 100%" max-height="500">
+                    <el-table-column type="selection" :selectable="selectable" width="55" />
                     <el-table-column prop="name" label="色 号" width="150" sortable/>
                     <el-table-column prop="color" label="色 值">
                         <template #default="scope">
@@ -102,7 +104,7 @@
                     </el-table-column>
                     <el-table-column fixed="right" label="操 作" width="120">
                         <template #default="scope">
-                            <el-popconfirm title="确定删除?" @confirm="handleDelete(scope.row)">
+                            <el-popconfirm title="确定删除?" @confirm="handleDelete(scope.$index)">
                                 <template #reference>
                                     <el-button link type="primary" size="small">删 除</el-button>
                                 </template>
@@ -186,7 +188,8 @@ export default defineComponent({
             customData:{} as any,
             isAddPindou:false,
             searchValue:'',
-            searchData:[] as any
+            searchData:[] as any,
+            selectable:[]
         });
         
         let methods = {
@@ -356,13 +359,14 @@ export default defineComponent({
                     proxy.$message.error('保存失败');
                 });
             },
-            handleDelete (row)
+            handleDelete (index)
             {
-                let index = data.list.data.findIndex((item) => item.name === row.name);
-                if (index >= 0) 
-                {
-                    data.list.data.splice(index, 1);
-                }
+                // let index = data.list.data.findIndex((item) => item.name === row.name);
+                // if (index >= 0) 
+                // {
+                //     data.list.data.splice(index, 1);
+                // }
+                data.list.data.splice(index, 1);
                 editSpaceStore.editPindouData({id:data.pindouBrand, value:data.list }).then((res) => 
                 {
                     // methods.saveData();
@@ -372,6 +376,10 @@ export default defineComponent({
                     console.error(err);
                     proxy.$message.error('删除失败');
                 });
+            },
+            handleBatchDelete ()
+            {
+                //
             },
             exportFile (isTemplate = false)
             { 
