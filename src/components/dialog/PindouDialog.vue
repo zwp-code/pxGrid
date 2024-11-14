@@ -1,12 +1,22 @@
 <template>
-    <el-dialog v-model="dialogVisible" :title="`拼豆 - ${isDrawMode ? '绘图模式' : '预览模式'}`"
+    <el-dialog v-model="dialogVisible"
     :width="500"
     draggable="true"
     :modal="false"
     :lock-scroll="false"
     :close-on-click-modal="false"
+    :show-close="false"
     :before-close="handleClose"
     class="z-dialog z-dialog-1" center>
+        <template #header="{ titleId, titleClass }">
+            <div class="flex-between">
+                <h4 :id="titleId" :class="titleClass" draggable="false">{{`拼豆 - ${isDrawMode ? '绘图模式' : '预览模式'}`}}</h4>
+                <div class="flex-end">
+                    <el-icon class="pointer" @click="handleHide" style="margin-right:15px" title="最小化"><Minus /></el-icon>
+                    <el-icon class="pointer" @click="handleClose" title="关闭"><Close /></el-icon>
+                </div>
+            </div>
+        </template>
         <div class="content">
             <el-tag type="info">颜色仅供参考，以实际为准</el-tag>
             <div class="item flex-start">
@@ -114,7 +124,7 @@ export default defineComponent({
             default:false
         }
     },
-    emits: ['close', 'replace', 'change', 'export', 'highlight', 'select'],
+    emits: ['close', 'replace', 'change', 'export', 'highlight', 'select', 'hide'],
     setup (props, context) 
     {
         let { proxy }:any = getCurrentInstance();
@@ -171,7 +181,8 @@ export default defineComponent({
             type:1,
             loading:false,
             isHighlight:false,
-            isDrawMode:false
+            isDrawMode:false,
+            isHide:false
         });
         
         let methods = {
@@ -199,11 +210,20 @@ export default defineComponent({
                 let pindouOptions = JSON.parse(proxy.$utils.cache.pindou.get());
                 data.brandOptions = pindouOptions || [];
             },
+            handleShow ()
+            {
+                data.dialogVisible = true;
+            },
+            handleHide ()
+            {
+                context.emit('hide');
+                data.dialogVisible = false;
+            },
             handleClose ()
             {
                 data.dialogVisible = false;
                 data.isHighlight = false;
-                data.pindouBrand = 'mard';
+                // data.pindouBrand = 'mard';
                 data.replaceObj = null;
                 data.selectedObj = null;
                 methods.handleChange('', 1);
@@ -288,7 +308,7 @@ export default defineComponent({
 </script>
 <style lang='scss' scoped>
 .content {
-    padding:10px;
+    // padding:10px;
     max-height: 500px;
     overflow: auto;
     
@@ -334,4 +354,5 @@ export default defineComponent({
         }
     }
 }
+
 </style>

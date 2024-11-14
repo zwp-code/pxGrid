@@ -1,4 +1,4 @@
-import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, onActivated, watch } from 'vue';
+import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, onActivated, watch, watchEffect } from 'vue';
 import NewProjectDialog from '@/components/dialog/NewProjectDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import Worker from '@/utils/worker.js?worker';
@@ -23,7 +23,9 @@ export default defineComponent({
             isExporting:false,
             NewProjectVisible:false,
             editProjectInfo:null as any,
-            isloading:false
+            isloading:false,
+            searchValue:'',
+            searchData:[] as any
         });
 
 
@@ -58,6 +60,15 @@ export default defineComponent({
             //         editSpaceStore.projectList = JSON.parse(projectData);
             //     }
             // },
+            handleSearch ()
+            {
+                if (data.searchValue.trim() === '') return proxy.$message.warning('请输入内容');
+                let reg = new RegExp(data.searchValue, 'i');
+                data.searchData = editSpaceStore.projectList.filter((item) => 
+                {
+                    return reg.test(item.data.projectName);
+                });
+            },
             async handleOpenProject (project)
             {
                 // editSpaceStore.saveProjectId(project.projectId);
@@ -188,6 +199,14 @@ export default defineComponent({
                 document.body.removeChild(input);
             }
         };
+
+        watchEffect(() => 
+        {
+            if (data.searchValue.trim() === '')
+            {
+                data.searchData = [];
+            }
+        });
         
         onMounted(() => 
         {

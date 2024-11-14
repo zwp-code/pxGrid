@@ -58,7 +58,7 @@ export default defineComponent({
         let arr = menuRoutes.map((item:any, index) => 
         {
             let obj = null as any;
-            if (index < 3)
+            if (index < 4)
             {
                 obj = {
                     path:`/${item.path}`,

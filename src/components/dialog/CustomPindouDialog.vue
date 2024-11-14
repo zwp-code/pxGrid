@@ -69,9 +69,10 @@
                     <el-button type="warning" :icon="Upload" :disabled="pindouBrand===''"/>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item @click="importFile">导入文件</el-dropdown-item>
-                            <el-dropdown-item @click="exportFile(false)">导出文件</el-dropdown-item>
-                            <el-dropdown-item @click="exportFile(true)">下载模板</el-dropdown-item>
+                            <el-dropdown-item @click="exportFile(true)">下载空模板</el-dropdown-item>
+                            <el-dropdown-item @click="importExcelFile">导入为Excel</el-dropdown-item>
+                            <el-dropdown-item @click="exportFile(false)">导出为Excel</el-dropdown-item>
+                            <el-dropdown-item @click="importJSONFile">导入为JSON</el-dropdown-item>
                             <el-dropdown-item @click="exportJSONFile">导出为JSON</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -106,7 +107,7 @@
                                     <el-button link type="primary" size="small">删 除</el-button>
                                 </template>
                             </el-popconfirm>
-                            <el-button link type="primary" size="small" @click="innerVisible=true;editMask=true;color=`#${scope.row.color}`;name=scope.row.name">编 辑</el-button>
+                            <el-button link type="primary" size="small" @click="innerVisible=true;editMask=scope.$index;color=`#${scope.row.color}`;name=scope.row.name;">编 辑</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -125,12 +126,12 @@
         <el-dialog
         v-model="innerVisible"
         width="300"
-        :title="editMask?'修改':'添加'"
+        :title="editMask >= 0 ?'修改':'添加'"
         append-to-body
         class="z-dialog"
         >
             <div class="flex-between" style="margin-top: 10px;">
-                <el-input v-model="name" placeholder="请输入" style="width:200px" :disabled="editMask"/>
+                <el-input v-model="name" placeholder="请输入" style="width:200px"/>
                 <el-color-picker v-model="color"/>
             </div>
             <template #footer>
@@ -181,7 +182,7 @@ export default defineComponent({
             innerVisible:false,
             name:'',
             color:'',
-            editMask:false,
+            editMask:-1,
             customData:{} as any,
             isAddPindou:false,
             searchValue:'',
@@ -306,7 +307,7 @@ export default defineComponent({
             handleAdd ()
             {
                 data.innerVisible = true;
-                data.editMask = false;
+                data.editMask = -1;
                 data.name = '';
                 data.color = '';
             },
@@ -316,25 +317,28 @@ export default defineComponent({
             },
             handleEdit ()
             {
-                if (data.editMask)
+                if (data.name === '') return proxy.$message.warning('色号不能为空');
+                if (data.color === '') return proxy.$message.warning('颜色不能为空');
+                if (data.editMask >= 0)
                 {
-                    if (data.color === '') return proxy.$message.warning('颜色不能为空');
-                    data.list.data.forEach((item) => 
-                    {
-                        if (item.name === data.name)
-                        {
-                            item.color = data.color.slice(1).toLowerCase();
-                        }
-                    });
+                    data.list.data[data.editMask] = { name: data.name, color: data.color.slice(1).toLowerCase() };
+                    // data.list.data.forEach((item) => 
+                    // {
+                    //     if (item.name === data.name)
+                    //     {
+                    //         item.
+                    //         item.color = data.color.slice(1).toLowerCase();
+                    //     }
+                    // });
                 }
                 else
                 {
-                    let flag = data.list.data.find((item) => item.name === data.name);
-                    if (flag) 
-                    {
-                        return proxy.$message.warning('色号不能重复');
-                    }
-                    if (data.color === '') return proxy.$message.warning('颜色不能为空');
+                    // let flag = data.list.data.find((item) => item.name === data.name);
+                    // if (flag) 
+                    // {
+                    //     return proxy.$message.warning('色号不能重复');
+                    // }
+                    // if (data.color === '') return proxy.$message.warning('颜色不能为空');
                     data.list.data.push({
                         name:data.name,
                         color:data.color.slice(1).toLowerCase()
@@ -383,7 +387,7 @@ export default defineComponent({
                 const blob = new Blob([d], {type: ''});
                 FileSaver.saveAs(blob, `${data.pindouBrand}-${data.customPindouLabel}.json`);
             },
-            importFile ()
+            importExcelFile ()
             {
                 const input:any = document.createElement('input');
                 input.type = 'file';
@@ -409,6 +413,31 @@ export default defineComponent({
 
                         };
                         reader.readAsArrayBuffer(file);
+                        
+                    }
+                });
+                document.body.appendChild(input);
+                input.click();
+                document.body.removeChild(input);
+            },
+            importJSONFile ()
+            {
+                const input:any = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.addEventListener('change', function () 
+                {
+                    const file = input.files[0];
+                    if (file) 
+                    {
+                        const reader = new FileReader();
+                        reader.onload = function (e:any) 
+                        {
+                            const jsonData = JSON.parse(e.target.result);
+                            methods.openInfo(jsonData);
+
+                        };
+                        reader.readAsText(file);
                         
                     }
                 });

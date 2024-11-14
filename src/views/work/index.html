@@ -335,6 +335,8 @@
                             </div>
                         </div>
                     </div>
+                    <div class="pindouBtn flex-center" @click="handleShowPindou" v-if="isHidePindouMode">拼</div>
+                    
                 </div>
             </div>
             <el-footer class="flex-start">
@@ -623,18 +625,20 @@
             </div>
         </el-aside>
     </el-container>
+    
     <teleport to="body">
         <MyColorDialog 
         ref="MyColorDialog"
         @close="addKeyBoardEvent"
         @select="(color) => brushColor = color">
         </MyColorDialog>
+
         <ReplaceColorDialog
         @close="addKeyBoardEvent"
         ref="ReplaceColorDialog" 
-        @confirm="handleConfirmReplaceColor"></ReplaceColorDialog>
-        <!-- <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog> -->
-        <!-- <NoticeDialog v-if="noticeVisible" :visible="noticeVisible" :notice="notice" @close="noticeVisible=false"></NoticeDialog> -->
+        @confirm="handleConfirmReplaceColor">
+        </ReplaceColorDialog>
+       
         <ExportDialog 
         v-if="exportVisible" 
         :loading="exportLoaidng"
@@ -643,9 +647,11 @@
         @export="handleExport"
         @close="handleCloseDialog('exportVisible')">
         </ExportDialog>
+
         <PreviewAnimDialog 
         ref="PreviewAnimDialog">
         </PreviewAnimDialog>
+
         <PindouDialog
         ref="PindouDialog" 
         @close="handleCloseDialog" 
@@ -653,8 +659,10 @@
         @replace="handleReplacePindouColor"
         @highlight="handlePindouHighlight"
         @select="(color) => brushColor = color"
+        @hide="isHidePindouMode=true"
         @export="handleExportPindou">
         </PindouDialog>
+
         <LayerMenu
         v-if="LayerMenu.visible"
         :visible="LayerMenu.visible"
@@ -662,10 +670,8 @@
         :top="LayerMenu.top"
         :contextData="LayerMenu.contextData"
         @import="handleImportLayer"
-        @export="handleExportLayer"
-        >
+        @export="handleExportLayer">
         </LayerMenu>
-        <!-- <img ref="originalImage" :src="require('@/assets/keji.png')" style="display: none;"> -->
     </teleport>
     
 </div>

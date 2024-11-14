@@ -32,7 +32,8 @@ export default {
         'download':'下 载',
         'import':'导 入',
         'newSucceeded':'新建成功',
-        'newFailed':'新建失败'
+        'newFailed':'新建失败',
+        'pindouShop':'拼 豆'
 
     }
 };

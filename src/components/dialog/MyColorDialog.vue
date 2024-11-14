@@ -14,8 +14,8 @@
             <div class="flex-between">
                 <h4 :id="titleId" :class="titleClass" draggable="false">{{title}}</h4>
                 <div class="flex-end">
-                    <el-icon class="pointer" @click="isShowModule=true;title='颜色模板'" style="margin-right:15px"><Goods /></el-icon>
-                    <el-icon class="pointer" @click="handleClose"><Close /></el-icon>
+                    <el-icon class="pointer" @click="isShowModule=true;title='颜色模板'" style="margin-right:15px" title="颜色模板"><Goods /></el-icon>
+                    <el-icon class="pointer" @click="handleClose" title="关闭"><Close /></el-icon>
                 </div>
             </div>
         </template>

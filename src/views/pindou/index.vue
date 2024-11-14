@@ -5,9 +5,9 @@
             <div class="flex-start searchBox">
                 <div class="input-search">
                     <el-icon><Search /></el-icon>
-                    <input type="text" v-model="searchValue" placeholder="请搜索像素资源" @keyup.enter="search">
+                    <input type="text" v-model="searchValue" placeholder="请搜索拼豆色卡" @keyup.enter="search">
                 </div>
-                <el-select 
+                <!-- <el-select 
                 v-model="filterValue" placeholder="请选择分类" 
                 size="large"
                 @change="handleFilter"
@@ -22,7 +22,7 @@
                         :label="item.label"
                         :value="item.value"
                     />
-                </el-select>
+                </el-select> -->
                 <button class="pixelButton" @click="handleReset">重 置</button>
                 <div style="margin-left:5px">
                     <el-pagination
@@ -37,21 +37,20 @@
                 </div>
             </div>
             <div class="full-layout scrollbar flex-start flex-warp scrollAuto"
-            v-if="searchData.length && !isloading" 
+            v-if="(list.length || searchData.length) && !isloading" 
             style="align-content: flex-start;
             align-items:flex-start;
             gap:10px;
             padding:10px 18px">
-                <div v-for="item in searchData" :key="item.id" class="download-item">
+                <div v-for="item in searchData.length ? searchData : list" :key="item.id" class="download-item">
                     <div class="frameImg">
-                        <img :src="getFrameImg(item.data.frameImg)"/>
+                        <img :src="getFrameImg(item.data.pindouKey)"/>
                         <img :src="require('@/assets/hot.png')" class="top" v-if="item.data.isTop"/>
-                        <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
-                        <el-tag type="danger" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
+                        <el-tag type="danger" v-if="item.data.tip!==''" class="size">{{ item.data.tip }}</el-tag>
                     </div>
                     <div class="info">
                         <div class="flex-between" style="padding-bottom: 5px;">
-                            <h4 class="oneline" :title="item.data.projectName">{{item.data.projectName }}</h4>
+                            <h4 class="oneline" :title="item.data.pindouName + item.data.pindouKey.toUpperCase()">{{item.data.pindouName + '(' + item.data.pindouKey.toUpperCase() + ')' }}</h4>
                             <el-dropdown trigger="click" size="small">
                                 <el-button 
                                 type="primary" 
@@ -77,7 +76,7 @@
                 </div>
                 
             </div>
-            <div v-else-if="!isloading && !searchData.length" 
+            <div v-else-if="!isloading && (!searchData.length || !list.length)" 
             class="full-layout flex-center scrollbar scrollAuto">
                 <el-empty
                 :image="require('@/assets/empty.png')"

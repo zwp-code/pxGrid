@@ -1,7 +1,7 @@
 const config = 
 {
     name:'像素格子',
-    aI_MODULE_Token:'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',
+    AI_MODULE_TOKEN:'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',
     AI_MODULE_URL:'https://api-inference.huggingface.co/models/nerijs/pixel-art-xl',
     colorList:[
         {

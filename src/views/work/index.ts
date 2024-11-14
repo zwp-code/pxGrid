@@ -187,7 +187,9 @@ export default defineComponent({
                 contextData:null
             },
             selectLayerList:[] as any,
-            pindouHighlight:null as any
+            pindouHighlight:null as any,
+            isHidePindouMode:false,
+            pindouBrand:'mard'
 
             
         });
@@ -451,7 +453,12 @@ export default defineComponent({
                     proxy.$refs.PindouDialog.handleOpen(mode);
                 }
             },
-            handlePindouEvent (brand = 'mard')
+            handleShowPindou ()
+            {
+                data.isHidePindouMode = false;
+                proxy.$refs.PindouDialog.handleShow();
+            },
+            handlePindouEvent (brand = data.pindouBrand)
             {
                 data.worker.postMessage({
                     type:6,
@@ -465,6 +472,7 @@ export default defineComponent({
                     console.log(data.pinDouData);
                     methods.handleDrawPindou(data.ctx1);
                     data.pinDouMode = true;
+                    data.pindouBrand = brand;
                     proxy.$refs.PindouDialog.handleOpen(event.data);
                     methods.handleCancelKeyboardEvent();
                 };

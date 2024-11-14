@@ -35,6 +35,12 @@ const routes:RouteRecordRaw[] = [
                 component:() => import('@/views/module/index.vue')
             },
             {
+                path:'pindou',
+                name:'pindou',
+                meta:{ title:'pindouShop', icon:'Orange' },
+                component:() => import('@/views/pindou/index.vue')
+            },
+            {
                 path:'work/:projectId',
                 name:'work',
                 meta:{ title:'工作台' },
