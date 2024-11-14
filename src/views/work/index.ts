@@ -1450,7 +1450,7 @@ export default defineComponent({
             },
             draw (event) 
             {
-                console.log(event);
+                // console.log(event);
                 
                 // data.test.add([event.offsetX, event.offsetY]);
                 if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
@@ -4294,25 +4294,26 @@ export default defineComponent({
                         if (data.projectData.data)
                         {
                             data.worker.postMessage({
-                                type:4, 
+                                type:4,
                                 variables:JSON.parse(JSON.stringify(projectData.data))
                             });
                             data.worker.onmessage = (event) => 
                             {
                                 try
                                 {
+                                    console.log(event.data);
+                                    
                                     data.drawRecord = event.data;
                                     editSpaceStore.saveProjectId(data.projectData.projectId);
-                                    methods.reDraw();
+                                    if (data.drawRecord.length) methods.reDraw();
                                     // methods.handleRenderAllFrameImg(data.ctx1);
                                     data.loading = false;
                                 }
                                 catch (err)
                                 {
                                     console.log(err);
-                                    
                                     proxy.$message.error('项目异常，请重新刷新');
-                                    location.reload();
+                                    window.location.reload();
                                 }
                             };
                         }

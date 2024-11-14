@@ -37,7 +37,7 @@
                         <el-icon style="margin-right: 25px;" @click="handleResetCanvas"><Refresh /></el-icon>
                     </el-tooltip>
 
-                    <el-tooltip content="移动画布 [Space/空格]" placement="bottom">
+                    <el-tooltip content="移动画布 [空格 + 鼠标]" placement="bottom">
                         <el-icon style="margin-right: 25px; color: orange;" v-if="isSpace" @click="isSpace=false"><Pointer /></el-icon>
                         <el-icon style="margin-right: 25px;" @click="isSpace=true" v-else><Pointer /></el-icon>
                     </el-tooltip>
