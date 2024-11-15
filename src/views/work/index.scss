@@ -165,7 +165,7 @@
 .el-main {
     height: auto;
     flex: 3;
-    flex-basis: auto;
+    // flex-basis: auto;
     overflow: hidden;
     min-height: 700px;
 }
@@ -195,6 +195,7 @@
     width: 100%;
     height: 100%;
     min-height: 700px;
+    max-width: 320px;
     overflow: hidden;
     flex: 1;
     padding: 20px;
@@ -205,7 +206,7 @@
 .function-block, .function-block-column {
     display: flex;
     align-items: center;
-    margin-top: 15px;
+    margin-top: 10px;
 
     .function-label {
         margin-right: 16px;
@@ -226,6 +227,14 @@
             height: 20px;
             box-shadow: 0px 0px 4px 2px var(--el-shadow-color);
             // margin: 10px;
+        }
+    }
+
+    .symmetric-box {
+        // gap: 10px;
+
+        .el-checkbox {
+            margin-right: 0;
         }
     }
 }

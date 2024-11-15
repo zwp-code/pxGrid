@@ -21,9 +21,6 @@
                         <el-icon style="margin-right: 25px;" @click="handleRecover"><Right /></el-icon>
                     </el-tooltip>
 
-                    <!-- <el-tooltip content="拼豆模式 [Alt/⌥ + o]" placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleOpenPindou"><Grape /></el-icon>
-                    </el-tooltip> -->
                     <el-tooltip content="放大画布 [滚轮/Ctrl/⌘ + =]" placement="bottom">
                         <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(1)"><ZoomIn /></el-icon>
                     </el-tooltip>
@@ -74,38 +71,6 @@
                     placement="bottom">
                         <el-icon style="margin-right: 0px;" @click="handleScreenFull"><FullScreen /></el-icon>
                     </el-tooltip>
-
-                    <!-- <el-tooltip
-                    :content="checkTheme ? '夜间模式' : '白天模式'"
-                    placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="changeTheme" v-if="checkTheme"><Moon /></el-icon>
-                        <el-icon style="margin-right: 25px;" @click="changeTheme" v-else><Sunny /></el-icon>
-                    </el-tooltip>
-
-                    <el-tooltip
-                    content="全屏"
-                    placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="ScreenFull"><FullScreen /></el-icon>
-                    </el-tooltip>
-
-                    <el-tooltip
-                    content="赞助"
-                    placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="donateVisible=true"><ShoppingCart /></el-icon>
-                    </el-tooltip>
-
-                    <el-dropdown trigger="click" @command="handleLanguageCommand">
-                        <span class="el-dropdown-link">
-                            语言
-                            <el-icon class="el-icon--right"><arrow-down /></el-icon>
-                        </span>
-                        <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item command="en">英 文</el-dropdown-item>
-                            <el-dropdown-item command="zh">中 文</el-dropdown-item>
-                        </el-dropdown-menu>
-                        </template>
-                    </el-dropdown> -->
                 </div>
             </el-header>
             <div class="flex-start flex-nowarp full-w" style="flex: 1;">
@@ -140,6 +105,23 @@
                             </div>
                         </el-tooltip>
                         <el-tooltip
+                            content="油漆桶 [r]"
+                            placement="right"
+                        >
+                            <div class="pointer toolItem" @click="handleChangeTool(4)" :class="{ 'active': currentTool === 4 }">
+                                <img :src="requireIcon('bucket')"/>
+                            </div>
+                        </el-tooltip>
+                        <el-tooltip
+                            content="移动 [t]"
+                            placement="right"
+                        >
+                            <div class="pointer toolItem" @click="handleChangeTool(7)"
+                            :class="{ 'active': currentTool === 7 }">
+                                <img :src="requireIcon('move')"/>
+                            </div>
+                        </el-tooltip>
+                        <el-tooltip
                             content="形状"
                             placement="right"
                         >
@@ -170,23 +152,8 @@
                             </el-dropdown>
                             
                         </el-tooltip>
-                        <el-tooltip
-                            content="油漆桶 [r]"
-                            placement="right"
-                        >
-                            <div class="pointer toolItem" @click="handleChangeTool(4)" :class="{ 'active': currentTool === 4 }">
-                                <img :src="requireIcon('bucket')"/>
-                            </div>
-                        </el-tooltip>
-                        <el-tooltip
-                            content="移动 [t]"
-                            placement="right"
-                        >
-                            <div class="pointer toolItem" @click="handleChangeTool(7)"
-                            :class="{ 'active': currentTool === 7 }">
-                                <img :src="requireIcon('move')"/>
-                            </div>
-                        </el-tooltip>
+                        
+                        
                         <el-tooltip
                             content="选区"
                             placement="right"
@@ -226,11 +193,12 @@
                             placement="right"
                         >
                             <el-dropdown placement="top-start" trigger="click">
-                                <div class="pointer toolItem">
+                                <div class="pointer toolItem" :class="{ 'active': currentTool === 9 }">
                                     <img :src="requireTransformImg"/>
                                 </div>
                                 <template #dropdown>
                                     <el-dropdown-menu>
+                                        <el-dropdown-item @click="drawTransform('scale')" :disabled="pinDouMode">缩放 [Ctrl/⌘ + q]</el-dropdown-item>
                                         <el-dropdown-item @click="drawTransform('hReverse')" :disabled="pinDouMode">水平翻转 [Ctrl/⌘ + ↑]</el-dropdown-item>
                                         <el-dropdown-item @click="drawTransform('vReverse')" :disabled="pinDouMode">垂直翻转 [Ctrl/⌘ + ↓]</el-dropdown-item>
                                         <el-dropdown-item @click="drawTransform('ssz')" :disabled="pinDouMode || canvasWidth!==canvasHeight">顺时针旋转90度 [Ctrl/⌘ + →]</el-dropdown-item>
@@ -320,21 +288,32 @@
                     <canvas id="Canvas" width="512" height="512"></canvas>
                     <canvas id="RealCanvas" v-show="false"></canvas>
                     <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
-                    <div class="cancelSelect" v-if="selectData.selectList.length">
-                        <!-- <el-dropdown placement="top">
-                            <el-button type="primary" @click="handleRemoveSelect">旋 转</el-button>
-                            <template #dropdown>
-                                <el-dropdown-menu>
-                                    <el-dropdown-item>45度</el-dropdown-item>
-                                    <el-dropdown-item>90度</el-dropdown-item>
-                                    <el-dropdown-item>180度</el-dropdown-item>
-                                </el-dropdown-menu>
-                            </template>
-                        </el-dropdown> -->
-                        <el-button type="primary" @click="handleCopySelectData">复 制</el-button>
-                        <el-button type="primary" @click="handleRemoveSelect">删 除</el-button>
-                        <el-button type="primary" @click="handleCancelSelect">取消选择</el-button>
+                    <div class="flex-center cancelSelect">
+                        <div v-if="selectData.selectList.length">
+                            <!-- <el-dropdown placement="top">
+                                <el-button type="primary" @click="handleRemoveSelect">旋 转</el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item>45度</el-dropdown-item>
+                                        <el-dropdown-item>90度</el-dropdown-item>
+                                        <el-dropdown-item>180度</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown> -->
+                            <el-button type="primary" @click="handleCopySelectData">复 制</el-button>
+                            <el-button type="primary" @click="handleRemoveSelect">删 除</el-button>
+                            <el-button type="primary" @click="handleCancelSelect">取消选择</el-button>
+                        </div>
+                        <div v-if="currentTool === 9">
+                            <el-button type="danger" @click="handleCancelScale">
+                                <el-icon><Close /></el-icon>
+                            </el-button>
+                            <el-button type="success" @click="handleFinishScale">
+                                <el-icon><Check /></el-icon>
+                            </el-button>
+                        </div>
                     </div>
+                    
                     <div class="colorSelector" v-if="colorStatList.length">
                         <div class="back-icon" @click="handleExpand">
                             <el-icon><Expand /></el-icon>
@@ -509,7 +488,7 @@
                             type="number"
                             :max="70"
                             :min="6"
-                            :disabled="pinDouMode"
+                            :disabled="pinDouMode || isScaling || selectData.selectList.length"
                             @change="(e) => handleChangeCanvasSize(e, 'canvasWidth')"
                             >
                                 <template #prepend>宽</template>
@@ -520,7 +499,7 @@
                             type="number"
                             :max="70"
                             :min="6"
-                            :disabled="pinDouMode"
+                            :disabled="pinDouMode || isScaling || selectData.selectList.length"
                             @change="(e) => handleChangeCanvasSize(e, 'canvasHeight')"
                             >
                                 <template #prepend>高</template>
@@ -530,9 +509,11 @@
                             <el-checkbox v-model="isCheckedRatio" size="small" label="保持横纵比" @change="handleChangeRatio" :disabled="pinDouMode"/>
                             <el-checkbox v-model="isShowReferenceLine" size="small" label="参考线" :disabled="pinDouMode"/>
                         </div>
-                        <div style="margin-top: 10px;" v-show="currentTool === 0">
-                            <el-checkbox v-model="isHorizontal" size="small" label="水平对称" :disabled="pinDouMode" @change="handleChangeTransform($event, 'isHorizontal')"/>
-                            <el-checkbox v-model="isVertical" size="small" label="垂直对称" :disabled="pinDouMode" @change="handleChangeTransform($event, 'isVertical')"/>
+                        <div style="margin-top: 10px;" v-show="currentTool === 0" class="flex-between symmetric-box full-w">
+                            <el-checkbox v-model="isHorizontal" size="small" label="水平对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isHorizontal')"/>
+                            <el-checkbox v-model="isVertical" size="small" label="垂直对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isVertical')"/>
+                            <el-checkbox v-model="isCenter" size="small" label="中心对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isCenter')"/>
+
                         </div>
                     </div>
                     <div class="function-block function-block-between" v-show="currentTool === 4 || (currentTool === 8 && selectType === 'quickSelect')">

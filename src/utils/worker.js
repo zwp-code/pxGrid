@@ -59,15 +59,19 @@ addEventListener('message', (e) =>
         let colorStatList = [];
         for (let i = 0; i < dataTable.length; i++)
         {
-            for (let j = 0; j < dataTable[i].layerData.length; j++)
+            if (dataTable[i].isRender)
             {
-                let color = dataTable[i].layerData[j][2];
-                if (color === '#00000000') continue;
-                if (!colorStatList.includes(color))
+                for (let j = 0; j < dataTable[i].layerData.length; j++)
                 {
-                    colorStatList.push(color);
+                    let color = dataTable[i].layerData[j][2];
+                    if (color === '#00000000') continue;
+                    if (!colorStatList.includes(color))
+                    {
+                        colorStatList.push(color);
+                    }
                 }
             }
+            
         }
         return postMessage(colorStatList);
     }
