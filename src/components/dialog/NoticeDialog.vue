@@ -1,14 +1,22 @@
 <template>
-    <el-dialog v-model="dialogVisible" :title="notice.title"
-    :width="500"
+    <el-dialog v-model="dialogVisible"
+    :width="400"
     :before-close="handleClose"
     :lock-scroll="false"
+    :show-close="false"
     class="z-dialog" center>
+        <template #header="{ titleId, titleClass }">
+            <div class="flex-between">
+                <h4 :id="titleId" :class="titleClass" draggable="false">{{notice.title}}</h4>
+                <div class="flex-end">
+                    <el-icon class="pointer" @click="handleClose" title="关闭"><Close /></el-icon>
+                </div>
+            </div>
+        </template>
         <div class="notice-content">{{notice.content}}</div>
         <template #footer>
             <span class="dialog-footer">
-                <el-button type="primary" @click="handleHidden"
-                >不再提示</el-button>
+                <el-button type="primary" @click="handleHidden" class="full-w">不再提示</el-button>
             </span>
         </template>
     </el-dialog>
@@ -63,7 +71,7 @@ export default defineComponent({
 </script>
 <style lang='scss' scoped>
 .notice-content {
-    padding: 5px 5px 15px;
+    padding: 0px 2px;
     font-size: 15px;
     text-align: justify;
     white-space: pre-wrap;

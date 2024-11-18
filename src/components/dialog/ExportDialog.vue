@@ -25,13 +25,19 @@
                 <div class="flex-start" style="gap:10px">
                     <p>倍图</p>
                     <div>
-                        <el-radio-group v-model="radio">
+                        <el-radio-group v-model="radio" :disabled="isShowGrid">
                             <el-radio :value="1">x1</el-radio>
                             <el-radio :value="2">x2</el-radio>
                             <el-radio :value="3">x3</el-radio>
                             <el-radio :value="4">x4</el-radio>
                             <el-radio :value="5">x5</el-radio>
                         </el-radio-group>
+                    </div>
+                </div>
+                <div class="flex-start" style="gap:10px">
+                    <p>样式</p>
+                    <div>
+                        <el-checkbox v-model="isShowGrid" label="导出网格图(512*512)" @change="handleChangeGrid"/>
                     </div>
                 </div>
             </template>
@@ -82,9 +88,21 @@ export default defineComponent({
             checked5:false,
             checked6:false,
             type:1,
-            radio:1
+            radio:1,
+            isShowGrid:false
         });
         let methods = {
+            handleChangeGrid ()
+            {
+                if (data.isShowGrid)
+                {
+                    if ([1, 2, 5, 6].includes(data.type)) 
+                    {
+                        data.isShowGrid = false;
+                        return proxy.$message.warning('网格图仅支持导出单张图');
+                    }
+                }
+            },
             clearStatus ()
             {
                 for (let i = 0; i < 6; i++)
@@ -107,7 +125,9 @@ export default defineComponent({
             handleConfirm ()
             {
                 if (data.fileName.trim() === '') return proxy.$message.warning('请输入文件名称');
-                context.emit('export', data.type, data.fileName, data.radio);
+                context.emit('export', data.type, data.fileName, data.radio, false, {
+                    isShowGrid:data.isShowGrid
+                });
             }
         };
 

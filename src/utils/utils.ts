@@ -93,6 +93,12 @@ export function getColumnsList (list, columnsNum = 2)
     return cloGapList;
 }
 
+export function isLastCharNumberWithRegex (str) 
+{
+    const regex = /\d$/;
+    return regex.test(str);
+}
+
 export function isHexColor (color) 
 {
     const hexWithAlphaRegex = /^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$/;

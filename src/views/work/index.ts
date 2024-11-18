@@ -199,7 +199,10 @@ export default defineComponent({
             scaleAreaData:null as any,
             // scaleMatrixData:[] as any, // 缩放的图像矩阵
             scaleRatio:0, // 每次拖动递增1
-            emptyLayerData:[] as any
+            emptyLayerData:[] as any, // 空模板
+            exportStyleOptions:{
+                isShowGrid:false
+            }
 
             
         });
@@ -669,9 +672,17 @@ export default defineComponent({
             {
                 data.currentDrawShape = shape;
             },
-            getLayerData (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex)
+            getCurrentLayerData (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex)
             {
                 return data.drawRecord[frameIndex].layer[layerIndex].layerData;
+            },
+            getCurrentLayerId (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex)
+            {
+                return data.drawRecord[frameIndex].layer[layerIndex].layerId;
+            },
+            getCurrentFrameId (frameIndex = data.currentFrameIndex)
+            {
+                return data.drawRecord[frameIndex].frameId;
             },
             drawScaleFrame ()
             {
@@ -680,7 +691,7 @@ export default defineComponent({
                 // data.scaleMatrixData = [];
                 let rectWidth = 0;
                 let rectHeight = 0;
-                let currentLayerData = JSON.parse(JSON.stringify(methods.getLayerData()));
+                let currentLayerData = JSON.parse(JSON.stringify(methods.getCurrentLayerData()));
                 let minX = Infinity;
                 let minY = Infinity; 
                 let maxX = -Infinity; 
@@ -884,6 +895,7 @@ export default defineComponent({
                 data.currentDrawTransform = transform;
                 if (transform === 'scale') 
                 {
+                    if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                     methods.handleChangeTool(9);
                     data.isScaling = true;
                     methods.drawScaleFrame();
@@ -894,8 +906,8 @@ export default defineComponent({
                 // let centerY = data.canvasBeginPos.y + data.canvasHeight * data.scale / 2;
                 let centerX = data.canvasBeginPos.centerX;
                 let centerY = data.canvasBeginPos.centerY;
-                let currentLayerData1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                let currentLayerData2 = JSON.parse(JSON.stringify(currentLayerData1));
+                let currentLayerData1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex];
+                let currentLayerData2 = JSON.parse(JSON.stringify(currentLayerData1.layerData));
                 if (data.selectData.selectList.length)
                 {
                     let currentSelectData = data.selectData.selectList;
@@ -919,13 +931,13 @@ export default defineComponent({
                 }
                 if (transform === 'hReverse')
                 {
-                    for (let i = 0; i < currentLayerData2.length; i++)
+                    for (let i = 0; i < realCoords.length; i++)
                     {
                         // if (realCoords[i][2] === data.emptyColor) continue;
-                        // let beginX = realCoords[i][0];
-                        // let beginY = realCoords[i][1];
-                        // let endX = centerX + (centerX - realCoords[i][0] - data.scale);
-                        // let endY = beginY;
+                        let beginX = realCoords[i][0];
+                        let beginY = realCoords[i][1];
+                        let endX = centerX + (centerX - realCoords[i][0] - data.scale);
+                        let endY = beginY;
                         // const beginRow = Math.floor((beginY - data.drawAreaList[0][1]) / data.scale);
                         // const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
                         // const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
@@ -942,25 +954,39 @@ export default defineComponent({
                         //     currentLayerData2[endIndex][2] = realCoords[i][2];
                         //     currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
                         // }
-                        let col = (data.canvasWidth - 1) - currentLayerData2[i][0];
-                        let row = currentLayerData2[i][1];
-                        currentLayerData2[i][0] = col;
-                        if (data.selectData.selectList.length)
+                        // let col = (data.canvasWidth - 1) - currentLayerData2[i][0];
+                        // let row = currentLayerData2[i][1];
+                        // currentLayerData2[i][0] = col;
+                        if (data.selectData.selectList.length && data.selectData.selectLayerId === currentLayerData1.layerId)
                         {
+                            const beginRow = Math.floor((beginY - data.drawAreaList[0][1]) / data.scale);
+                            const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
+                            const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
+                            const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
+                            let beginIndex = beginCol + beginRow * data.canvasWidth;
+                            let endIndex = col + row * data.canvasWidth;
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
                             data.selectData.selectList[i][0] = col;
                             data.selectData.selectList[i][1] = row;
+                        }
+                        else
+                        {
+                            let col = (data.canvasWidth - 1) - currentLayerData2[i][0];
+                            // let row = currentLayerData2[i][1];
+                            currentLayerData2[i][0] = col;
                         }
                     }
                 }
                 else if (transform === 'vReverse')
                 {
-                    for (let i = 0; i < currentLayerData2.length; i++)
+                    for (let i = 0; i < realCoords.length; i++)
                     {
                         // if (realCoords[i][2] === data.emptyColor) continue;
-                        // let beginX = realCoords[i][0];
-                        // let beginY = realCoords[i][1];
-                        // let endX = beginX;
-                        // let endY = centerY + (centerY - realCoords[i][1] - data.scale);
+                        let beginX = realCoords[i][0];
+                        let beginY = realCoords[i][1];
+                        let endX = beginX;
+                        let endY = centerY + (centerY - realCoords[i][1] - data.scale);
                         // const beginRow = Math.floor((beginY - data.drawAreaList[0][1]) / data.scale);
                         // const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
                         // const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
@@ -977,13 +1003,25 @@ export default defineComponent({
                         //     currentLayerData2[endIndex][2] = realCoords[i][2];
                         //     currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
                         // }
-                        let row = (data.canvasHeight - 1) - currentLayerData2[i][1];
-                        let col = currentLayerData2[i][0];
-                        currentLayerData2[i][1] = row;
-                        if (data.selectData.selectList.length)
+                        
+                        if (data.selectData.selectList.length && data.selectData.selectLayerId === currentLayerData1.layerId)
                         {
+                            const beginRow = Math.floor((beginY - data.drawAreaList[0][1]) / data.scale);
+                            const beginCol = Math.floor((beginX - data.drawAreaList[0][0]) / data.scale);
+                            const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
+                            const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
+                            let beginIndex = beginCol + beginRow * data.canvasWidth;
+                            let endIndex = col + row * data.canvasWidth;
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
                             data.selectData.selectList[i][0] = col;
                             data.selectData.selectList[i][1] = row;
+                        }
+                        else
+                        {
+                            let row = (data.canvasHeight - 1) - currentLayerData2[i][1];
+                            // let col = currentLayerData2[i][0];
+                            currentLayerData2[i][1] = row;
                         }
                     }
                 }
@@ -1006,8 +1044,8 @@ export default defineComponent({
                         let endX = rotateX + centerX - data.scale;
                         let endY = rotateY + centerY;
                         
-                        // const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
-                        // const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
+                        const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
                         // let endIndex = col + row * data.canvasWidth;
@@ -1025,15 +1063,24 @@ export default defineComponent({
                         //     currentLayerData2[endIndex][2] = realCoords[i][2];
                         //     currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
                         // }
-                        currentLayerData2[i][0] = col;
-                        currentLayerData2[i][1] = row;
+                        // currentLayerData2[i][0] = col;
+                        // currentLayerData2[i][1] = row;
                         
                         // console.log(beginCol, beginRow, col, row);
                         
-                        if (data.selectData.selectList.length)
+                        if (data.selectData.selectList.length && data.selectData.selectLayerId === currentLayerData1.layerId)
                         {
+                            let beginIndex = beginCol + beginRow * data.canvasWidth;
+                            let endIndex = col + row * data.canvasWidth;
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
                             data.selectData.selectList[i][0] = col;
                             data.selectData.selectList[i][1] = row;
+                        }
+                        else
+                        {
+                            currentLayerData2[i][0] = col;
+                            currentLayerData2[i][1] = row;
                         }
                     }
                 }
@@ -1049,12 +1096,12 @@ export default defineComponent({
                         let endX = rotateX + centerX;
                         let endY = rotateY + centerY - data.scale;
 
-                        // const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
-                        // const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
+                        const beginRow = Math.floor((realCoords[i][1] - data.drawAreaList[0][1]) / data.scale);
+                        const beginCol = Math.floor((realCoords[i][0] - data.drawAreaList[0][0]) / data.scale);
                         const row = Math.floor((endY - data.drawAreaList[0][1]) / data.scale);
                         const col = Math.floor((endX - data.drawAreaList[0][0]) / data.scale);
-                        currentLayerData2[i][0] = col;
-                        currentLayerData2[i][1] = row;
+                        // currentLayerData2[i][0] = col;
+                        // currentLayerData2[i][1] = row;
                         // let endIndex = col + row * data.canvasWidth;
                         // let beginIndex = beginCol + beginRow * data.canvasWidth;
                         // if (currentLayerData1[endIndex][2] === data.emptyColor)
@@ -1067,10 +1114,19 @@ export default defineComponent({
                         //     currentLayerData2[endIndex][2] = realCoords[i][2];
                         //     currentLayerData2[beginIndex][2] = currentLayerData1[endIndex][2];
                         // }
-                        if (data.selectData.selectList.length)
+                        if (data.selectData.selectList.length && data.selectData.selectLayerId === currentLayerData1.layerId)
                         {
+                            let beginIndex = beginCol + beginRow * data.canvasWidth;
+                            let endIndex = col + row * data.canvasWidth;
+                            currentLayerData2[endIndex][2] = realCoords[i][2];
+                            currentLayerData2[beginIndex][2] = data.emptyColor;
                             data.selectData.selectList[i][0] = col;
                             data.selectData.selectList[i][1] = row;
+                        }
+                        else
+                        {
+                            currentLayerData2[i][0] = col;
+                            currentLayerData2[i][1] = row;
                         }
                     }
                 }
@@ -2317,6 +2373,7 @@ export default defineComponent({
                 // }
                 if (data.selectData.selectList.length)
                 {
+                    data.selectData.selectLayerId = 0;
                     data.selectData.selectList = [];
                     data.selectData.copyList = [];
                     data.isMoving = false;
@@ -2724,6 +2781,7 @@ export default defineComponent({
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                data.ctx3.globalAlpha = 1;
                 for (let y = 0; y < data.canvasHeight; y++) 
                 {
                     for (let x = 0; x < data.canvasWidth; x++) 
@@ -2783,6 +2841,7 @@ export default defineComponent({
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                data.ctx3.globalAlpha = 1;
                 for (let i = imageData.length - 1; i >= 0; i--)
                 {
                     if (imageData[i].isRender)
@@ -3469,7 +3528,7 @@ export default defineComponent({
             {
                 // 切换图层
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) methods.handleCancelScale();
+                if (data.isScaling && index !== data.currentLayerIndex) methods.handleCancelScale();
                 console.log(index, data.isShift);
                 
                 if (data.isShift)
@@ -3485,6 +3544,7 @@ export default defineComponent({
                 console.log(index);
                 
                 data.currentLayerIndex = index;
+                data.currentLayerId = methods.getCurrentLayerId();
                 data.selectLayerList = [data.currentLayerIndex];
             },
             handleChangeLayerVisible (index)
@@ -3517,7 +3577,7 @@ export default defineComponent({
                     // if (data.isScaling) methods.handleCancelScale();
                     if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 }
-                if (data.currentLayerIndex === index && data.selectData.selectLayerId === data.currentLayerIndex) methods.handleCancelSelect();
+                if (data.currentLayerIndex === index && data.selectData.selectLayerId === data.currentLayerId) methods.handleCancelSelect();
                 // if (data.currentLayerIndex === index && data.isScaling) methods.handleCancelScale();
                 data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
                 // if (data.selectData.selectList.length) methods.handleCancelSelect();
@@ -3525,6 +3585,7 @@ export default defineComponent({
                 let nextIndex = index - 1;
                 if (nextIndex < 0) nextIndex = 0;
                 data.currentLayerIndex = nextIndex;
+                data.currentLayerId = methods.getCurrentLayerId();
                 data.selectLayerList = [data.currentLayerIndex];
                 methods.reDraw();
                 // methods.handleAddHistory();
@@ -3564,40 +3625,20 @@ export default defineComponent({
                 };
                 methods.handleAddHistory();
             },
-            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1)
+            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1, options = data.exportStyleOptions)
             {
+                let { isShowGrid } = options;
                 const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
+                if (isShowGrid)
+                {
+                    methods.handleExportGridFrame(imageData, 'layer');
+                    return;
+                }
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
-                data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
-                if (!data.drawRecord[frameIndex].layer[layerIndex].isRender) return;
-                console.log(imageData);
-                // const worker = new Worker();
-                // worker.postMessage({type:2, variables:JSON.parse(JSON.stringify(imageData)), width:data.canvasWidth, height:data.canvasHeight});
-                // worker.onmessage = (event) => 
-                // {
-                //     let colorList = event.data;
-                //     for (let y = 0; y < data.canvasHeight; y++) 
-                //     {
-                //         for (let x = 0; x < data.canvasWidth; x++) 
-                //         {
-                //             let color = data.emptyColor;
-                //             // for (let i = 0; i < imageData.length; i++)
-                //             // {
-                //             //     if (imageData[i][0] === y && imageData[i][1] === x && imageData[i][2] !== data.emptyColor)
-                //             //     {
-                //             //         color = imageData[i][2];
-                //             //         break;
-                //             //     }
-                //             // }
-                            
-                //             // 在新的 canvas 上绘制缩小后的像素
-                //             data.ctx3.fillStyle = colorList[x + y];
-                //             data.ctx3.fillRect(y, x, 1, 1);
-                //         }
-                //     }
-                //     if (isDownload) downloadImage(data.realCanvas, `layer${layerIndex + 1}`);
-                // };
+                data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                data.ctx3.globalAlpha = 1;
+                // console.log(imageData);
                 for (let y = 0; y < data.canvasHeight; y++) 
                 {
                     for (let x = 0; x < data.canvasWidth; x++) 
@@ -3615,12 +3656,12 @@ export default defineComponent({
             handleImportLayer (layerIndex = data.currentLayerIndex)
             {
                 console.log(layerIndex);
-                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                if (data.selectData.selectList.length) methods.handleCancelSelect();
                 if (data.isScaling) methods.handleCancelScale();
                 // 导入图片资源，需要保证图片大小与画布大小一致
                 const input:any = document.createElement('input');
                 input.type = 'file';
-                input.accept = 'image/png';
+                input.accept = 'image/png,image/jpeg';
                 input.addEventListener('change', function () 
                 {
                     const file = input.files[0];
@@ -3666,6 +3707,11 @@ export default defineComponent({
                 const imgCtx:any = imgCanvas.getContext('2d');
                 if (isScale)
                 {
+                    let scaleX = data.canvasWidth / img.width;
+                    let scaleY = data.canvasHeight / img.height;
+                    let scale = Math.min(scaleX, scaleY);
+                    imgCanvas.width = img.width * scale;
+                    imgCanvas.height =  img.height * scale;
                     pica.resize(img, imgCanvas, {
                         unsharpAmount: 100,
                         unsharpRadius: 0.5,
@@ -3746,9 +3792,10 @@ export default defineComponent({
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 // data.selectData.selectList = [];
-                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) methods.handleCancelScale();
+                if (data.selectData.selectList.length && index !== data.currentFrameIndex) return proxy.$message.warning('请先取消选中区域');
+                if (data.isScaling && index !== data.currentFrameIndex) methods.handleCancelScale();
                 data.currentFrameIndex = index;
+                data.currentFrameId = methods.getCurrentFrameId();
                 // data.currentLayerIndex = 0;
                 methods.handleChangeLayer(0);
                 methods.reDraw(true, false);
@@ -3804,14 +3851,86 @@ export default defineComponent({
                 methods.handleAddHistory();
 
             },
-            handleExportFrame (index, isDownload = true, scale = 1)
+            handleExportGridFrame (imageData, type)
             {
+                data.realCanvas.width = 512;
+                data.realCanvas.height = 512;
+                data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                // 绘制网格
+                const cellX = data.realCanvas.width / data.canvasWidth;
+                const cellY = data.realCanvas.width / data.canvasHeight;
+                const scaleValue = Math.round(Math.min(cellX, cellY));
+                data.ctx3.strokeStyle = 'gray';
+                data.ctx3.globalAlpha = 1;
+                data.ctx3.lineWidth = 1;
+                for (let i = 0; i <= data.canvasHeight; i++)
+                {
+                    // 绘制水平网格线
+                    data.ctx3.beginPath();
+                    data.ctx3.moveTo(0, i * scaleValue);
+                    data.ctx3.lineTo(data.canvasWidth * scaleValue, i * scaleValue);
+                    data.ctx3.stroke();
+                }
+                for (let j = 0; j <= data.canvasWidth; j++) 
+                {
+                    // 绘制垂直网格线
+                    data.ctx3.beginPath();
+                    data.ctx3.moveTo(j * scaleValue, 0);
+                    data.ctx3.lineTo(j * scaleValue, data.canvasHeight * scaleValue);
+                    data.ctx3.stroke();
+                }
+                if (type === 'frame')
+                {
+                    for (let i = imageData.length - 1; i >= 0; i--)
+                    {
+                        if (imageData[i].isRender)
+                        {
+                            for (let y = 0; y < data.canvasHeight; y++) 
+                            {
+                                for (let x = 0; x < data.canvasWidth; x++) 
+                                {
+                                    let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
+                                    
+                                    // 在新的 canvas 上绘制缩小后的像素
+                                    data.ctx3.fillStyle = color;
+                                    data.ctx3.globalAlpha = 1;
+                                    data.ctx3.fillRect(x * scaleValue + 1, y * scaleValue + 1, scaleValue - 2, scaleValue - 2);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (let y = 0; y < data.canvasHeight; y++) 
+                    {
+                        for (let x = 0; x < data.canvasWidth; x++) 
+                        {
+                            let color = imageData[x + (y * data.canvasWidth)][2];
+                            
+                            // 在新的 canvas 上绘制缩小后的像素
+                            data.ctx3.fillStyle = color;
+                            data.ctx3.globalAlpha = 1;
+                            data.ctx3.fillRect(x * scaleValue + 1, y * scaleValue + 1, scaleValue - 2, scaleValue - 2);
+                        }
+                    }
+                }
+                
+            },
+            handleExportFrame (index, isDownload = true, scale = 1, options = data.exportStyleOptions)
+            {
+                let { isShowGrid } = options;
+                data.ctx3.globalAlpha = 1;
                 const imageData = data.drawRecord[index].layer;
+                // console.log(imageData);
+                if (isShowGrid)
+                {
+                    methods.handleExportGridFrame(imageData, 'frame');
+                    return;
+                }
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
-                data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
-                console.log(imageData);
-                
+                data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
                 // let layerArr = [] as any;
                 for (let i = imageData.length - 1; i >= 0; i--)
                 {
@@ -3834,18 +3953,6 @@ export default defineComponent({
                         }
                     }
                 }
-                
-                // for (let y = 0; y < data.canvasHeight; y++) 
-                // {
-                //     for (let x = 0; x < data.canvasWidth; x++) 
-                //     {
-                //         let color = layerArr[x + (y * data.canvasWidth)][2];
-                        
-                //         // 在新的 canvas 上绘制缩小后的像素
-                //         data.ctx3.fillStyle = color;
-                //         data.ctx3.fillRect(x * scale, y * scale, scale, scale);
-                //     }
-                // }
                 if (isDownload) downloadImage(data.realCanvas, `frame${index + 1}`);
             },
             compressDrawRecordData ()
@@ -3939,7 +4046,7 @@ export default defineComponent({
                 document.body.removeChild(input);
             },
             // 帧结束
-            handleExport (type, filename, scale = 1, isBack = false)
+            async handleExport (type, filename, scale = 1, isBack = false, options = data.exportStyleOptions)
             {
                 if (!isBack) data.exportLoaidng = true;
                 if (data.isExportProject)
@@ -3985,6 +4092,7 @@ export default defineComponent({
                             methods.handleExportLayer(i, j, false, scale);
                             canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth * scale, data.canvasHeight * scale);
                             count++;
+                            
                         }
                     }
                     for (let l = 0; l < maxLayer; l++)
@@ -4016,7 +4124,7 @@ export default defineComponent({
                     let canavsUrlData = [] as any;
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
-                        methods.handleExportFrame(i, false, scale);
+                        methods.handleExportFrame(i, false, scale, options);
                         canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
                     }
                     exportImageForZip(`${filename}`, canavsUrlData);
@@ -4029,8 +4137,11 @@ export default defineComponent({
                         let currentFrameLayerLength = data.drawRecord[i].layer.length; // 当前帧的图层长度
                         for (let j = currentFrameLayerLength - 1; j >= 0; j--)
                         {
-                            methods.handleExportLayer(i, j, false, scale);
-                            canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
+                            if (data.drawRecord[i].layer[j].isRender)
+                            {
+                                methods.handleExportLayer(i, j, false, scale, options);
+                                canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
+                            }
                             
                         }
                     }
@@ -4075,8 +4186,19 @@ export default defineComponent({
                     let maxLayer = 0; // 最大图层
                     let canavsData = [] as any; // 每个帧图层的image数据
                     let canavsUrlData = [] as any;  // 合并后的image数据
-                    // 精灵图区分图层，每一个帧里的图层会单独导出为精灵图
-                    let count = 0;
+                    // gif区分图层
+                    // let promises = [] as any;
+                    const blobToBase64Promise = (value) => 
+                    {
+                        return new Promise((resolve, reject) => 
+                        {
+                            blobToBase64(value).then((res) => 
+                            {
+                                // canavsUrlData.push(res);
+                                resolve(res);
+                            });
+                        });
+                    };
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
                         canavsData[i] = [];
@@ -4099,9 +4221,9 @@ export default defineComponent({
                             width:data.canvasWidth * scale,
                             height:data.canvasHeight * scale,
                             workers: 2,
-                            quality: 0,
+                            quality: 10,
                             background: 'rgba(0,0,0,0)',
-                            transparent:'#00000000'
+                            transparent:'rgba(0,0,0,0)'
                         });
                         for (let i = 0; i < canavsData.length; i++)
                         {
@@ -4113,27 +4235,28 @@ export default defineComponent({
                                 let newCtx:any = newCanvas.getContext('2d');
                                 newCtx.putImageData(canavsData[i][l], 0, 0);
                                 gif.addFrame(newCanvas, {delay: 200});
-                                // bigCtx.drawImage(newCanvas, i * data.canvasWidth * scale, 0);
                                 continue;
                             }
                         }
-                        gif.on('finished', function (blob) 
+                        const gifBlob = await new Promise((resolve) => 
                         {
-                            // downloadImageByDataURL(filename, URL.createObjectURL(blob));
-                            blobToBase64(blob).then((res) => canavsUrlData.push(res));
-                            count++;
-                            gif.abort();
+                            gif.on('finished', function (blob) 
+                            {
+                                resolve(blob);
+                                gif.abort();
+                            });
+                            gif.render();
                         });
-                        gif.render();
+
+                        let convertedValue = await blobToBase64Promise(gifBlob);
+                        canavsUrlData.push(convertedValue);
                     }
-                    let timer = setInterval(() => 
+                    
+                    await Promise.all(canavsUrlData).then(() => 
                     {
-                        if (count === maxLayer) 
-                        {
-                            exportImageForZip(`${filename}`, canavsUrlData, 'gif');
-                            clearInterval(timer); 
-                        }
-                    }, 100);
+                        console.log(canavsUrlData);
+                        exportImageForZip(`${filename}`, canavsUrlData, 'gif');
+                    });
                 }
                 data.exportLoaidng = false;
             },

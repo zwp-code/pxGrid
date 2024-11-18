@@ -34,8 +34,20 @@
                         >
                             <template #prepend>高</template>
                         </el-input>
-                        <div style="margin-left: 10px;">
+                        <div style="margin-left: 20px;">
                             <el-checkbox v-model="isCheckedRatio" label="保持横纵比" @change="handleChangeRatio" />
+                        </div>
+                    </div>
+                    <div class="flex-between full-w" style="gap:10px;margin-top:10px">
+                        <div v-for="item in canvasTemplate" :key="item.label" class="template-box pointer" 
+                        @click="handleSelectTemplate(item)"
+                        :class="{'active':selectTemplateId === item.id}">
+                            <img :src="require('@/assets/grid.png')"/>
+                            <div class="full-w size flex-center">
+                                <el-tag type="success" size="small" v-if="item.id!==0">{{item.width}}*{{item.height}}</el-tag>
+                                <el-tag type="primary" size="small" v-else>自定义</el-tag>
+                            </div>
+                            
                         </div>
                     </div>
                 </el-form-item>
@@ -102,9 +114,49 @@ export default defineComponent({
             } as any,
             isloading:false,
             isCheckedRatio:true,
-            widthHeightRatio:1
+            widthHeightRatio:1,
+            canvasTemplate:[
+                {
+                    id:0,
+                    width:0,
+                    height:0
+                },
+                {
+                    id:1,
+                    width:16,
+                    height:16
+                },
+                {
+                    id:2,
+                    width:24,
+                    height:24
+                },
+                {
+                    id:3,
+                    width:32,
+                    height:32
+                },
+                {
+                    id:4,
+                    width:48,
+                    height:48
+                },
+                {
+                    id:5,
+                    width:64,
+                    height:64
+                }
+            ],
+            selectTemplateId:3
         });
         let methods = {
+            handleSelectTemplate (value)
+            {
+                data.selectTemplateId = value.id;
+                if (value.id === 0) return;
+                data.itemInfo.width = value.width;
+                data.itemInfo.height = value.height;
+            },
             handleChangeRatio (e)
             {
                 if (e)
@@ -139,6 +191,15 @@ export default defineComponent({
                     {
                         data.itemInfo.width = parseInt(data.itemInfo[key] / data.widthHeightRatio);
                     }
+                }
+                let obj = data.canvasTemplate.find((item) => item.width === data.itemInfo.width && item.height === data.itemInfo.height);
+                if (obj)
+                {
+                    data.selectTemplateId = obj.id;
+                }
+                else
+                {
+                    data.selectTemplateId = 0;
                 }
             },
             handleConfirm ()
@@ -223,5 +284,30 @@ export default defineComponent({
 @keyframes AnimationShow {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+.template-box {
+    position: relative;
+    overflow: hidden;
+    border-radius: 5px;
+    width: 64px;
+    height: 64px;
+    border: 2px solid #808080;
+    background-color: var(--el-bg-island-nav);
+
+    img {
+        object-fit: cover;
+    }
+
+    .size {
+        position: absolute;
+        bottom: 2px;
+        right: 30px;
+        transform: translate(50%, 0);
+    }
+}
+
+.active {
+    border: 2px solid var(--el-text-color);
 }
 </style>
