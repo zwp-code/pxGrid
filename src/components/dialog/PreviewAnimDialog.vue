@@ -71,6 +71,8 @@ export default defineComponent({
             {
                 data.dialogVisible = true;
                 data.imgData.imgUrl = value.imgUrl;
+                console.log(value.imgUrl);
+                
                 data.imgData.width = value.width;
                 data.imgData.height = value.height;
                 data.imgData.frame = value.frame;

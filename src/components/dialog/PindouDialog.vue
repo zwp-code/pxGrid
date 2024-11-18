@@ -47,8 +47,8 @@
                     <el-select v-model="replaceObj" value-key="name" filterable
                     @change="handleChangeColor" placeholder="请选择" style="width:200px">
                         <el-option
-                            v-for="item in pindouColorList"
-                            :key="item.name"
+                            v-for="(item, index) in pindouColorList"
+                            :key="index"
                             :label="item.name"
                             :value="item">
                                 <span style="float: left">{{ item.name }}</span>
@@ -232,7 +232,10 @@ export default defineComponent({
             handleOpen (value)
             {
                 data.dialogVisible = true;
+                methods.updateData();
                 data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                console.log(data.pindouColorList);
+                
                 if (value === 'draw') return data.isDrawMode = true;
                 data.isDrawMode = false;
                 data.colorStatList = value.colorStatList;

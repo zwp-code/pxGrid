@@ -37,7 +37,7 @@
                 <div class="flex-start" style="gap:10px">
                     <p>样式</p>
                     <div>
-                        <el-checkbox v-model="isShowGrid" label="导出网格图(512*512)" @change="handleChangeGrid"/>
+                        <el-checkbox v-model="isShowGrid" label="导出网格图" @change="handleChangeGrid"/>
                     </div>
                 </div>
             </template>

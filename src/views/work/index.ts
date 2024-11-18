@@ -3853,12 +3853,16 @@ export default defineComponent({
             },
             handleExportGridFrame (imageData, type)
             {
-                data.realCanvas.width = 512;
-                data.realCanvas.height = 512;
+                let scale = 50;
+                if (data.canvasWidth >= 56 || data.canvasHeight >= 56) scale = 20;
+                else if (data.canvasWidth >= 48 || data.canvasHeight >= 48) scale = 30;
+                else if (data.canvasWidth >= 32 || data.canvasHeight >= 32) scale = 40;
+                data.realCanvas.width = data.canvasWidth * scale;
+                data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
                 // 绘制网格
                 const cellX = data.realCanvas.width / data.canvasWidth;
-                const cellY = data.realCanvas.width / data.canvasHeight;
+                const cellY = data.realCanvas.height / data.canvasHeight;
                 const scaleValue = Math.round(Math.min(cellX, cellY));
                 data.ctx3.strokeStyle = 'gray';
                 data.ctx3.globalAlpha = 1;
@@ -4331,13 +4335,13 @@ export default defineComponent({
                 proxy.$refs.ReplaceColorDialog.handleOpen();
                 methods.handleCancelKeyboardEvent();
             },
-            handleOpenPreviewDialog ()
+            async handleOpenPreviewDialog ()
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 data.previewLoading = true;
                 let scale = 6; // 放大倍数
                 // methods.handleExport(1, '1111', false, scale);
-                const imgUrl = methods.handleExport(1, '', scale, true);
+                const imgUrl = await methods.handleExport(1, '', scale, true);
                 proxy.$refs.PreviewAnimDialog.handleOpen({
                     imgUrl, 
                     width:data.canvasWidth * scale, 
