@@ -8,11 +8,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dhdbstjr98/gif.js": "^1.0.2",
     "@element-plus/icons-vue": "^1.1.1",
     "@vueuse/core": "^9.2.0",
     "axios": "^1.2.0",
     "element-plus": "^2.4.3",
     "file-saver": "^2.0.5",
+    "gifshot-plus": "^1.0.2",
     "jszip": "^3.10.1",
     "pica": "^9.0.1",
     "pinia": "^2.0.17",

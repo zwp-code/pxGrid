@@ -6,7 +6,7 @@
                 <div class="flex-end" style="gap:10px">
                     <el-input v-model="searchValue" placeholder="请搜索项目" @keyup.enter="handleSearch"></el-input>
                     <el-button type="primary"  @click="handleImportProject">{{ $t('message.importProject') }}</el-button>
-                    <el-button type="primary"  @click="NewProjectVisible=true" style="margin-left:0">{{ $t('message.newProject') }}</el-button>
+                    <el-button type="primary"  @click="NewProjectVisible=true;editProjectInfo=null" style="margin-left:0">{{ $t('message.newProject') }}</el-button>
                 </div>
             </div>
             <div class="full-layout scrollbar flex-start flex-warp scrollAuto"

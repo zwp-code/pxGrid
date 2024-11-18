@@ -6,8 +6,12 @@
     @open="initSpirit"
     :lock-scroll="false"
     class="z-dialog" center>
-        <div class="content flex-center">
+        <div class="content flex-column-center">
             <canvas id="Preview" width="512" height="512"></canvas>
+            <div class="flex-between full-w">
+                <span style="flex: 1;">帧率</span>
+                <el-slider v-model="frameRate" :step="10" show-stops :min="10" :max="60" style="flex:75%" @change="startAnimation"/>
+            </div>
         </div>
         <!-- <template #footer>
             <span class="dialog-footer">
@@ -50,7 +54,8 @@ export default defineComponent({
                 frame:1
             },
             spirit:null as any,
-            frameId:null as any
+            frameId:null as any,
+            frameRate:60
         });
         let methods = {
             handleClose ()
@@ -91,7 +96,7 @@ export default defineComponent({
                 });
                 console.log(data.spirit);
                 
-                methods.animate();
+                methods.startAnimation();
                 
             },
             computeScale ()
@@ -107,6 +112,34 @@ export default defineComponent({
                 data.ctx.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 data.spirit.draw();
                 data.spirit.animate = true;
+            },
+
+            startAnimation () 
+            {
+                if (data.frameId) cancelAnimationFrame(data.frameId);
+                const interval = 1000 / data.frameRate; // 每帧需要的时间间隔（毫秒）
+                let lastTime = 0; // 上一次动画帧的时间戳
+
+                function animate (currentTime) 
+                {
+                    // 计算当前帧与上一帧的时间差
+                    const deltaTime = currentTime - lastTime;
+
+                    if (deltaTime >= interval) 
+                    {
+                        lastTime = currentTime; // 更新上一次动画帧的时间戳
+
+                        // 执行动画逻辑
+                        data.ctx.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                        data.spirit.draw();
+                        data.spirit.animate = true;
+                    }
+
+                    data.frameId = requestAnimationFrame(animate); // 请求下一帧
+                }
+
+                // 启动动画循环
+                data.frameId = requestAnimationFrame(animate);
             }
         };
 
@@ -123,6 +156,6 @@ export default defineComponent({
 </script>
 <style lang='scss' scoped>
 .content {
-    // padding:10px;
+    padding:20px;
 }
 </style>

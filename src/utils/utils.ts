@@ -215,12 +215,12 @@ export function downloadImageByDataURL (name, dataURL)
     document.body.removeChild(a);
 }
 
-export function exportImageForZip (filenamae, imgArr)
+export function exportImageForZip (filenamae, imgArr, type = 'png')
 {
     const zip = new JSZip();
     for (let i = 0; i < imgArr.length; i++)
     {
-        zip.file(`image${i}.png`, imgArr[i].split(',')[1], { base64: true });
+        zip.file(`image${i}.${type}`, imgArr[i].split(',')[1], { base64: true });
     }
     zip.generateAsync({ type: 'blob' }).then(function (content) 
     {
@@ -228,7 +228,7 @@ export function exportImageForZip (filenamae, imgArr)
     });
 }
 
-export function downloadIamgeByUrl (url, name) // 外链下载
+export function downloadIamgeByUrl (url, name, type = 'image/png') // 外链下载
 {
     // 下载图片地址和图片名
     let image = new Image();
@@ -241,7 +241,7 @@ export function downloadIamgeByUrl (url, name) // 外链下载
         canvas.height = image.height;
         const context:any = canvas.getContext('2d');
         context.drawImage(image, 0, 0, image.width, image.height);
-        const dataURL = canvas.toDataURL('image/png');
+        const dataURL = canvas.toDataURL(type);
         const a = document.createElement('a'); 
         const event = new MouseEvent('click'); 
         a.download = name || 'photo';
@@ -361,3 +361,117 @@ export function measureTextHeight (width, height)
 
 export const isObject = (data) => Object.prototype.toString.call(data) === '[object Object]';
 export const isArray = (data) => Object.prototype.toString.call(data) === '[object Array]';
+
+
+export function nearestNeighborCoordZoom (scaleAreaData, scaleRatio)
+{
+    let {
+        minX,
+        maxX,
+        minY,
+        maxY,
+        realmaxX,
+        realminX,
+        realmaxY,
+        realminY,
+        colorMaxtrix,
+        coordMaxtrix
+    } = scaleAreaData;
+    let originGridWidth = (maxX - minX) + 1;
+    let originGridHeight = (maxY - minY) + 1;
+    // let targetWidth = originGridWidth + scaleRatio;
+    // let targetHeight = originGridHeight + scaleRatio;
+    // let scaleX = targetWidth / originGridWidth;
+    // let scaleY = targetHeight / originGridHeight;
+    let scaledPixelMap = [] as any;
+    if (scaleRatio >= 0)
+    {
+        for (let y = 0; y < coordMaxtrix.length; y++)
+        {
+            let newRow = [] as any;
+            for (let x = 0; x < coordMaxtrix[y].length; x++)
+            {
+                let x1 = coordMaxtrix[y][x][0];
+                let y1 = coordMaxtrix[y][x][1];
+                newRow.push([x1, y1]);
+            }
+            // 为当前行添加新列（位于右侧的新点）
+            let lastCoord = coordMaxtrix[y][coordMaxtrix[y].length - 1];
+            for (let i = 1; i <= scaleRatio; i++) 
+            {
+                newRow.push([lastCoord[0] + i, lastCoord[1]]);
+            }
+            scaledPixelMap.push(newRow);
+        }
+        // 添加新行（位于底部的新点）
+        for (let i = 1; i <= scaleRatio; i++) 
+        {
+            let lastRow = scaledPixelMap[scaledPixelMap.length - 1];
+            let newBottomRow = [] as any;
+            lastRow.forEach((coord) => 
+            {
+                newBottomRow.push([coord[0], coord[1] + 1]);
+            });
+            scaledPixelMap.push(newBottomRow);
+        }
+    }
+    else
+    {
+        for (let y = 0; y < coordMaxtrix.length + scaleRatio; y++)
+        {
+            let newRow = [] as any;
+            for (let x = 0; x < coordMaxtrix[y].length + scaleRatio; x++)
+            {
+                let x1 = coordMaxtrix[y][x][0];
+                let y1 = coordMaxtrix[y][x][1];
+                newRow.push([x1, y1]);
+            }
+            scaledPixelMap.push(newRow);
+        }
+    }
+    
+    return scaledPixelMap;
+}
+
+
+export function nearestNeighborColorZoom (scaleAreaData, scaleRatio)
+{
+    let {
+        minX,
+        maxX,
+        minY,
+        maxY,
+        realmaxX,
+        realminX,
+        realmaxY,
+        realminY,
+        colorMaxtrix,
+        coordMaxtrix
+    } = scaleAreaData;
+    let originGridWidth = (maxX - minX) + 1;
+    let originGridHeight = (maxY - minY) + 1;
+    let targetWidth = originGridWidth + scaleRatio;
+    let targetHeight = originGridHeight + scaleRatio;
+    let scaleX = targetWidth / originGridWidth;
+    let scaleY = targetHeight / originGridHeight;
+    let scaledPixelMap = [] as any;
+    for (let i = 0; i < targetHeight; i++) 
+    {
+        scaledPixelMap.push([]);
+        for (let j = 0; j < targetWidth; j++) 
+        {
+            scaledPixelMap[i].push('#00000000');
+        }
+    }
+    for (let y = 0; y < targetHeight; y++)
+    {
+        for (let x = 0; x < targetWidth; x++)
+        {
+            let srcX = Math.floor(x / scaleX);
+            let srcY = Math.floor(y / scaleY);
+
+            scaledPixelMap[y][x] = colorMaxtrix[srcY][srcX];
+        }
+    }
+    return scaledPixelMap;
+}

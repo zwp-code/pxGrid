@@ -5,7 +5,7 @@ import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import LayerMenu from '@/components/menu/LayerMenu.vue';
 import { useEditSpaceStore } from '@/store';
-import { copyText, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, measureTextHeight, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -14,6 +14,8 @@ import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
 import PindouDialog from '@/components/dialog/PindouDialog.vue';
+import gifshot from 'gifshot-plus';
+import GIF from '@dhdbstjr98/gif.js';
 export default defineComponent({
     name:'work',
     components: {
@@ -60,6 +62,7 @@ export default defineComponent({
             isMoving:false,
             isSelecting:false,
             isCopy:false,
+            isScale:false,
             shapeFillColor:'#000000ff',
             brushColor:'#000000ff',
             brushSize:1,
@@ -115,7 +118,7 @@ export default defineComponent({
             
             FrameTimer:null as any,
             maxFrame:12,
-            maxLayer:20,
+            maxLayer:30,
             exportVisible:false,
             exportLoaidng:false,
 
@@ -192,7 +195,11 @@ export default defineComponent({
             isHidePindouMode:false, // 是否隐藏拼豆模式
             pindouBrand:'mard', // 拼豆品牌 色卡
             isScaling:false, // 是否缩放
-            scaleWhitePointPos:[] as any
+            scaleWhitePointPos:[] as any,
+            scaleAreaData:null as any,
+            // scaleMatrixData:[] as any, // 缩放的图像矩阵
+            scaleRatio:0, // 每次拖动递增1
+            emptyLayerData:[] as any
 
             
         });
@@ -291,6 +298,7 @@ export default defineComponent({
             },
             handleSaveProject ()
             {
+                if (data.isScaling) methods.handleCancelScale();
                 // 保存到indexdb
                 data.loading = true;
                 data.isSaveProject = true;
@@ -425,19 +433,19 @@ export default defineComponent({
             handleChangeTool (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 if (index === 6)
                 {
                     // 清空当前选择的图层绘画信息
-                    let layerArr = [] as any;
-                    for (let i = 0; i < data.canvasHeight; i++) 
-                    {
-                        for (let j = 0; j < data.canvasWidth; j++) 
-                        {
-                            layerArr.push([j, i, data.emptyColor]);
-                        }
-                    }
-                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = layerArr;
+                    // data.emptyLayerData = [] as any;
+                    // for (let i = 0; i < data.canvasHeight; i++) 
+                    // {
+                    //     for (let j = 0; j < data.canvasWidth; j++) 
+                    //     {
+                    //         layerArr.push([j, i, data.emptyColor]);
+                    //     }
+                    // }
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = JSON.parse(JSON.stringify(data.emptyLayerData));
                     methods.handleCancelSelect();
                     methods.reDraw();
                     return;
@@ -451,7 +459,7 @@ export default defineComponent({
             handlePindouMode (mode)
             {
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return proxy.$message.warning('请将图层设置显示状态');
                 if (mode === 'preview') 
                 {
@@ -523,6 +531,7 @@ export default defineComponent({
                 
                 methods.computeScale();
                 methods.drawPixelArea();
+                methods.handleInitEmptyLayer();
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 methods.initCanvasRecord('scale');
                 // methods.reDraw();
@@ -566,21 +575,21 @@ export default defineComponent({
                             }
                         ]
                     });
-                    methods.handleFrameImg(data.ctx2);
+                    // methods.handleFrameImg(data.ctx2);
                 }
                 else if (type === 'scale')
                 {
                     data.loading = true;
                     // const worker = new Worker();
                     // 每个帧的图层都要进行比例调整
-                    let layerOriginArr = [] as any;
-                    for (let y = 0; y < data.canvasHeight; y++) 
-                    {
-                        for (let x = 0; x < data.canvasWidth; x++) 
-                        {
-                            layerOriginArr.push([x, y, data.emptyColor]);
-                        }
-                    }
+                    let layerOriginArr = JSON.parse(JSON.stringify(data.emptyLayerData));
+                    // for (let y = 0; y < data.canvasHeight; y++) 
+                    // {
+                    //     for (let x = 0; x < data.canvasWidth; x++) 
+                    //     {
+                    //         layerOriginArr.push([x, y, data.emptyColor]);
+                    //     }
+                    // }
                     data.worker.postMessage({originData:layerOriginArr, type:1, variables:JSON.parse(JSON.stringify(data.drawRecord))});
                     data.worker.onmessage = (event) => 
                     {
@@ -668,13 +677,15 @@ export default defineComponent({
             {
                 // 绘制缩放框
                 if (!data.isScaling) return;
+                // data.scaleMatrixData = [];
                 let rectWidth = 0;
                 let rectHeight = 0;
-                let currentLayerData = methods.getLayerData();
+                let currentLayerData = JSON.parse(JSON.stringify(methods.getLayerData()));
                 let minX = Infinity;
                 let minY = Infinity; 
                 let maxX = -Infinity; 
                 let maxY = -Infinity;
+                // let originArr = [] as any;
                 for (let i = 0; i < currentLayerData.length; i++)
                 {
                     if (currentLayerData[i][2] === data.emptyColor) continue;
@@ -692,7 +703,13 @@ export default defineComponent({
                 if (maxX === -Infinity) maxX = 0;
                 if (maxY === -Infinity) maxY = 0;
                 console.log(minX, minY, maxX, maxY);
-                if (minX + minY + maxX + maxY === 0) return;
+                if (minX + minY + maxX + maxY === 0) 
+                {
+                    data.isScaling = false;
+                    console.log(data.historyRecord);
+                    
+                    return proxy.$message.warning('图像为空');
+                }
                 let realmaxX = (maxX * data.scale) + data.canvasBeginPos.x + data.scale;
                 let realminX = (minX * data.scale) + data.canvasBeginPos.x;
                 let realmaxY = (maxY * data.scale) + data.canvasBeginPos.y + data.scale;
@@ -700,13 +717,60 @@ export default defineComponent({
                 rectWidth = realmaxX - realminX;
                 rectHeight = realmaxY - realminY;
                 console.log(rectWidth, rectHeight);
-                
-                methods.handleDrawScaleFrame(realminX - 5, realminY - 5, realmaxX + 5, realmaxY + 5, rectWidth, rectHeight);
+                data.scaleAreaData = {};
+                data.scaleAreaData = {
+                    minX,
+                    maxX,
+                    minY,
+                    maxY,
+                    realmaxX,
+                    realminX,
+                    realmaxY,
+                    realminY,
+                    originArr:[],
+                    colorMaxtrix:[],
+                    coordMaxtrix:[],
+                    isRight:false,
+                    isLeft:false,
+                    isTop:false,
+                    isBottom:false
 
+                };
+                methods.handleDrawScaleFrame(realminX - 5, realminY - 5, realmaxX + 5, realmaxY + 5);
+                // 获取截取的像素区域数据
+                for (let i = 0; i < currentLayerData.length; i++)
+                {
+                    if (currentLayerData[i][0] <= data.scaleAreaData.maxX && currentLayerData[i][0] >= data.scaleAreaData.minX && currentLayerData[i][1] <= data.scaleAreaData.maxY && currentLayerData[i][1] >= data.scaleAreaData.minY)
+                    {
+                        data.scaleAreaData.originArr.push(currentLayerData[i]);
+                    }
+                }
+                
+                let originGridWidth = (data.scaleAreaData.maxX - data.scaleAreaData.minX) + 1;
+                let originGridHeight = (data.scaleAreaData.maxY - data.scaleAreaData.minY) + 1;
+                
+                for (let y = 0; y < originGridHeight; y++)
+                {
+                    let coordRowArr = [] as any;
+                    let colorRowArr = [] as any;
+                    for (let x = 0; x < originGridWidth; x++)
+                    {
+                        let index = x + y * originGridWidth;
+                        coordRowArr.push([data.scaleAreaData.originArr[index][0], data.scaleAreaData.originArr[index][1]]);
+                        colorRowArr.push([data.scaleAreaData.originArr[index][2]]);
+                    }
+                    data.scaleAreaData.colorMaxtrix.push(colorRowArr);
+                    data.scaleAreaData.coordMaxtrix.push(coordRowArr);
+                }
+                // console.log(data.scaleAreaData);
+                // let scaledCoordMap = nearestNeighborCoordZoom(data.scaleAreaData, data.scaleRatio + 1);
+                // let scaledColorMap = nearestNeighborColorZoom(data.scaleAreaData, data.scaleRatio + 1);
+                // console.log(scaledCoordMap, scaledColorMap);
+                
             },
-            handleDrawScaleFrame (minX, minY, maxX, maxY, rectWidth, rectHeight)
+            handleDrawScaleFrame (minX, minY, maxX, maxY, isRedraw = true)
             {
-                methods.drawPixelArea();
+                if (isRedraw) methods.drawPixelArea();
                 data.ctx2.strokeStyle = 'blue';
                 data.ctx2.fillStyle = 'white';
                 data.ctx2.globalAlpha = 0.9;
@@ -729,27 +793,27 @@ export default defineComponent({
                 data.ctx2.stroke();
 
                 data.scaleWhitePointPos = [
-                    [minX - 4, minY - 4],
-                    [maxX - 4, minY - 4],
-                    [minX - 4, maxY - 4],
+                    // [minX - 4, minY - 4],
+                    // [maxX - 4, minY - 4],
+                    // [minX - 4, maxY - 4],
                     [maxX - 4, maxY - 4]
                 ];
 
                 // 绘制白点
-                data.ctx2.beginPath();
-                data.ctx2.rect(minX - 4, minY - 4, 8, 8);
-                data.ctx2.fill();
-                data.ctx2.stroke();
+                // data.ctx2.beginPath();
+                // data.ctx2.rect(minX - 4, minY - 4, 8, 8);
+                // data.ctx2.fill();
+                // data.ctx2.stroke();
 
                 // data.ctx2.beginPath();
                 // data.ctx2.rect(((maxX - minX) / 2) + minX - 4, minY - 4, 8, 8);
                 // data.ctx2.fill();
                 // data.ctx2.stroke();
 
-                data.ctx2.beginPath();
-                data.ctx2.rect(maxX - 4, minY - 4, 8, 8);
-                data.ctx2.fill();
-                data.ctx2.stroke();
+                // data.ctx2.beginPath();
+                // data.ctx2.rect(maxX - 4, minY - 4, 8, 8);
+                // data.ctx2.fill();
+                // data.ctx2.stroke();
 
                 // data.ctx2.beginPath();
                 // data.ctx2.rect(minX - 4, ((maxY - minY) / 2) + minY - 4, 8, 8);
@@ -766,10 +830,10 @@ export default defineComponent({
                 // data.ctx2.fill();
                 // data.ctx2.stroke();
 
-                data.ctx2.beginPath();
-                data.ctx2.rect(minX - 4, maxY - 4, 8, 8);
-                data.ctx2.fill();
-                data.ctx2.stroke();
+                // data.ctx2.beginPath();
+                // data.ctx2.rect(minX - 4, maxY - 4, 8, 8);
+                // data.ctx2.fill();
+                // data.ctx2.stroke();
 
                 // data.ctx2.beginPath();
                 // data.ctx2.rect(((maxX - minX) / 2) + minX - 4, maxY - 4, 8, 8);
@@ -781,21 +845,41 @@ export default defineComponent({
                 data.ctx2.fill();
                 data.ctx2.stroke();
             },
-            handleCancelScale ()
-            {
-                // 重置回原来的图像
-                methods.handleFinishScale();
-            },
             handleFinishScale ()
             {
+                // 重置回原来的图像
+                let scaledCoordMap = nearestNeighborCoordZoom(data.scaleAreaData, data.scaleRatio);
+                let scaledColorMap = nearestNeighborColorZoom(data.scaleAreaData, data.scaleRatio);
+                if (data.scaleRatio < 0)
+                {
+                    // 清空当前图层
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = JSON.parse(JSON.stringify(data.emptyLayerData));
+                }
+                for (let y = 0; y < scaledCoordMap.length; y++)
+                {
+                    for (let x = 0; x < scaledCoordMap[y].length; x++)
+                    {
+                        methods.addDrawRecord([scaledCoordMap[y][x][0], scaledCoordMap[y][x][1], scaledColorMap[y][x][0]]);
+                    }
+                }
                 data.isScaling = false;
+                data.scaleAreaData = null;
+                data.scaleRatio = 0;
+                methods.handleChangeTool(0);
+                methods.drawPixelArea();
+                methods.reDraw();
+            },
+            handleCancelScale ()
+            {
+                data.isScaling = false;
+                data.scaleAreaData = null;
                 methods.handleChangeTool(0);
                 methods.drawPixelArea();
                 methods.reDraw(false);
             },
             drawTransform (transform)
             {
-                if (data.isScaling && transform !== 'scale') return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling && transform !== 'scale') methods.handleCancelScale();
                 if (data.isScaling && transform === 'scale') return;
                 data.currentDrawTransform = transform;
                 if (transform === 'scale') 
@@ -803,6 +887,7 @@ export default defineComponent({
                     methods.handleChangeTool(9);
                     data.isScaling = true;
                     methods.drawScaleFrame();
+                    return;
                 }
                 let realCoords = [] as any;
                 // let centerX = data.canvasBeginPos.x + data.canvasWidth * data.scale / 2;
@@ -1070,29 +1155,31 @@ export default defineComponent({
                 console.log(data.scale);
                 // data.brushSize = data.scale;
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                methods.drawPixelArea();
-                methods.drawScaleFrame();
-                if (data.pinDouMode) 
-                {
-                    methods.handleDrawPindou(data.ctx1);
-                }
-                else
-                {
-                    methods.reDraw(false);
-                }
+                methods.handleResizeDraw();
             },
             handleResizeCanvas (delta)
             {
                 data.scale += delta;
                 data.scale = Math.max(1, data.scale);
+                methods.handleResizeDraw();
+            },
+            handleResizeDraw ()
+            {
                 methods.drawPixelArea();
-                if (data.pinDouMode) 
+                if (data.isScaling)
                 {
-                    methods.handleDrawPindou(data.ctx1);
+                    methods.handleScaleFrame();
                 }
                 else
                 {
-                    methods.reDraw(false);
+                    if (data.pinDouMode) 
+                    {
+                        methods.handleDrawPindou(data.ctx1);
+                    }
+                    else
+                    {
+                        methods.reDraw(false);
+                    }
                 }
             },
             startDrawing () 
@@ -1192,7 +1279,7 @@ export default defineComponent({
                         {
                             return proxy.$message.warning('请先取消选中区域');
                         }
-                        if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                        if (data.isScaling) methods.handleCancelScale();
                         // 绘制形状
                         data.isDrawShape = true;
                         let gridX = (col * data.scale) + data.canvasBeginPos.x;
@@ -1268,7 +1355,7 @@ export default defineComponent({
                     }
                     else if (data.currentTool === 8 && data.selectType === 'select')
                     {
-                        if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                        if (data.isScaling) methods.handleCancelScale();
                         let currentLayerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex];
                         if (!currentLayerData.isRender) return;
                         if (data.selectData.selectLayerId !== currentLayerData.layerId)
@@ -1342,6 +1429,32 @@ export default defineComponent({
                         }))));
                         const targetColor = data.ctx1.getImageData(event.offsetX, event.offsetY, 1, 1).data;                       
                         methods.fillChunkSelect(col, row, rgbaToHex(targetColor));
+                    }
+                    else if (data.currentTool === 9 && data.isScaling)
+                    {
+                        if (!data.scaleAreaData) return;
+                        data.lastX = event.offsetX;
+                        data.lastY = event.offsetY;
+                        data.isScale = true;
+                        // if (Math.abs(event.offsetX - data.scaleWhitePointPos[0][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[0][1]) <= 10) 
+                        // {
+                        //     // 左上
+                        // }
+                        // else if (Math.abs(event.offsetX - data.scaleWhitePointPos[1][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[1][1]) <= 10) 
+                        // {
+                        //     // 右上
+                        // }
+                        // else if (Math.abs(event.offsetX - data.scaleWhitePointPos[2][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[2][1]) <= 10)
+                        // {
+                        //     // 左下
+                        // }
+                        // else if (Math.abs(event.offsetX - data.scaleWhitePointPos[3][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[3][1]) <= 10) 
+                        // {
+                        //     // 右下
+                        //     data.scaleAreaData.isRight = true;
+                        //     data.scaleAreaData.isBottom = true;
+                            
+                        // }
                     }
                 }
             },
@@ -1600,10 +1713,14 @@ export default defineComponent({
                 // 更改鼠标样式
                 if (!event) return;
                 if (!data.scaleWhitePointPos.length) return;
-                if (Math.abs(event.offsetX - data.scaleWhitePointPos[0][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[0][1]) <= 10) data.canvas.style.cursor = 'nw-resize';
-                else if (Math.abs(event.offsetX - data.scaleWhitePointPos[1][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[1][1]) <= 10) data.canvas.style.cursor = 'ne-resize';
-                else if (Math.abs(event.offsetX - data.scaleWhitePointPos[2][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[2][1]) <= 10) data.canvas.style.cursor = 'sw-resize';
-                else if (Math.abs(event.offsetX - data.scaleWhitePointPos[3][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[3][1]) <= 10) data.canvas.style.cursor = 'se-resize';
+                // if (Math.abs(event.offsetX - data.scaleWhitePointPos[0][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[0][1]) <= 10) data.canvas.style.cursor = 'nw-resize';
+                // else if (Math.abs(event.offsetX - data.scaleWhitePointPos[1][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[1][1]) <= 10) data.canvas.style.cursor = 'ne-resize';
+                // else if (Math.abs(event.offsetX - data.scaleWhitePointPos[2][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[2][1]) <= 10) data.canvas.style.cursor = 'sw-resize';
+                if (Math.abs(event.offsetX - data.scaleWhitePointPos[0][0]) <= 10 && Math.abs(event.offsetY - data.scaleWhitePointPos[0][1]) <= 10) 
+                {
+                    data.canvas.style.cursor = 'se-resize';
+                    data.scaleAreaData.cursor = 'se-resize';
+                }
             },
             draw (event) 
             {
@@ -1793,7 +1910,7 @@ export default defineComponent({
                                 methods.reDraw(false);
                                 for (let i = 0; i < arr.length; i++)
                                 {
-                                    if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
+                                    if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight || arr[i][0] < 0 || arr[i][1] < 0) return;
                                     let gridX = (arr[i][0] * data.scale) + data.canvasBeginPos.x;
                                     let gridY = (arr[i][1] * data.scale) + data.canvasBeginPos.y;
                                     data.ctx1.fillStyle = data.brushColor;
@@ -1823,7 +1940,7 @@ export default defineComponent({
                                 methods.reDraw(false);
                                 for (let i = 0; i < arr.length; i++)
                                 {
-                                    if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight) return;
+                                    if (arr[i][0] > data.canvasWidth || arr[i][1] > data.canvasHeight || arr[i][0] < 0 || arr[i][1] < 0) return;
                                     let gridX = (arr[i][0] * data.scale) + data.canvasBeginPos.x;
                                     let gridY = (arr[i][1] * data.scale) + data.canvasBeginPos.y;
                                     data.ctx1.fillStyle = data.brushColor;
@@ -2107,6 +2224,50 @@ export default defineComponent({
                             // }
                         }
                     }
+                    if (data.isScale)
+                    {
+                        data.canvas.style.cursor = data.scaleAreaData.cursor;
+                        const dx = event.offsetX - data.lastX;
+                        const dy = event.offsetY - data.lastY;
+                        // console.log(dx, dy);
+                        
+                        if ((dx >= data.scale - 5 && dy >= data.scale - 5) || (dx <= -data.scale + 5 && dy <= -data.scale + 5))
+                        {
+                            if (dx >= data.scale - 5 || dy >= data.scale - 5) data.scaleRatio = data.scaleRatio += 1;
+                            else if (dx <= -data.scale + 5 || dy <= -data.scale + 5) data.scaleRatio = data.scaleRatio -= 1;
+                            data.lastX = event.offsetX;
+                            data.lastY = event.offsetY;
+                            if (data.scaleAreaData.coordMaxtrix.length + data.scaleRatio === 0) data.scaleRatio += 1;
+                            console.log(data.scaleRatio);
+                            
+                            let scaledCoordMap = nearestNeighborCoordZoom(data.scaleAreaData, data.scaleRatio);
+                            let scaledColorMap = nearestNeighborColorZoom(data.scaleAreaData, data.scaleRatio);
+                            console.log(scaledCoordMap, scaledColorMap);
+                            data.scaleAreaData.scaledCoordMap = scaledCoordMap;
+                            data.scaleAreaData.scaledColorMap = scaledColorMap;
+                            methods.reDraw(false, false, data.canvasBeginPos, false);
+                            for (let y = 0; y < scaledCoordMap.length; y++)
+                            {
+                                for (let x = 0; x < scaledCoordMap[y].length; x++)
+                                {
+                                    let gridX = (scaledCoordMap[y][x][0] * data.scale) + data.canvasBeginPos.x;
+                                    let gridY = (scaledCoordMap[y][x][1] * data.scale) + data.canvasBeginPos.y;
+                                    data.ctx1.fillStyle = scaledColorMap[y][x][0];
+                                    data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                                    // scaledCoordMap[y][x][2] = scaledColorMap[y][x][0];
+                                    // methods.addDrawRecord([scaledCoordMap[y][x][0], scaledCoordMap[y][x][1], scaledColorMap[y][x][0]]);
+                                }
+                            }
+                            let realmaxX = ((data.scaleAreaData.maxX + data.scaleRatio) * data.scale) + data.canvasBeginPos.x + data.scale;
+                            let realminX = (data.scaleAreaData.minX * data.scale) + data.canvasBeginPos.x;
+                            let realmaxY = ((data.scaleAreaData.maxY + data.scaleRatio) * data.scale) + data.canvasBeginPos.y + data.scale;
+                            let realminY = (data.scaleAreaData.minY * data.scale) + data.canvasBeginPos.y;
+                            methods.drawPixelArea();
+                            console.log(data.scaleRatio, data.scaleAreaData, realmaxX, realmaxY);
+                            methods.handleDrawScaleFrame(realminX - 5, realminY - 5, realmaxX + 5, realmaxY + 5);
+                        }
+                        // console.log(data.scaleRatio);
+                    }
                     
                 }
                 else
@@ -2200,17 +2361,53 @@ export default defineComponent({
                     let centerY = beginY + data.scale * data.canvasHeight / 2;
                     
                     methods.drawPixelArea(beginX, beginY);
-                    if (data.pinDouMode) 
+                    if (data.isScaling)
                     {
-                        methods.handleDrawPindou(data.ctx1, { x:beginX, y:beginY, centerX, centerY });
+                        methods.handleScaleFrame({ x:beginX, y:beginY, centerX, centerY });
                     }
                     else
                     {
-                        methods.reDraw(false, false, { x:beginX, y:beginY, centerX, centerY });
+                        if (data.pinDouMode) 
+                        {
+                            methods.handleDrawPindou(data.ctx1, { x:beginX, y:beginY, centerX, centerY });
+                        }
+                        else
+                        {
+                            methods.reDraw(false, false, { x:beginX, y:beginY, centerX, centerY });
+                        }
                     }
                     // methods.reDrawSelectData({ x:beginX, y:beginY });
                 }
                 
+            },
+            handleScaleFrame (canvasBeginPos = data.canvasBeginPos)
+            {
+                if (data.isScaling)
+                {
+                    if (data.scaleAreaData.scaledCoordMap)
+                    {
+                        methods.reDraw(false, false, canvasBeginPos, false);
+                        for (let y = 0; y < data.scaleAreaData.scaledCoordMap.length; y++)
+                        {
+                            for (let x = 0; x < data.scaleAreaData.scaledCoordMap[y].length; x++)
+                            {
+                                let gridX = (data.scaleAreaData.scaledCoordMap[y][x][0] * data.scale) + canvasBeginPos.x;
+                                let gridY = (data.scaleAreaData.scaledCoordMap[y][x][1] * data.scale) + canvasBeginPos.y;
+                                data.ctx1.fillStyle = data.scaleAreaData.scaledColorMap[y][x][0];
+                                data.ctx1.fillRect(gridX, gridY, data.scale, data.scale);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        methods.reDraw(false, false, canvasBeginPos);
+                    }
+                    let realmaxX = ((data.scaleAreaData.maxX + data.scaleRatio) * data.scale) + canvasBeginPos.x + data.scale;
+                    let realminX = (data.scaleAreaData.minX * data.scale) + canvasBeginPos.x;
+                    let realmaxY = ((data.scaleAreaData.maxY + data.scaleRatio) * data.scale) + canvasBeginPos.y + data.scale;
+                    let realminY = (data.scaleAreaData.minY * data.scale) + canvasBeginPos.y;
+                    methods.handleDrawScaleFrame(realminX - 5, realminY - 5, realmaxX + 5, realmaxY + 5, false);
+                }
             },
             addDrawList (col, row, brushColor)
             {
@@ -2578,7 +2775,7 @@ export default defineComponent({
                 // let beginY = data.drawAreaList[0][1];
                 // const imageData = ctx.getImageData(beginX, beginY, data.canvasWidth * data.scale, data.canvasHeight * data.scale);
                 // const dataURL = generateIamge(data.canvasWidth * data.scale, data.canvasHeight * data.scale, imageData);
-                // console.log('执行了');
+                console.log('执行了');
                 
                 let scale = 5;
                 let count = 0;
@@ -2902,6 +3099,8 @@ export default defineComponent({
                     data.FrameTimer && clearTimeout(data.FrameTimer);
                     data.FrameTimer = setTimeout(() => 
                     {
+                        console.log('这里');
+                        
                         if (count > 0) methods.handleFrameImg(data.ctx1, isAddHistory);
                         else methods.handleFrameImg(data.ctx2, isAddHistory);
                     }, 300);
@@ -2914,6 +3113,7 @@ export default defineComponent({
                 data.isDrawing = false;
                 data.drawList = [];
                 data.isErasering = false;
+                data.isScale = false;
                 if (data.isDragging)
                 {
                     data.isDragging = false;
@@ -3125,7 +3325,7 @@ export default defineComponent({
                     data.isDrawShape = false;
                 }
             },
-            addCursorClass (event)
+            addCursorClass (event = null)
             {
                 if (data.currentTool === 0) data.canvas.classList.add('brush-cursor');
                 else if (data.currentTool === 1) data.canvas.classList.add('eraser-cursor');
@@ -3217,17 +3417,10 @@ export default defineComponent({
             handleAddLayer ()
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 // 新建图层
                 if (data.drawRecord[data.currentFrameIndex].layer.length > data.maxLayer) return proxy.$message.warning('图层数量达到上限');
-                let layerArr = [] as any;
-                for (let i = 0; i < data.canvasHeight; i++) 
-                {
-                    for (let j = 0; j < data.canvasWidth; j++) 
-                    {
-                        layerArr.push([j, i, data.emptyColor]);
-                    }
-                }
+                let layerArr = JSON.parse(JSON.stringify(data.emptyLayerData));
                 let length = data.drawRecord[data.currentFrameIndex].layer.length;
                 let obj = {
                     layerId:uuid.v4(),
@@ -3243,7 +3436,7 @@ export default defineComponent({
             handleLayerMerge ()
             {
                 // 合并图层
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 if (data.selectLayerList.length > 1)
                 {
@@ -3276,7 +3469,7 @@ export default defineComponent({
             {
                 // 切换图层
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 console.log(index, data.isShift);
                 
                 if (data.isShift)
@@ -3297,7 +3490,7 @@ export default defineComponent({
             handleChangeLayerVisible (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 if (index < 0)
                 {
                     for (let i = 0; i < data.drawRecord[data.currentFrameIndex].layer.length; i++)
@@ -3317,9 +3510,22 @@ export default defineComponent({
             handleDeleteLayer (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                if (data.isScaling) methods.handleCancelScale();
+                if (data.currentLayerIndex !== index)
+                {
+                    // if (data.isScaling) methods.handleCancelScale();
+                    if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                }
+                if (data.currentLayerIndex === index && data.selectData.selectLayerId === data.currentLayerIndex) methods.handleCancelSelect();
+                // if (data.currentLayerIndex === index && data.isScaling) methods.handleCancelScale();
                 data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
-                data.currentLayerIndex = data.drawRecord[data.currentFrameIndex].layer.length - 1;
+                // if (data.selectData.selectList.length) methods.handleCancelSelect();
+                // data.drawRecord[data.currentFrameIndex].layer.splice(index, 1);
+                let nextIndex = index - 1;
+                if (nextIndex < 0) nextIndex = 0;
+                data.currentLayerIndex = nextIndex;
+                data.selectLayerList = [data.currentLayerIndex];
                 methods.reDraw();
                 // methods.handleAddHistory();
                 
@@ -3327,7 +3533,7 @@ export default defineComponent({
             handleCopyLayer (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 let copyData = JSON.parse(JSON.stringify(data.drawRecord[data.currentFrameIndex].layer[index]));
                 let length = data.drawRecord[data.currentFrameIndex].layer.length;
                 copyData.layerId = uuid.v4();
@@ -3364,6 +3570,7 @@ export default defineComponent({
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.canvasWidth, data.canvasHeight);
+                if (!data.drawRecord[frameIndex].layer[layerIndex].isRender) return;
                 console.log(imageData);
                 // const worker = new Worker();
                 // worker.postMessage({type:2, variables:JSON.parse(JSON.stringify(imageData)), width:data.canvasWidth, height:data.canvasHeight});
@@ -3408,6 +3615,8 @@ export default defineComponent({
             handleImportLayer (layerIndex = data.currentLayerIndex)
             {
                 console.log(layerIndex);
+                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                if (data.isScaling) methods.handleCancelScale();
                 // 导入图片资源，需要保证图片大小与画布大小一致
                 const input:any = document.createElement('input');
                 input.type = 'file';
@@ -3514,15 +3723,8 @@ export default defineComponent({
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧数量达到上限');
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
-                let layerArr = [] as any;
-                for (let i = 0; i < data.canvasHeight; i++) 
-                {
-                    for (let j = 0; j < data.canvasWidth; j++) 
-                    {
-                        layerArr.push([j, i, data.emptyColor]);
-                    }
-                }
+                if (data.isScaling) methods.handleCancelScale();
+                let layerArr = JSON.parse(JSON.stringify(data.emptyLayerData));
                 let obj = {
                     frameId:uuid.v1(),
                     currentFrameImg:null as any,
@@ -3538,14 +3740,14 @@ export default defineComponent({
                 };
                 data.drawRecord.push(obj);
                 methods.handleChangeFrame(data.drawRecord.length - 1);
-                methods.handleFrameImg(data.ctx2);
+                // methods.handleFrameImg(data.ctx2);
             },
             handleChangeFrame (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 // data.selectData.selectList = [];
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 data.currentFrameIndex = index;
                 // data.currentLayerIndex = 0;
                 methods.handleChangeLayer(0);
@@ -3556,7 +3758,7 @@ export default defineComponent({
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 if (type === 'copyData')
                 {
                     editSpaceStore.frameCopyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
@@ -3593,7 +3795,10 @@ export default defineComponent({
             handleDeleteFrame (index)
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                // if (data.isScaling) methods.handleCancelScale();
+                if (data.selectData.selectList.length) methods.handleCancelSelect(); 
+                if (data.isScaling) methods.handleCancelScale();
                 data.drawRecord.splice(index, 1);
                 methods.handleChangeFrame(index - 1);
                 methods.handleAddHistory();
@@ -3819,7 +4024,6 @@ export default defineComponent({
                 else if (type === 4)
                 {
                     let canavsUrlData = [] as any;  // 合并后的image数据
-                    // 精灵图区分图层，每一个帧里的图层会单独导出为精灵图
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
                         let currentFrameLayerLength = data.drawRecord[i].layer.length; // 当前帧的图层长度
@@ -3827,10 +4031,109 @@ export default defineComponent({
                         {
                             methods.handleExportLayer(i, j, false, scale);
                             canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
+                            
                         }
                     }
+                    console.log(canavsUrlData);
                     
                     exportImageForZip(`${filename}`, canavsUrlData);
+                }
+                else if (type === 5)
+                {
+                    if (!gifshot.isSupported()) return proxy.$message.warning('当前浏览器不支持GIF导出');
+                    let canavsUrlData = [] as any;
+                    let gif = new GIF({
+                        width:data.canvasWidth * scale,
+                        height:data.canvasHeight * scale,
+                        workers: 2,
+                        quality: 0,
+                        background: 'rgba(0,0,0,0)',
+                        transparent:'#00000000'
+                    });
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        methods.handleExportFrame(i, false, scale);
+                        canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
+                    }
+                    for (let i = 0; i < canavsUrlData.length; i++)
+                    {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = canavsUrlData[i];
+                        imgElement.width = data.canvasWidth * scale;
+                        imgElement.height = data.canvasHeight * scale;
+                        gif.addFrame(imgElement, {delay: 200});
+                    }
+                    gif.on('finished', function (blob) 
+                    {
+                        downloadImageByDataURL(filename, URL.createObjectURL(blob));
+                        gif.abort();
+                    });
+                    gif.render();
+                }
+                else if (type === 6)
+                {
+                    let maxLayer = 0; // 最大图层
+                    let canavsData = [] as any; // 每个帧图层的image数据
+                    let canavsUrlData = [] as any;  // 合并后的image数据
+                    // 精灵图区分图层，每一个帧里的图层会单独导出为精灵图
+                    let count = 0;
+                    for (let i = 0; i < data.drawRecord.length; i++)
+                    {
+                        canavsData[i] = [];
+                        let currentFrameLayerLength = data.drawRecord[i].layer.length; // 当前帧的图层长度
+                        if (maxLayer < currentFrameLayerLength)
+                        {
+                            maxLayer = currentFrameLayerLength;
+                        }
+                        let count = 0;
+                        for (let j = currentFrameLayerLength - 1; j >= 0; j--)
+                        {
+                            methods.handleExportLayer(i, j, false, scale);
+                            canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth * scale, data.canvasHeight * scale);
+                            count++;
+                        }
+                    }
+                    for (let l = 0; l < maxLayer; l++)
+                    {
+                        let gif = new GIF({
+                            width:data.canvasWidth * scale,
+                            height:data.canvasHeight * scale,
+                            workers: 2,
+                            quality: 0,
+                            background: 'rgba(0,0,0,0)',
+                            transparent:'#00000000'
+                        });
+                        for (let i = 0; i < canavsData.length; i++)
+                        {
+                            if (canavsData[i][l])
+                            {
+                                let newCanvas = document.createElement('canvas');
+                                newCanvas.width = data.canvasWidth * scale;
+                                newCanvas.height = data.canvasHeight * scale;
+                                let newCtx:any = newCanvas.getContext('2d');
+                                newCtx.putImageData(canavsData[i][l], 0, 0);
+                                gif.addFrame(newCanvas, {delay: 200});
+                                // bigCtx.drawImage(newCanvas, i * data.canvasWidth * scale, 0);
+                                continue;
+                            }
+                        }
+                        gif.on('finished', function (blob) 
+                        {
+                            // downloadImageByDataURL(filename, URL.createObjectURL(blob));
+                            blobToBase64(blob).then((res) => canavsUrlData.push(res));
+                            count++;
+                            gif.abort();
+                        });
+                        gif.render();
+                    }
+                    let timer = setInterval(() => 
+                    {
+                        if (count === maxLayer) 
+                        {
+                            exportImageForZip(`${filename}`, canavsUrlData, 'gif');
+                            clearInterval(timer); 
+                        }
+                    }, 100);
                 }
                 data.exportLoaidng = false;
             },
@@ -3865,7 +4168,7 @@ export default defineComponent({
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 // 撤销操作
                 data.currentHistoryIndex = data.currentHistoryIndex - 1;
                 if (data.currentHistoryIndex < 0) proxy.$message.warning('暂无更多记录');
@@ -3882,7 +4185,7 @@ export default defineComponent({
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 // 恢复操作
                 data.currentHistoryIndex = data.currentHistoryIndex + 1;
                 if (data.currentHistoryIndex > data.historyRecord.length - 1) proxy.$message.warning('暂无更多记录');
@@ -3901,7 +4204,7 @@ export default defineComponent({
             handleOpenReplaceColorDialog ()
             {
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 proxy.$refs.ReplaceColorDialog.handleOpen();
                 methods.handleCancelKeyboardEvent();
             },
@@ -4249,15 +4552,22 @@ export default defineComponent({
                 data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 // methods.computeScale();
                 methods.drawPixelArea();
-                methods.drawScaleFrame();
-                if (data.pinDouMode)
+                if (data.isScaling)
                 {
-                    methods.handleDrawPindou(data.ctx1);
+                    methods.handleScaleFrame();
                 }
                 else
                 {
-                    methods.reDraw(false, false);
+                    if (data.pinDouMode)
+                    {
+                        methods.handleDrawPindou(data.ctx1);
+                    }
+                    else
+                    {
+                        methods.reDraw(false, false);
+                    }
                 }
+                
             },
             handleResizeWindow ()
             {
@@ -4302,7 +4612,7 @@ export default defineComponent({
             },
             handleFilter (value)
             {
-                if (data.isScaling) return proxy.$message.warning('请先取消缩放');
+                if (data.isScaling) methods.handleCancelScale();
                 useFilterHooks.handleFilter(value, data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData, data.selectData, data.canvasWidth, data.canvasHeight, methods.reDraw);
             },
             handleExpand ()
@@ -4428,7 +4738,20 @@ export default defineComponent({
                 data.isHidePindouMode = false;
                 data.isScaling = false;
                 data.scaleWhitePointPos = [];
+                data.scaleAreaData = null;
+                data.scaleRatio = 0;
                 methods.handleCancelSelect();
+            },
+            handleInitEmptyLayer ()
+            {
+                data.emptyLayerData = [];
+                for (let i = 0; i < data.canvasHeight; i++) 
+                {
+                    for (let j = 0; j < data.canvasWidth; j++) 
+                    {
+                        data.emptyLayerData.push([j, i, data.emptyColor]);
+                    }
+                }
             },
             handleReadProjectData ()
             {
@@ -4474,6 +4797,7 @@ export default defineComponent({
                         console.log(data.canvasBeginPos, data.scale);
                         
                         methods.drawPixelArea();
+                        methods.handleInitEmptyLayer();
                         methods.startDrawing();
                         methods.addKeyBoardEvent();
                         methods.handleResizeWindow();
@@ -4563,8 +4887,9 @@ export default defineComponent({
 
         watch(() => data.isShowReferenceLine, (newValue, oldValue) => 
         {
-            methods.drawPixelArea();
-            methods.reDraw(false);
+            methods.handleResizeDraw();
+            // methods.drawPixelArea();
+            // methods.reDraw(false);
         });
 
         watch(() => data.pinDouMode, (newValue, oldValue) => 

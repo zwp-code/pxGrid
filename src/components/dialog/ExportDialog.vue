@@ -18,6 +18,10 @@
                     <el-checkbox v-model="checked3" label="单张图（不区分图层）" @change="handleChange($evnet, 3)"/>
                     <el-checkbox v-model="checked4" label="单张图（区分图层）" @change="handleChange($evnet, 4)"/>
                 </div>
+                <div>
+                    <el-checkbox v-model="checked5" label="GIF动图（不区分图层）" @change="handleChange($evnet, 5)"/>
+                    <el-checkbox v-model="checked6" label="GIF动图（区分图层）" @change="handleChange($evnet, 6)"/>
+                </div>
                 <div class="flex-start" style="gap:10px">
                     <p>倍图</p>
                     <div>
@@ -75,13 +79,15 @@ export default defineComponent({
             checked2:false,
             checked3:false,
             checked4:false,
+            checked5:false,
+            checked6:false,
             type:1,
             radio:1
         });
         let methods = {
             clearStatus ()
             {
-                for (let i = 0; i < 4; i++)
+                for (let i = 0; i < 6; i++)
                 {
                     data[`checked${i + 1}`] = false;
                 }
