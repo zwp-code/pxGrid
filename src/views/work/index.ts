@@ -202,7 +202,7 @@ export default defineComponent({
             emptyLayerData:[] as any, // 空模板
             exportStyleOptions:{
                 isShowGrid:false,
-                gridBackgroundColor:'#00000000'
+                gridBackgroundColor:'#ffffffff'
             }
 
             
@@ -2922,6 +2922,7 @@ export default defineComponent({
                 }
                 console.log(imageData);
                 let fillPixel = new Map();
+                console.log(fillPixel);
                 
                 for (let i = imageData.length - 1; i >= 0; i--)
                 {
@@ -2932,10 +2933,9 @@ export default defineComponent({
                             for (let x = 0; x < data.canvasWidth; x++) 
                             {
                                 let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
-                                
                                 if (color === data.emptyColor)
                                 {
-                                    if (!fillPixel.has(`${x}${y}`))
+                                    if (!fillPixel.has(`${x}-${y}`))
                                     {
                                         bigCtx.fillStyle = 'black';
                                         bigCtx.beginPath();
@@ -2945,10 +2945,10 @@ export default defineComponent({
                                     
                                 }
                                 else
-                                {
-                                    if (!fillPixel.has(`${x}${y}`))
+                                {   
+                                    if (!fillPixel.has(`${x}-${y}`))
                                     {
-                                        fillPixel.set(`${x}${y}`, true);
+                                        fillPixel.set(`${x}-${y}`, true);
                                     }
                                     bigCtx.fillStyle = color;
                                     bigCtx.fillRect(x * scale + ruler, y * scale + ruler, scale, scale);

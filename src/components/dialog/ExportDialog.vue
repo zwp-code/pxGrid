@@ -95,7 +95,7 @@ export default defineComponent({
             radio:1,
             options:{
                 isShowGrid:false,
-                gridBackgroundColor:'#00000000'
+                gridBackgroundColor:'#ffffffff'
             }
             
         });

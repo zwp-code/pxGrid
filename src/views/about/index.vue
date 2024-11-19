@@ -35,7 +35,7 @@
                             <el-avatar 
                             :src="item.avatar || require('@/assets/boy.png')" 
                             :size="30"/>
-                            {{ item.name }}(${{item.amount}})
+                            {{ item.name }}(￥{{item.amount}})
                         </el-link>
                     </div>
                 </div>

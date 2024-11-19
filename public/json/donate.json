@@ -40,5 +40,12 @@
         "avatar":null,
         "link":null,
         "amount":10
+    },
+    {
+        "id":7,
+        "name":"呆喵是只橘白",
+        "avatar":"https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo316ninsl7ji6g5o24is10bkp2045f56g?imageView2/2/w/540/format/webp|imageMogr2/strip2",
+        "link":"https://www.xiaohongshu.com/user/profile/60449702000000000101d322?channelType=web_engagement_notification_page&channelTabId=connections&xsec_token=&xsec_source=pc_notice",
+        "amount":50
     }
 ]
