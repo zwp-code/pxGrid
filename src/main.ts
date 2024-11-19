@@ -12,7 +12,6 @@ import { componentIcon } from './utils/element-plus';
 import { createPinia } from 'pinia';
 import i18n from '@/i18n';
 import router from './router';
-
 const pinia = createPinia();
 
 

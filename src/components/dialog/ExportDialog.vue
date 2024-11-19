@@ -11,21 +11,21 @@
             </div>
             <template v-if="!isExportProject">
                 <div>
-                    <el-checkbox v-model="checked1" label="精灵图（不区分图层）" @change="handleChange($evnet, 1)"/>
-                    <el-checkbox v-model="checked2" label="精灵图（区分图层）" @change="handleChange($evnet, 2)"/>
+                    <el-checkbox v-model="checked1" label="精灵图（不区分图层）" :disabled="options.isShowGrid" @change="handleChange($evnet, 1)"/>
+                    <el-checkbox v-model="checked2" label="精灵图（区分图层）" :disabled="options.isShowGrid" @change="handleChange($evnet, 2)"/>
                 </div>
                 <div>
                     <el-checkbox v-model="checked3" label="单张图（不区分图层）" @change="handleChange($evnet, 3)"/>
                     <el-checkbox v-model="checked4" label="单张图（区分图层）" @change="handleChange($evnet, 4)"/>
                 </div>
                 <div>
-                    <el-checkbox v-model="checked5" label="GIF动图（不区分图层）" @change="handleChange($evnet, 5)"/>
-                    <el-checkbox v-model="checked6" label="GIF动图（区分图层）" @change="handleChange($evnet, 6)"/>
+                    <el-checkbox v-model="checked5" label="GIF动图（不区分图层）" :disabled="options.isShowGrid" @change="handleChange($evnet, 5)"/>
+                    <el-checkbox v-model="checked6" label="GIF动图（区分图层）" :disabled="options.isShowGrid" @change="handleChange($evnet, 6)"/>
                 </div>
                 <div class="flex-start" style="gap:10px">
                     <p>倍图</p>
                     <div>
-                        <el-radio-group v-model="radio" :disabled="isShowGrid">
+                        <el-radio-group v-model="radio" :disabled="options.isShowGrid">
                             <el-radio :value="1">x1</el-radio>
                             <el-radio :value="2">x2</el-radio>
                             <el-radio :value="3">x3</el-radio>
@@ -36,8 +36,12 @@
                 </div>
                 <div class="flex-start" style="gap:10px">
                     <p>样式</p>
-                    <div>
-                        <el-checkbox v-model="isShowGrid" label="导出网格图" @change="handleChangeGrid"/>
+                    <div class="flex-start" style="gap:10px">
+                        <el-checkbox v-model="options.isShowGrid" label="网格图" @change="handleChangeGrid"/>
+                        <div class="flex-start" style="gap:10px;height: 32px;" v-if="options.isShowGrid">
+                            <el-color-picker v-model="options.gridBackgroundColor" show-alpha size="small"/>
+                            <span style="line-height:1;">网格背景</span>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -89,16 +93,20 @@ export default defineComponent({
             checked6:false,
             type:1,
             radio:1,
-            isShowGrid:false
+            options:{
+                isShowGrid:false,
+                gridBackgroundColor:'#00000000'
+            }
+            
         });
         let methods = {
             handleChangeGrid ()
             {
-                if (data.isShowGrid)
+                if (data.options.isShowGrid)
                 {
                     if ([1, 2, 5, 6].includes(data.type)) 
                     {
-                        data.isShowGrid = false;
+                        data.options.isShowGrid = false;
                         return proxy.$message.warning('网格图仅支持导出单张图');
                     }
                 }
@@ -125,9 +133,7 @@ export default defineComponent({
             handleConfirm ()
             {
                 if (data.fileName.trim() === '') return proxy.$message.warning('请输入文件名称');
-                context.emit('export', data.type, data.fileName, data.radio, false, {
-                    isShowGrid:data.isShowGrid
-                });
+                context.emit('export', data.type, data.fileName, data.radio, false, data.options);
             }
         };
 

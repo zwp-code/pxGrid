@@ -42,7 +42,7 @@
             </div>
         </div>
         
-        <!-- <HomeFooter></HomeFooter> -->
+        <HomeFooter></HomeFooter>
     </div>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
     <el-main class="routerview-right scrollbar" :class="{'relative':!editSpaceStore.isFullWork}">
-        <el-backtop :right="40" :bottom="40" target=".routerview-right .scrollbar"/>
+        <!-- <el-backtop :right="40" :bottom="40" target=".routerview-right .scrollbar"/> -->
         <router-view v-slot="{ Component }">
             <keep-alive :include="['about', 'work']">
                 <component :is="Component"></component>

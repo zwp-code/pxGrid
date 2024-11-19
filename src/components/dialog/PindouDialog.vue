@@ -44,9 +44,15 @@
                 </div>
                 <div class="item flex-start" style="gap:15px" v-if="selectedObj || isDrawMode">
                     <p>{{ isDrawMode ? '拼豆色卡' : '替换颜色'}}</p>
-                    <el-select v-model="replaceObj" value-key="name" filterable
-                    @change="handleChangeColor" placeholder="请选择" style="width:200px">
-                        <el-option
+                    <el-select-v2 
+                    v-model="replaceObj" 
+                    value-key="name"
+                    filterable
+                    @change="handleChangeColor"
+                    :options="pindouColorList" 
+                    placeholder="请选择" 
+                    style="width:200px">
+                        <!-- <el-option
                             v-for="(item, index) in pindouColorList"
                             :key="index"
                             :label="item.name"
@@ -57,8 +63,16 @@
                                     style="border-radius:5px;box-shadow: 0px 0px 4px 2px var(--el-shadow-color);" 
                                     :style="{backgroundColor:`#${item.color}ff`}" class="full-layout"></span>
                                 </div>
-                        </el-option>
-                    </el-select>
+                        </el-option> -->
+                        <template #default="{ item }">
+                            <span style="float: left">{{ item.label }}</span>
+                            <div style="float: right;width: 40px;padding:5px" class="flex-center full-h">
+                                <span 
+                                style="border-radius:5px;box-shadow: 0px 0px 4px 2px var(--el-shadow-color);" 
+                                :style="{backgroundColor:`#${item.value.color}ff`}" class="full-layout"></span>
+                            </div>
+                        </template>
+                    </el-select-v2>
                     <div class="flex-center color-item" v-if="replaceObj" style="width:40px; height:30px"
                     :style="{backgroundColor:'#' + replaceObj.color}">
                     </div>
@@ -132,44 +146,7 @@ export default defineComponent({
         let data = reactive({
             dialogVisible:false,
             pindouBrand:'mard',
-            brandOptions:[
-                {
-                    label:'Mard 融合豆',
-                    value:'mard'
-                },
-                {
-                    label:'Hama',
-                    value:'hama'
-                },
-                {
-                    label:'Perler 5mm',
-                    value:'perler'
-                },
-                {
-                    label:'Perler mini 2.6mm',
-                    value:'perler-mini'
-                },
-                {
-                    label:'Nabbi',
-                    value:'nabbi'
-                },
-                {
-                    label:'Artkal S 5mm',
-                    value:'artkal-s'
-                },
-                {
-                    label:'Artkal R soft 5mm',
-                    value:'artkal-r'
-                },
-                {
-                    label:'Artkal C 2.6mm',
-                    value:'artkal-c'
-                },
-                {
-                    label:'Artkal A soft 2.6mm',
-                    value:'artkal-a'
-                }
-            ],
+            brandOptions:[],
             // currentSelectPindou:null as any,
             colorStatList:null as any,
             colorTotal:0,
@@ -233,9 +210,8 @@ export default defineComponent({
             {
                 data.dialogVisible = true;
                 methods.updateData();
-                data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
-                console.log(data.pindouColorList);
-                
+                // data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                // console.log(data.pindouColorList);
                 if (value === 'draw') return data.isDrawMode = true;
                 data.isDrawMode = false;
                 data.colorStatList = value.colorStatList;
@@ -247,6 +223,7 @@ export default defineComponent({
             },
             handleChangeColor (e)
             {
+                console.log(data.replaceObj);
                 // console.log(data.pindouColorList);
                 // let color = '#' + e.color + 'ff';
                 if (data.isDrawMode) 
@@ -274,7 +251,17 @@ export default defineComponent({
             {
                 data.replaceObj = null;
                 data.selectedObj = null;
-                data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                let pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                data.pindouColorList = pindouColorList.map((item) =>
+                {
+                    return {
+                        value:{
+                            name:item.name,
+                            color:item.color
+                        },
+                        label:item.name
+                    };
+                });
                 // if (data.isDrawMode) return data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
                 if (!data.isDrawMode) context.emit('change', data.pindouBrand);
             },
@@ -283,32 +270,22 @@ export default defineComponent({
                 context.emit('removeKeyBoard');
                 proxy.$refs.CustomPindouDialog.handleOpen();
             }
-
-            // handleConfirm ()
-            // {
-            //     if (data.replaceColor.trim() === '' || data.newColor.trim() === '') return proxy.$message.warning('颜色不能为空');
-            //     data.loading = true;
-            //     context.emit('confirm', { type:data.type, replaceColor:data.replaceColor, newColor:data.newColor }, () => data.loading = false);
-            // },
-            // handleUpdate (color)
-            // {
-            //     data.replaceColor = color;
-            // }
         };
 
         onMounted(() => 
         {
-            // methods.getData();
-            // let pindouOptions = JSON.parse(proxy.$utils.cache.pindou.get());
-            // data.brandOptions = pindouOptions || [];
-            // let arr = Object.keys(customData).map((item) => 
-            // {
-            //     return {
-            //         value:item,
-            //         label:item
-            //     };
-            // });
             methods.updateData();
+            let pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+            data.pindouColorList = pindouColorList.map((item) =>
+            {
+                return {
+                    value:{
+                        name:item.name,
+                        color:item.color
+                    },
+                    label:item.name
+                };
+            });
 
         });
         return {

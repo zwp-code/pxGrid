@@ -33,7 +33,8 @@ export default {
         'import':'导 入',
         'newSucceeded':'新建成功',
         'newFailed':'新建失败',
-        'pindouShop':'拼 豆'
+        'pindouShop':'拼 豆',
+        'feedback':'反 馈'
 
     }
 };

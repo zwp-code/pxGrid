@@ -201,7 +201,8 @@ export default defineComponent({
             scaleRatio:0, // 每次拖动递增1
             emptyLayerData:[] as any, // 空模板
             exportStyleOptions:{
-                isShowGrid:false
+                isShowGrid:false,
+                gridBackgroundColor:'#00000000'
             }
 
             
@@ -3631,7 +3632,7 @@ export default defineComponent({
                 const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
                 if (isShowGrid)
                 {
-                    methods.handleExportGridFrame(imageData, 'layer');
+                    methods.handleExportGridFrame(imageData, 'layer', options);
                     return;
                 }
                 data.realCanvas.width = data.canvasWidth * scale;
@@ -3851,8 +3852,9 @@ export default defineComponent({
                 methods.handleAddHistory();
 
             },
-            handleExportGridFrame (imageData, type)
+            handleExportGridFrame (imageData, type, options = data.exportStyleOptions)
             {
+                let { gridBackgroundColor } = options;
                 let scale = 50;
                 if (data.canvasWidth >= 56 || data.canvasHeight >= 56) scale = 20;
                 else if (data.canvasWidth >= 48 || data.canvasHeight >= 48) scale = 30;
@@ -3860,10 +3862,16 @@ export default defineComponent({
                 data.realCanvas.width = data.canvasWidth * scale;
                 data.realCanvas.height = data.canvasHeight * scale;
                 data.ctx3.clearRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                if (gridBackgroundColor !== data.emptyColor)
+                {
+                    // 绘制背景颜色
+                    data.ctx3.fillStyle = gridBackgroundColor;
+                    data.ctx3.fillRect(0, 0, data.realCanvas.width, data.realCanvas.height);
+                }
                 // 绘制网格
-                const cellX = data.realCanvas.width / data.canvasWidth;
-                const cellY = data.realCanvas.height / data.canvasHeight;
-                const scaleValue = Math.round(Math.min(cellX, cellY));
+                // const cellX = data.realCanvas.width / data.canvasWidth;
+                // const cellY = data.realCanvas.height / data.canvasHeight;
+                const scaleValue = scale;
                 data.ctx3.strokeStyle = 'gray';
                 data.ctx3.globalAlpha = 1;
                 data.ctx3.lineWidth = 1;
@@ -3929,7 +3937,7 @@ export default defineComponent({
                 // console.log(imageData);
                 if (isShowGrid)
                 {
-                    methods.handleExportGridFrame(imageData, 'frame');
+                    methods.handleExportGridFrame(imageData, 'frame', options);
                     return;
                 }
                 data.realCanvas.width = data.canvasWidth * scale;
@@ -4867,6 +4875,7 @@ export default defineComponent({
                 data.scaleWhitePointPos = [];
                 data.scaleAreaData = null;
                 data.scaleRatio = 0;
+                data.colorStatList = [];
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()

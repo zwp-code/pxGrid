@@ -1,10 +1,10 @@
 import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed } from 'vue';
-// import HomeFooter from '@/components/HomeFooter.vue';
+import HomeFooter from '@/components/HomeFooter.vue';
 import axios from 'axios';
 export default defineComponent({
     name:'about',
     components: {
-        // HomeFooter
+        HomeFooter
     },
     props:{},
     emits:[],

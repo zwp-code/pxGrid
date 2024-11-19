@@ -5,7 +5,7 @@ import { base64ToBlob, blobToBase64, downloadFile, formatTime, sortList } from '
 import { uuid } from 'vue-uuid';
 import { useEditSpaceStore } from '@/store';
 export default defineComponent({
-    name:'module',
+    name:'pindou',
     components: {
 
     },

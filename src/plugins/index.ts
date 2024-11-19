@@ -7,6 +7,7 @@ import message from '../utils/message';
 import iconSvg from '@/assets/svg/icon';
 import db from '@/config/db';
 
+
 export default {
     install (app:any)
     {

@@ -40,6 +40,12 @@ const routes:RouteRecordRaw[] = [
                 meta:{ title:'pindouShop', icon:'Orange' },
                 component:() => import('@/views/pindou/index.vue')
             },
+            // {
+            //     path:'feedback',
+            //     name:'feedback',
+            //     meta:{ title:'feedback', icon:'MessageBox' },
+            //     component:() => import('@/views/feedback/index.vue')
+            // },
             {
                 path:'work/:projectId',
                 name:'work',
