@@ -94,7 +94,7 @@ export default defineComponent({
 
             historyRecord:[] as any, // 绘画历史记录
             historyMaxLength:10,
-            currentHistoryIndex:9,
+            currentHistoryIndex:0,
             historyTimer:null as any,
             
             lastX:0,
@@ -609,6 +609,7 @@ export default defineComponent({
                             }
                         ]
                     });
+                    methods.handleAddHistory();
                     // methods.handleFrameImg(data.ctx2);
                 }
                 else if (type === 'scale')
@@ -3637,7 +3638,7 @@ export default defineComponent({
                 
                 data.currentLayerIndex = index;
                 data.currentLayerId = methods.getCurrentLayerId();
-                data.layerAlpha = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha;
+                data.layerAlpha = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha || 100;
                 data.selectLayerList = [data.currentLayerIndex];
             },
             handleChangeLayerVisible (index)
@@ -3678,7 +3679,7 @@ export default defineComponent({
                 let nextIndex = index - 1;
                 if (nextIndex < 0) nextIndex = 0;
                 data.currentLayerIndex = nextIndex;
-                data.layerAlpha = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha;
+                data.layerAlpha = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha || 100;
                 data.currentLayerId = methods.getCurrentLayerId();
                 data.selectLayerList = [data.currentLayerIndex];
                 methods.reDraw();
@@ -4412,6 +4413,7 @@ export default defineComponent({
             },
             handleRevoke ()
             {
+                if (!data.historyRecord.length) return;
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 if (data.isScaling) methods.handleCancelScale();
@@ -4423,12 +4425,14 @@ export default defineComponent({
                     data.currentHistoryIndex = 0;
                 }
                 console.log(data.currentHistoryIndex);
+                console.log(data.historyRecord);
                 
                 data.drawRecord = JSON.parse(JSON.stringify(data.historyRecord[data.currentHistoryIndex].record));
                 methods.reDraw(true, false);
             },
             handleRecover ()
             {
+                if (!data.historyRecord.length) return;
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 if (data.isScaling) methods.handleCancelScale();
@@ -4997,6 +5001,7 @@ export default defineComponent({
                 data.isHideLinmoMode = false;
                 data.linmoMode = false;
                 data.linmoPhoto = null;
+                data.currentHistoryIndex = 0;
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()
@@ -5076,6 +5081,7 @@ export default defineComponent({
                                     data.drawRecord = event.data;
                                     editSpaceStore.saveProjectId(data.projectData.projectId);
                                     if (data.drawRecord.length) methods.reDraw();
+                                    methods.handleChangeLayer(data.currentLayerIndex);
                                     // methods.handleRenderAllFrameImg(data.ctx1);
                                     data.loading = false;
                                 }

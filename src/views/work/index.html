@@ -12,13 +12,13 @@
                     <el-tooltip
                     content="撤销 [Alt/⌥ + z]"
                     placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleRevoke"><Back /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="handleRevoke" :class="{ isNotAllowed:!historyRecord.length}"><Back /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip
                     content="恢复 [Alt/⌥ + x]"
                     placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleRecover"><Right /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="handleRecover" :class="{ isNotAllowed:!historyRecord.length}"><Right /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip content="放大画布 [滚轮/Ctrl/⌘ + =]" placement="bottom">

@@ -213,6 +213,7 @@ export default defineComponent({
                 methods.updateData();
                 // data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
                 // console.log(data.pindouColorList);
+                methods.getPindouColorList();
                 if (value === 'draw') return data.isDrawMode = true;
                 data.isDrawMode = false;
                 data.colorStatList = value.colorStatList;
@@ -252,6 +253,12 @@ export default defineComponent({
             {
                 data.replaceObj = null;
                 data.selectedObj = null;
+                methods.getPindouColorList();
+                // if (data.isDrawMode) return data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+                if (!data.isDrawMode) context.emit('change', data.pindouBrand);
+            },
+            getPindouColorList ()
+            {
                 let pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
                 data.pindouColorList = pindouColorList.map((item) =>
                 {
@@ -263,8 +270,6 @@ export default defineComponent({
                         label:item.name
                     };
                 });
-                // if (data.isDrawMode) return data.pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
-                if (!data.isDrawMode) context.emit('change', data.pindouBrand);
             },
             handleCustomPindou ()
             {
@@ -276,17 +281,17 @@ export default defineComponent({
         onMounted(() => 
         {
             methods.updateData();
-            let pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
-            data.pindouColorList = pindouColorList.map((item) =>
-            {
-                return {
-                    value:{
-                        name:item.name,
-                        color:item.color
-                    },
-                    label:item.name
-                };
-            });
+            // let pindouColorList = editSpaceStore.pindouMaps[data.pindouBrand].data;
+            // data.pindouColorList = pindouColorList.map((item) =>
+            // {
+            //     return {
+            //         value:{
+            //             name:item.name,
+            //             color:item.color
+            //         },
+            //         label:item.name
+            //     };
+            // });
 
         });
         return {

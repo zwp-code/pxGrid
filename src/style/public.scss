@@ -229,6 +229,12 @@ body,html{
     height: 100%;
 }
 
+.isNotAllowed {
+    cursor: not-allowed !important;
+    color: #808080 !important;
+    pointer-events: none !important;
+}
+
 // element plus 自定义样式
 .el-button,
 .el-input,
