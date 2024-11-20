@@ -1,5 +1,6 @@
 <template>
-    <el-dialog v-model="dialogVisible"
+    <el-dialog 
+    v-model="dialogVisible"
     :width="500"
     draggable="true"
     :modal="false"

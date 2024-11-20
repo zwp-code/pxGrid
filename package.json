@@ -21,6 +21,7 @@
     "pinia": "^2.0.17",
     "screenfull": "^5.1.0",
     "vue": "^3.2.25",
+    "vue-eye-dropper": "0.0.12",
     "vue-i18n": "^9.3.0-beta.16",
     "vue-router": "^4.0.13",
     "vue-uuid": "^2.0.2",

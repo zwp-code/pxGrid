@@ -92,6 +92,7 @@
         width: 80px;
         max-width: 80px;
         height: 100%;
+        z-index: 2;
         background: var(--el-drawer-bg);
         // overflow-y: auto;
 
@@ -160,11 +161,27 @@
             background-color: var(--el-color-primary-light-3);
         }
     }
+
+    .linmoPhoto {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: auto;
+        height: auto;
+        user-select: none;
+        transform-origin: 0 0;
+        // transform: translate(-50%, -50%);
+        max-height: calc(100% / 2);
+        max-width: calc(100% / 2);
+        min-width: 100px;
+        min-height: 100px;
+        cursor: move;
+    }
 }
 
 .el-main {
     height: auto;
-    flex: 3;
+    flex: 4;
     // flex-basis: auto;
     overflow: hidden;
     min-height: 700px;
@@ -191,14 +208,14 @@
 .el-aside {
     background-color: var(--el-bg-color-second);
     box-shadow: -1px 0px 4px 4px var(--el-shadow-aside);
-    min-width: 300px;
+    min-width: 320px;
     width: 100%;
     height: 100%;
     min-height: 700px;
-    max-width: 320px;
+    // max-width: 320px;
     overflow: hidden;
     flex: 1;
-    padding: 20px;
+    padding: 20px 15px;
     z-index: 10;
 }
 
@@ -209,7 +226,7 @@
     margin-top: 10px;
 
     .function-label {
-        margin-right: 16px;
+        margin-right: 15px;
         font-size: 14px;
     }
 
@@ -236,6 +253,10 @@
         .el-checkbox {
             margin-right: 0;
         }
+    }
+
+    :deep(.el-input-group__prepend) {
+        padding: 0 10px;
     }
 }
 
@@ -388,5 +409,6 @@
 
 
 .el-divider--horizontal {
-    margin: 20px 0;
+    margin: 15px 0;
 }
+

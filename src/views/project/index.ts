@@ -159,6 +159,14 @@ export default defineComponent({
                     const file = input.files[0];
                     if (file) 
                     {
+                        const imageTypes = [
+                            'image/jpeg',
+                            'image/png',
+                            'image/gif',
+                            'image/bmp',
+                            'image/svg+xml'
+                        ];
+                        if (imageTypes.includes(file.type)) return proxy.$message.warning('导入文件格式不正确，确保导入的是项目文件而非图片文件');
                         data.isloading = true;
                         const reader = new FileReader();
                         reader.onload = function (e:any) 

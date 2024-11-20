@@ -11,14 +11,14 @@
             :show-message="false"
             :model="itemInfo">
                 <el-form-item label="项目名称" required prop="projectName">
-                    <el-input v-model="itemInfo.projectName" clearable placeholder="请输入"/>
+                    <el-input v-model="itemInfo.projectName" clearable placeholder="请输入" maxlength="20"/>
                 </el-form-item>
                 <el-form-item label="画布像素" required v-if="!editInfo">
                     <div class="flex-between full-w">
                         <el-input
                         v-model="itemInfo.width"
                         type="number"
-                        :max="70"
+                        :max="128"
                         :min="6"
                         @change="(e) => handleChangeCanvasSize(e, 'width')"
                         >
@@ -28,7 +28,7 @@
                         v-model="itemInfo.height"
                         style="margin-left: 10px;"
                         type="number"
-                        :max="70"
+                        :max="128"
                         :min="6"
                         @change="(e) => handleChangeCanvasSize(e, 'height')"
                         >
@@ -42,7 +42,7 @@
                         <div v-for="item in canvasTemplate" :key="item.label" class="template-box pointer" 
                         @click="handleSelectTemplate(item)"
                         :class="{'active':selectTemplateId === item.id}">
-                            <img :src="require('@/assets/grid.png')"/>
+                            <img :src="require('@/assets/grid-small.png')"/>
                             <div class="full-w size flex-center">
                                 <el-tag type="success" size="small" v-if="item.id!==0">{{item.width}}*{{item.height}}</el-tag>
                                 <el-tag type="primary" size="small" v-else>自定义</el-tag>
@@ -171,10 +171,10 @@ export default defineComponent({
             },
             handleChangeCanvasSize (e, key)
             {
-                if (e < 6 || e > 70) 
+                if (e < 6 || e > 128) 
                 {
-                    data.itemInfo[key] = e < 6 ? 6 : e > 70 ? 70 : data.itemInfo[key];
-                    proxy.$message.warning('画布像素不能小于6或大于70像素');
+                    data.itemInfo[key] = e < 6 ? 6 : e > 128 ? 128 : data.itemInfo[key];
+                    proxy.$message.warning('画布像素必须6-128像素区间');
                 }
                 else
                 {
@@ -297,6 +297,7 @@ export default defineComponent({
 
     img {
         object-fit: cover;
+        opacity:.6;
     }
 
     .size {

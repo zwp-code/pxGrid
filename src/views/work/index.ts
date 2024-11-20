@@ -4,6 +4,7 @@ import PreviewAnimDialog from '@/components/dialog/PreviewAnimDialog.vue';
 import ReplaceColorDialog from '@/components/dialog/ReplaceColorDialog.vue';
 import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import LayerMenu from '@/components/menu/LayerMenu.vue';
+import LinmoModeDialog from '@/components/dialog/LinmoModeDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
@@ -24,7 +25,8 @@ export default defineComponent({
         PreviewAnimDialog,
         ReplaceColorDialog,
         PindouDialog,
-        LayerMenu
+        LayerMenu,
+        LinmoModeDialog
     },
     props:{},
     emits:[],
@@ -203,7 +205,25 @@ export default defineComponent({
             exportStyleOptions:{
                 isShowGrid:false,
                 gridBackgroundColor:'#ffffffff'
-            }
+            },
+            layerAlpha:100,
+            isHideLinmoMode:false, // 是否隐藏临摹模式
+            linmoMode:false, // 是否启用临摹模式
+            linmoPhoto:null as any, // 临摹的图片URL
+            linmoPhotoStyle:{
+                transform: 'translate(0px, 0px) rotate(0deg) scale(1)',
+                opacity:1,
+                zIndex:0,
+                display:'block'
+            }, // 临摹的图片的样式
+            linmoPhotoDom:null as any, // 临摹的图片dom
+            dragLinmoPhoto:{
+                enable:false,
+                startX:0,
+                startY:0,
+                translateX:0,
+                translateY:0
+            } // 是否拖动临摹的图片
 
             
         });
@@ -454,25 +474,34 @@ export default defineComponent({
                     methods.reDraw();
                     return;
                 }
-                else if (index === 5)
-                {
-                    methods.handlePindouMode('preview');
-                }
                 data.currentTool = index;
+            },
+            handleLinmoMode ()
+            {
+                // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                // if (data.isScaling) methods.handleCancelScale();
+                if (data.isHideLinmoMode)
+                {
+                    data.isHideLinmoMode = false;
+                    proxy.$refs.LinmoModeDialog.handleShow();
+                    return;
+                }
+                data.linmoMode = true;
+                proxy.$refs.LinmoModeDialog.handleOpen();
             },
             handlePindouMode (mode)
             {
                 if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 if (data.isScaling) methods.handleCancelScale();
                 if (!data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender) return proxy.$message.warning('请将图层设置显示状态');
-                if (mode === 'preview') 
+                if (mode === 'preview' && !data.pinDouMode) 
                 {
                     if (data.pinDouDrawMode) return proxy.$message.warning('请先退出拼豆绘图模式');
                     data.currentTool = 5;
                     data.loading = true;
                     methods.handlePindouEvent();
                 }
-                else
+                else if (mode === 'draw' && !data.pinDouDrawMode)
                 {
                     if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                     if (data.isHidePindouMode)
@@ -510,10 +539,10 @@ export default defineComponent({
             },
             handleChangeCanvasSize (e, key)
             {
-                if (e < 6 || e > 70) 
+                if (e < 6 || e > 128) 
                 {
-                    data[key] = e < 6 ? 6 : e > 70 ? 70 : data[key];
-                    proxy.$message.warning('画布不能小于6或大于70像素');
+                    data[key] = e < 6 ? 6 : e > 128 ? 128 : data[key];
+                    proxy.$message.warning('画布像素必须6-128像素区间');
                 }
                 else
                 {
@@ -573,6 +602,7 @@ export default defineComponent({
                             {
                                 layerId:uuid.v4(),
                                 layerName:'图层1',
+                                alpha:100,
                                 currentLayerImg:methods.handleGridImg(),
                                 isRender:true, // 是否渲染
                                 layerData:layerArr // 绘画信息
@@ -1251,11 +1281,67 @@ export default defineComponent({
 
                 data.canvas.addEventListener('mouseout', methods.leave);
                 data.canvas.addEventListener('wheel', methods.handleWheelEvent);
+
+                data.linmoPhotoDom.addEventListener('mousedown', methods.linmoPhotoStart);
+                data.linmoPhotoDom.addEventListener('touchstart', methods.lnmoPhotoMobileStart);
+
+                data.linmoPhotoDom.addEventListener('mouseup', methods.linmoPhotoStop);
+                data.linmoPhotoDom.addEventListener('mouseout', methods.linmoPhotoStop);
+                data.linmoPhotoDom.addEventListener('touchend', methods.linmoPhotoStop);
+            },
+            linmoPhotoStart (event)
+            {
+                data.dragLinmoPhoto.enable = true;
+                data.dragLinmoPhoto.startX = event.offsetX;
+                data.dragLinmoPhoto.startY = event.offsetY;
+                data.dragLinmoPhoto.translateX = parseInt(getComputedStyle(data.linmoPhotoDom).transform.split(' ')[4]);
+                data.dragLinmoPhoto.translateY = parseInt(getComputedStyle(data.linmoPhotoDom).transform.split(' ')[5]);
+                document.addEventListener('mousemove', methods.linmoPhotoMove);
+                document.addEventListener('touchmove', methods.linmoPhotoMobileMove);
+                document.addEventListener('mouseup', methods.linmoPhotoStop);
+            },
+            lnmoPhotoMobileStart (event)
+            {
+                let obj = {
+                    offsetX:event.touches[0].clientX - data.canvas.getBoundingClientRect().left,
+                    offsetY:event.touches[0].clientY - data.canvas.getBoundingClientRect().top
+                };
+                methods.linmoPhotoStart(obj);
+            },
+            linmoPhotoMove (event)
+            {
+                if (data.dragLinmoPhoto.enable)
+                {
+                    const dx = event.offsetX - data.dragLinmoPhoto.startX;
+                    const dy = event.offsetY - data.dragLinmoPhoto.startY;
+                    // console.log(dx, dy);
+                    data.dragLinmoPhoto.translateX += dx;
+                    data.dragLinmoPhoto.translateY += dy;
+                    proxy.$refs.LinmoModeDialog.posX = data.dragLinmoPhoto.translateX;
+                    proxy.$refs.LinmoModeDialog.posY = data.dragLinmoPhoto.translateY;
+                    let rotateStr = data.linmoPhotoStyle.transform.split(') ')[1] + ')';
+                    let scaleStr = data.linmoPhotoStyle.transform.split(') ')[2];
+                    data.linmoPhotoStyle.transform = `translate(${data.dragLinmoPhoto.translateX}px, ${data.dragLinmoPhoto.translateY}px) ${rotateStr} ${scaleStr}`;
+                }
+                
+            },
+            linmoPhotoMobileMove (event)
+            {
+                let obj = {
+                    offsetX:event.touches[0].clientX - data.canvas.getBoundingClientRect().left,
+                    offsetY:event.touches[0].clientY - data.canvas.getBoundingClientRect().top
+                };
+                methods.linmoPhotoMove(obj);
+            },
+            linmoPhotoStop ()
+            {
+                data.dragLinmoPhoto.enable = false;
+                document.removeEventListener('mousemove', methods.linmoPhotoMove);
+                document.removeEventListener('touchmove', methods.linmoPhotoMobileMove);
+                document.removeEventListener('mouseup', methods.linmoPhotoStop);
             },
             mobileStart (event)
             {
-                console.log(event);
-                
                 let obj = {
                     offsetX:event.touches[0].clientX - data.canvas.getBoundingClientRect().left,
                     offsetY:event.touches[0].clientY - data.canvas.getBoundingClientRect().top
@@ -1282,20 +1368,17 @@ export default defineComponent({
                     }
                     if (data.currentTool === 0) 
                     {
-                        if (data.selectData.selectList.length)
+                        if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                        if (event.button === 0)
                         {
-                            return proxy.$message.warning('请先取消选中区域');
+                            data.isDrawing = true;
+                            
                         }
-                        data.isDrawing = true;
+                        else if (event.button === 2)
+                        {
+                            data.isErasering = true;
+                        }
                         methods.draw(event);
-                        // const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
-                        // const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
-                        // let gridX = (col * data.scale + data.canvas.width / 2) - data.canvasWidth * data.scale / 2;
-                        // let gridY = (row * data.scale + data.canvas.height / 2) - data.canvasHeight * data.scale / 2;
-                        // data.lastX = gridX + data.scale / 2;
-                        // data.lastY = gridY + data.scale / 2;
-                        // data.ctx1.beginPath();
-                        // data.ctx1.moveTo(gridX + data.scale / 2, gridY + data.scale / 2);
                     }
                     else if (data.currentTool === 1) 
                     {
@@ -2993,7 +3076,14 @@ export default defineComponent({
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
                 let index = value[0] + (value[1] * data.canvasWidth);
                 if (index >= data.canvasWidth * data.canvasHeight) return;
-                arr[index][2] = newColor;
+                // 处理透明度问题
+                let rgba = hexToRgba(newColor);
+                let r = rgba[0];
+                let g = rgba[1];
+                let b = rgba[2];
+                let a = (data.layerAlpha / 100);
+                let hexStr = rgbaToHex([r, g, b, a]);
+                arr[index][2] = hexStr;
                 // console.log(data.drawRecord);
                 if (isUpdate)
                 {
@@ -3485,6 +3575,7 @@ export default defineComponent({
                 let obj = {
                     layerId:uuid.v4(),
                     layerName: `图层${length + 1}`,
+                    alpha:100,
                     currentLayerImg:methods.handleGridImg(),
                     isRender:true, // 是否渲染
                     layerData:layerArr // 绘画信息
@@ -3546,6 +3637,7 @@ export default defineComponent({
                 
                 data.currentLayerIndex = index;
                 data.currentLayerId = methods.getCurrentLayerId();
+                data.layerAlpha = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha;
                 data.selectLayerList = [data.currentLayerIndex];
             },
             handleChangeLayerVisible (index)
@@ -3586,6 +3678,7 @@ export default defineComponent({
                 let nextIndex = index - 1;
                 if (nextIndex < 0) nextIndex = 0;
                 data.currentLayerIndex = nextIndex;
+                data.layerAlpha = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha;
                 data.currentLayerId = methods.getCurrentLayerId();
                 data.selectLayerList = [data.currentLayerIndex];
                 methods.reDraw();
@@ -3762,6 +3855,23 @@ export default defineComponent({
                     methods.reDraw();
                 };
             },
+            handleChangeLayerAlpha ()
+            {
+                data.loading = true;
+                let currentLayerData = JSON.parse(JSON.stringify(methods.getCurrentLayerData())); 
+                data.worker.postMessage({
+                    type:5, 
+                    variables:currentLayerData,
+                    targetAlpha:data.layerAlpha
+                });
+                data.worker.onmessage = (event) => 
+                {
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = event.data;
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].alpha = data.layerAlpha;
+                    data.loading = false;
+                    methods.reDraw();
+                };
+            },
             // 图层结束
 
             // 帧开始
@@ -3779,6 +3889,7 @@ export default defineComponent({
                         {
                             layerId:uuid.v4(),
                             layerName: '图层1',
+                            alpha:100,
                             currentLayerImg:methods.handleGridImg(),
                             isRender:true, // 是否渲染
                             layerData:layerArr // 绘画信息
@@ -4427,6 +4538,16 @@ export default defineComponent({
                     event.preventDefault();
                     methods.handleScreenFull(); // 全屏
                 }
+                else if (event.altKey && event.key === 'v') 
+                {
+                    // 重置画布位置
+                    methods.handleResetCanvas();
+                }
+                else if (event.altKey && event.key === 'g') 
+                {
+                    // 打开我的颜色
+                    proxy.$refs.MyColorDialog.handleOpen();
+                }
                 else if ((event.metaKey || event.ctrlKey) && event.key === 'm')
                 {
                     event.preventDefault();
@@ -4555,16 +4676,12 @@ export default defineComponent({
                     // 打开拼豆绘图模式
                     methods.handlePindouMode('draw');
                 }
-                else if (event.altKey && event.key === 'v') 
+                else if (event.key === 'l')
                 {
-                    // 重置画布位置
-                    methods.handleResetCanvas();
+                    // 打开临摹模式
+                    methods.handleLinmoMode();
                 }
-                else if (event.altKey && event.key === 'g') 
-                {
-                    // 打开我的颜色
-                    proxy.$refs.MyColorDialog.handleOpen();
-                }
+                
                 else if (event.key === 'a') 
                 {
                     methods.handleChangeTool(3);
@@ -4876,6 +4993,10 @@ export default defineComponent({
                 data.scaleAreaData = null;
                 data.scaleRatio = 0;
                 data.colorStatList = [];
+                data.layerAlpha = 100;
+                data.isHideLinmoMode = false;
+                data.linmoMode = false;
+                data.linmoPhoto = null;
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()
@@ -4918,6 +5039,7 @@ export default defineComponent({
                         data.canvas = document.getElementById('Canvas');
                         data.bgCanvas = document.getElementById('PixelCanvas');
                         data.realCanvas = document.getElementById('RealCanvas');
+                        data.linmoPhotoDom = document.getElementById('linmoPhoto');
                         data.canvas.width = pixelBox?.clientWidth;
                         data.canvas.height = pixelBox?.clientHeight;
                         data.bgCanvas.width = pixelBox?.clientWidth;
@@ -5067,6 +5189,12 @@ export default defineComponent({
                         methods.handleCancelKeyboardEvent();
                     }
                 }
+
+                if (!data.isHideLinmoMode && data.linmoMode)
+                {
+                    data.isHideLinmoMode = false;
+                    proxy.$refs.LinmoModeDialog.handleShow();
+                }
             }
         });
 
@@ -5083,6 +5211,12 @@ export default defineComponent({
                 data.canvas.removeEventListener('touchend', methods.stop);
                 data.canvas.removeEventListener('mouseout', methods.leave);
                 data.canvas.removeEventListener('wheel', methods.handleWheelEvent);
+                data.linmoPhotoDom.removeEventListener('mousedown', methods.linmoPhotoStart);
+                data.linmoPhotoDom.removeEventListener('touchstart', methods.lnmoPhotoMobileStart);
+
+                data.linmoPhotoDom.removeEventListener('mouseup', methods.linmoPhotoStop);
+                data.linmoPhotoDom.removeEventListener('mouseout', methods.linmoPhotoStop);
+                data.linmoPhotoDom.removeEventListener('touchend', methods.linmoPhotoStop);
                 window.removeEventListener('keydown', methods.handlekeyDownEvent);
                 window.removeEventListener('keyup', methods.handleKeyUpEvent);
                 window.removeEventListener('resize', methods.handleResizeWindowEvent);
@@ -5090,6 +5224,7 @@ export default defineComponent({
                 proxy.$refs.MyColorDialog.handleClose();
                 proxy.$refs.PreviewAnimDialog.handleClose();
                 proxy.$refs.PindouDialog.dialogVisible = false;
+                proxy.$refs.LinmoModeDialog.dialogVisible = false;
                 // if (proxy.$refs.PindouDialog.dialogVisible)
                 // {
                 //     proxy.$refs.PindouDialog.handleHide();
