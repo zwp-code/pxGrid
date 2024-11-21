@@ -25,16 +25,16 @@
             </div>
             <div class="item flex-between">
                 <p>缩放大小</p>
-                <el-input-number v-model="zoom" :min="1" :max="100" size="small" :step="0.1" @change="updatelinmoPhotoStyle"/>
+                <el-input-number v-model="zoom" :min="0.1" :max="100" size="small" :step="0.1" @change="updatelinmoPhotoStyle"/>
             </div>
             <div class="item flex-between">
                 <p>位置x</p>
-                <el-input-number v-model="posX" :min="0" :max="9999" size="small" :step="5" @change="updatelinmoPhotoStyle"/>
+                <el-input-number v-model="posX" :min="-999" :max="9999" size="small" :step="5" @change="updatelinmoPhotoStyle"/>
             </div>
 
             <div class="item flex-between">
                 <p>位置y</p>
-                <el-input-number v-model="posY" :min="0" :max="9999" size="small" :step="5" @change="updatelinmoPhotoStyle"/>
+                <el-input-number v-model="posY" :min="-999" :max="9999" size="small" :step="5" @change="updatelinmoPhotoStyle"/>
             </div>
             <div class="item flex-between">
                 <p>透明度</p>

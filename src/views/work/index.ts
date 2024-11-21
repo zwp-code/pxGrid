@@ -539,10 +539,10 @@ export default defineComponent({
             },
             handleChangeCanvasSize (e, key)
             {
-                if (e < 6 || e > 128) 
+                if (e < 6 || e > 70) 
                 {
-                    data[key] = e < 6 ? 6 : e > 128 ? 128 : data[key];
-                    proxy.$message.warning('画布像素必须6-128像素区间');
+                    data[key] = e < 6 ? 6 : e > 70 ? 70 : data[key];
+                    proxy.$message.warning('画布像素必须6-70像素区间');
                 }
                 else
                 {
@@ -5187,6 +5187,7 @@ export default defineComponent({
                 methods.startDrawing();
                 methods.addKeyBoardEvent();
                 methods.handleResizeWindow();
+                document.addEventListener('click', methods.closeMenu);
                 if (!data.isHidePindouMode && (data.pinDouMode || data.pinDouDrawMode))
                 {
                     methods.handleShowPindou();
@@ -5226,6 +5227,7 @@ export default defineComponent({
                 window.removeEventListener('keydown', methods.handlekeyDownEvent);
                 window.removeEventListener('keyup', methods.handleKeyUpEvent);
                 window.removeEventListener('resize', methods.handleResizeWindowEvent);
+                document.removeEventListener('click', methods.closeMenu);
                 proxy.$refs.ReplaceColorDialog.handleClose();
                 proxy.$refs.MyColorDialog.handleClose();
                 proxy.$refs.PreviewAnimDialog.handleClose();
