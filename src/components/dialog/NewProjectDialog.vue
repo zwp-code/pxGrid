@@ -241,12 +241,13 @@ export default defineComponent({
                                 proxy.$message.success(proxy.$t('message.newSucceeded'));
                                 data.isloading = false;
                                 methods.handleClose();
-                                proxy.$router.push({
-                                    name:'work',
-                                    params:{
-                                        projectId:data.itemInfo.projectId
-                                    }
-                                });
+                                context.emit('save', data.itemInfo);
+                                // proxy.$router.push({
+                                //     name:'work',
+                                //     params:{
+                                //         projectId:data.itemInfo.projectId
+                                //     }
+                                // });
                                 // editSpaceStore.saveProjectId(data.itemInfo.projectId);
                             }
                         }).catch((err) => 

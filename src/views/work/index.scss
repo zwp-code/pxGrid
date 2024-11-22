@@ -64,9 +64,12 @@
 
     #Canvas, #PixelCanvas {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate3d(-50%, -50%, 0);
+        top: 0;
+        left: 0;
+        transform: translate3d(0, 0, 0);
+        // top: 50%;
+        // left: 50%;
+        // transform: translate3d(-50%, -50%, 0);
     }
 
     .gridInfo {
@@ -335,6 +338,7 @@
         padding: 5px 10px;
         border-radius: 5px;
         font-size: 14px;
+        border: 2px solid #00000000;
     
         .layer-pic {
             width: 20px;

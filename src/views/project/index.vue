@@ -1,6 +1,9 @@
 <template>
     <div class="full-layout flex-center scrollbar routerview">
-        <div class="full-layout flex flex-column" v-loading="isloading" element-loading-background="#00000000">
+        <div class="full-layout flex flex-column" 
+        v-loading="isloading"
+        :element-loading-text="loadingText"
+        element-loading-background="#00000000">
             <div class="flex-between flex-warp" style="padding:20px 20px 10px;row-gap: 10px;">
                 <h2>{{$t('message.mineProject')}}</h2>
                 <div class="flex-end" style="gap:10px">
@@ -68,6 +71,7 @@
             v-if="NewProjectVisible" 
             :visible="NewProjectVisible"
             :editInfo="editProjectInfo"
+            @save="handleOpenProject"
             @close="NewProjectVisible=false">
             </NewProjectDialog>
         </div>

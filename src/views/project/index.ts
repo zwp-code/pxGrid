@@ -25,7 +25,8 @@ export default defineComponent({
             editProjectInfo:null as any,
             isloading:false,
             searchValue:'',
-            searchData:[] as any
+            searchData:[] as any,
+            loadingText:'正在加载...'
         });
 
 
@@ -72,6 +73,12 @@ export default defineComponent({
             async handleOpenProject (project)
             {
                 // editSpaceStore.saveProjectId(project.projectId);
+                data.isloading = true;
+                data.loadingText = '正在加载项目';
+                setTimeout(() => 
+                {
+                    data.loadingText = '首次打开项目会比较慢，请耐心等待！';
+                }, 5000);
                 proxy.$router.push({
                     name:'work',
                     params:{
@@ -168,6 +175,7 @@ export default defineComponent({
                         ];
                         if (imageTypes.includes(file.type)) return proxy.$message.warning('导入文件格式不正确，确保导入的是项目文件而非图片文件');
                         data.isloading = true;
+                        data.loadingText = '正在导入项目';
                         const reader = new FileReader();
                         reader.onload = function (e:any) 
                         {
@@ -222,6 +230,7 @@ export default defineComponent({
             console.log('项目列表', editSpaceStore.projectList);
             
         });
+
 
         // onActivated(() => 
         // {
