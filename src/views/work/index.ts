@@ -15,7 +15,6 @@ import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
 import PindouDialog from '@/components/dialog/PindouDialog.vue';
-import gifshot from 'gifshot-plus';
 import GIF from '@dhdbstjr98/gif.js';
 export default defineComponent({
     name:'work',
@@ -1283,7 +1282,7 @@ export default defineComponent({
                     //     }
                     // }
                     methods.handleResizeDraw();
-                }, 100);
+                }, 60);
                 // console.log(event);
                 
             },
@@ -3409,11 +3408,21 @@ export default defineComponent({
                 if (data.isErasering)
                 {
                     data.isErasering = false;
+                    let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    let count = 0;
                     for (let i = 0; i < data.removeDrawList.length; i++)
                     {
-                        methods.removeDrawRecord([data.removeDrawList[i][0], data.removeDrawList[i][1], data.brushColor], false);
+                        let index = data.removeDrawList[i][0] + data.removeDrawList[i][1] * data.canvasWidth;
+                        if (arr[index][2] === data.emptyColor) 
+                        {
+                            count++;
+                            continue;
+                        }
+                        arr[index][2] = data.emptyColor;
+                        // methods.removeDrawRecord([data.removeDrawList[i][0], data.removeDrawList[i][1], data.brushColor], false);
                     }
-                    methods.reDraw();
+                    if (count === data.removeDrawList.length) methods.reDraw(false);
+                    else methods.reDraw();
                 }
                 data.removeDrawList = [];
                 data.isScale = false;
@@ -4427,7 +4436,7 @@ export default defineComponent({
                 }
                 else if (type === 5)
                 {
-                    if (!gifshot.isSupported()) return proxy.$message.warning('当前浏览器不支持GIF导出');
+                    // if (!gifshot.isSupported()) return proxy.$message.warning('当前浏览器不支持GIF导出');
                     let canavsUrlData = [] as any;
                     let gif = new GIF({
                         width:data.canvasWidth * scale,

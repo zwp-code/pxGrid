@@ -12,12 +12,8 @@
                     <el-button type="primary"  @click="NewProjectVisible=true;editProjectInfo=null" style="margin-left:0">{{ $t('message.newProject') }}</el-button>
                 </div>
             </div>
-            <div class="full-layout scrollbar flex-start flex-warp scrollAuto"
-            v-if="(editSpaceStore.projectList.length || searchData.length) && !isloading" 
-            style="align-content: flex-start;
-            align-items:flex-start;
-            gap:10px;
-            padding:10px 18px">
+            <div class="full-layout scrollbar scrollAuto grid-box"
+            v-if="(editSpaceStore.projectList.length || searchData.length) && !isloading">
                 <div v-for="item in searchData.length ? searchData : editSpaceStore.projectList" :key="item.id" class="project-item">
                     <div class="frameImg flex-center">
                         <img :src="require('@/assets/grid.png')" v-if="item.data.frameImg===''" class="emptyImg"/>

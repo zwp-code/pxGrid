@@ -36,12 +36,8 @@
                     />
                 </div>
             </div>
-            <div class="full-layout scrollbar flex-start flex-warp scrollAuto"
-            v-if="searchData.length && !isloading" 
-            style="align-content: flex-start;
-            align-items:flex-start;
-            gap:10px;
-            padding:10px 18px">
+            <div class="full-layout scrollbar grid-box scrollAuto"
+            v-if="searchData.length && !isloading">
                 <div v-for="item in searchData" :key="item.id" class="download-item">
                     <div class="frameImg">
                         <img :src="getFrameImg(item.data.frameImg)"/>
