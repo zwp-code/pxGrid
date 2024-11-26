@@ -80,6 +80,17 @@ body,html{
     display: none !important;
 }
 
+.grid-box {
+    height: auto !important;
+    width: auto !important;
+    grid-column-gap: 15px;
+    grid-row-gap: 15px;
+    padding: 10px 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-rows: auto;
+}
+
 .pixelFont {
     font-family: 'PixelFont', sans-serif;
 }
