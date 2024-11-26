@@ -148,7 +148,7 @@ export default defineComponent({
                 data.dialogVisible = false;
                 context.emit('close', 'linmoMode');
                 context.emit('update', {
-                    transform: 'translate(0px, 0px) rotate(0deg) scale(1)',
+                    transform: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
                     opacity:1,
                     zIndex:0,
                     display:'block'
@@ -160,7 +160,8 @@ export default defineComponent({
                 if (!data.dialogVisible)
                 {
                     data.dialogVisible = true;
-                    data.zoom = 1;
+                    data.zoomX = 1;
+                    data.zoomY = 1;
                     data.opacity = 100;
                     data.posX = 0;
                     data.posY = 0;
