@@ -1236,53 +1236,59 @@ export default defineComponent({
             handleWheelEvent (event)
             {
                 event.preventDefault();
-                data.scaleTimer && clearTimeout(data.scaleTimer);
-                data.scaleTimer = setTimeout(() => 
-                {
-                    const delta = event.deltaY > 0 ? -1 : 1;
-                    data.scale += delta;
-                    data.scale = Math.max(1, data.scale);
-                    if (data.scale > 60) data.scale = 60;
-                    console.log(data.scale);
-                    // data.brushSize = data.scale;
-                    // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
-                    // methods.handleResizeDraw();
-                    // methods.handleResizeDraw();
-                    // console.log(event.deltaY);
+                const delta = event.deltaY > 0 ? -1 : 1;
+                data.scale += delta;
+                data.scale = Math.max(1, data.scale);
+                if (data.scale > 60) data.scale = 60;
+                console.log(data.scale);
+                methods.handleResizeDraw();
+                // data.scaleTimer && clearTimeout(data.scaleTimer);
+                // data.scaleTimer = setTimeout(() => 
+                // {
+                //     const delta = event.deltaY > 0 ? -1 : 1;
+                //     data.scale += delta;
+                //     data.scale = Math.max(1, data.scale);
+                //     if (data.scale > 60) data.scale = 60;
+                //     console.log(data.scale);
+                //     // data.brushSize = data.scale;
+                //     // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
+                //     // methods.handleResizeDraw();
+                //     // methods.handleResizeDraw();
+                //     // console.log(event.deltaY);
                     
-                    // if (event.deltaY < 0)
-                    // {
-                    //     data.bgCanvas.width += data.scale;
-                    //     data.bgCanvas.height += data.scale;
-                    //     data.canvas.width += data.scale;
-                    //     data.canvas.height += data.scale;
-                    // }
-                    // else
-                    // {
-                    //     const pixelBox:any = document.querySelector('.pixelBox');
-                    //     if (data.bgCanvas.width - data.scale / 2 <= pixelBox?.clientWidth)
-                    //     {
-                    //         data.bgCanvas.width = pixelBox?.clientWidth;
-                    //         data.canvas.width = pixelBox?.clientWidth;
-                    //     }
-                    //     else
-                    //     {
-                    //         data.bgCanvas.width -= data.scale / 2;
-                    //         data.canvas.width -= data.scale / 2;
-                    //     }
-                    //     if (data.bgCanvas.height - data.scale / 2 <= pixelBox?.clientHeight)
-                    //     {
-                    //         data.bgCanvas.height = pixelBox?.clientHeight;
-                    //         data.canvas.height = pixelBox?.clientHeight;
-                    //     }
-                    //     else
-                    //     {
-                    //         data.bgCanvas.height -= data.scale / 2;
-                    //         data.canvas.height -= data.scale / 2;
-                    //     }
-                    // }
-                    methods.handleResizeDraw();
-                }, 60);
+                //     // if (event.deltaY < 0)
+                //     // {
+                //     //     data.bgCanvas.width += data.scale;
+                //     //     data.bgCanvas.height += data.scale;
+                //     //     data.canvas.width += data.scale;
+                //     //     data.canvas.height += data.scale;
+                //     // }
+                //     // else
+                //     // {
+                //     //     const pixelBox:any = document.querySelector('.pixelBox');
+                //     //     if (data.bgCanvas.width - data.scale / 2 <= pixelBox?.clientWidth)
+                //     //     {
+                //     //         data.bgCanvas.width = pixelBox?.clientWidth;
+                //     //         data.canvas.width = pixelBox?.clientWidth;
+                //     //     }
+                //     //     else
+                //     //     {
+                //     //         data.bgCanvas.width -= data.scale / 2;
+                //     //         data.canvas.width -= data.scale / 2;
+                //     //     }
+                //     //     if (data.bgCanvas.height - data.scale / 2 <= pixelBox?.clientHeight)
+                //     //     {
+                //     //         data.bgCanvas.height = pixelBox?.clientHeight;
+                //     //         data.canvas.height = pixelBox?.clientHeight;
+                //     //     }
+                //     //     else
+                //     //     {
+                //     //         data.bgCanvas.height -= data.scale / 2;
+                //     //         data.canvas.height -= data.scale / 2;
+                //     //     }
+                //     // }
+                //     methods.handleResizeDraw();
+                // }, 60);
                 // console.log(event);
                 
             },
