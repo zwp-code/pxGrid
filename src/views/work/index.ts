@@ -15,7 +15,7 @@ import useFilter from '@/hooks/useFilter';
 import FileSaver from 'file-saver';
 import { ElMessageBox } from 'element-plus';
 import PindouDialog from '@/components/dialog/PindouDialog.vue';
-import GIF from '@dhdbstjr98/gif.js';
+// import GIF from '@dhdbstjr98/gif.js';
 export default defineComponent({
     name:'work',
     components: {
@@ -3697,7 +3697,7 @@ export default defineComponent({
             {
                 if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2) * 2);
                 else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
-                data.scale = Math.round(data.scale);
+                data.scale = Math.round(data.scale) - 2;
                 console.log(data.scale);
                 // data.brushSize = data.scale;
                 
@@ -4098,12 +4098,12 @@ export default defineComponent({
                     let pasteData = editSpaceStore.frameCopyData;
                     if (pasteData.frameId === data.drawRecord[index].frameId) 
                     {
-                        data.drawRecord[index] = pasteData;
+                        data.drawRecord[index] = JSON.parse(JSON.stringify(pasteData));
                     }
                     else
                     {
                         data.drawRecord[index].currentFrameImg = pasteData.currentFrameImg;
-                        data.drawRecord[index].layer = pasteData.layer;
+                        data.drawRecord[index].layer = JSON.parse(JSON.stringify(pasteData.layer));
                     }
                     proxy.$message.success('粘贴成功');
                     methods.reDraw(true, true);
@@ -4447,10 +4447,11 @@ export default defineComponent({
                     let gif = new GIF({
                         width:data.canvasWidth * scale,
                         height:data.canvasHeight * scale,
+                        workerScript: './gif-js/dist/gif.worker.js',
                         workers: 2,
-                        quality: 0,
+                        quality: 10,
                         background: 'rgba(0,0,0,0)',
-                        transparent:'#00000000'
+                        transparent:'rgba(0,0,0,0)'
                     });
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
@@ -4511,6 +4512,7 @@ export default defineComponent({
                         let gif = new GIF({
                             width:data.canvasWidth * scale,
                             height:data.canvasHeight * scale,
+                            workerScript: './gif-js/dist/gif.worker.js',
                             workers: 2,
                             quality: 10,
                             background: 'rgba(0,0,0,0)',

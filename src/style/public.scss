@@ -76,6 +76,10 @@ body,html{
     // text-align: center;
 }
 
+#nprogress .spinner {
+    display: none !important;
+}
+
 .pixelFont {
     font-family: 'PixelFont', sans-serif;
 }
