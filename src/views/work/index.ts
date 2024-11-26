@@ -211,7 +211,7 @@ export default defineComponent({
             linmoMode:false, // 是否启用临摹模式
             linmoPhoto:null as any, // 临摹的图片URL
             linmoPhotoStyle:{
-                transform: 'translate(0px, 0px) rotate(0deg) scale(1)',
+                transform: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
                 opacity:1,
                 zIndex:0,
                 display:'block'

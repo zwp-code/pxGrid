@@ -24,8 +24,12 @@
                 <el-link type="primary" :underline="false" @click="handleUpload">上传图片</el-link>
             </div>
             <div class="item flex-between">
-                <p>缩放大小</p>
-                <el-input-number v-model="zoom" :min="0.1" :max="100" size="small" :step="0.1" @change="updatelinmoPhotoStyle"/>
+                <p>缩放x</p>
+                <el-input-number v-model="zoomX" :min="0.1" :max="100" size="small" :step="0.1" @change="updatelinmoPhotoStyle"/>
+            </div>
+            <div class="item flex-between">
+                <p>缩放y</p>
+                <el-input-number v-model="zoomY" :min="0.1" :max="100" size="small" :step="0.1" @change="updatelinmoPhotoStyle"/>
             </div>
             <div class="item flex-between">
                 <p>位置x</p>
@@ -88,7 +92,8 @@ export default defineComponent({
         const editSpaceStore = useEditSpaceStore();
         let data = reactive({
             dialogVisible:false,
-            zoom:1,
+            zoomX:1,
+            zoomY:1,
             opacity:100,
             posX:0,
             posY:0,
@@ -96,7 +101,7 @@ export default defineComponent({
             zIndex:false,
             display:false,
             linmoPhotoStyle:{
-                transform: 'translate(0px, 0px) rotate(0deg) scale(1)',
+                transform: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
                 opacity:1,
                 zIndex:0,
                 display:'block'
@@ -168,7 +173,7 @@ export default defineComponent({
             updatelinmoPhotoStyle () 
             {
                 // 根据当前的变换值更新linmoPhotoStyle对象
-                data.linmoPhotoStyle.transform = `translate(${data.posX}px, ${data.posY}px) rotate(${data.rotate}deg) scale(${data.zoom})`;
+                data.linmoPhotoStyle.transform = `translate(${data.posX}px, ${data.posY}px) rotate(${data.rotate}deg) scale(${data.zoomX}, ${data.zoomY})`;
                 data.linmoPhotoStyle.opacity = data.opacity / 100;
                 data.linmoPhotoStyle.zIndex = data.zIndex ? 1 : 0;
                 data.linmoPhotoStyle.display = data.display ? 'none' : 'block';

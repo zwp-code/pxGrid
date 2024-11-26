@@ -16,6 +16,7 @@
     "file-saver": "^2.0.5",
     "jsonp-pro": "^1.1.2",
     "jszip": "^3.10.1",
+    "nprogress": "^0.2.0",
     "pica": "^9.0.1",
     "pinia": "^2.0.17",
     "screenfull": "^5.1.0",

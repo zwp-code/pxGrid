@@ -539,7 +539,7 @@
                         <div class="function-label">
                             图层透明度
                         </div>
-                        <el-input-number v-model="layerAlpha" :min="0" :max="100" size="small" @change="handleChangeLayerAlpha"/>
+                        <el-input-number v-model="layerAlpha" :min="0" :max="100" size="small" :disabled="pinDouMode" @change="handleChangeLayerAlpha"/>
                     </div>
                 </div>
                 <div style="flex: 1;margin-top: 15px;" class="full-w scrollHidden" v-if="drawRecord.length">

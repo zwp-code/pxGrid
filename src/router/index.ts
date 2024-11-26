@@ -1,5 +1,7 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
 import cache from '@/utils/cache';
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css';
 
 let router:any = null;
 // const allowRoutes: = ['/login', '/price', '/home'];
@@ -83,6 +85,7 @@ type Route = RouteLocationNormalized;
 // 全局前置路由守卫
 router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
 {
+    NProgress.start();
     if (to.path.includes('project'))
     {
         let id = cache.currentProjectId.get();
@@ -99,17 +102,6 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
     {
         next();
     }
-    // if (to.path === 'work')
-    // {
-    //     if (to.query.id)
-    //     {
-
-    //     }
-    // }
-    // else
-    // {
-    //     next();
-    // }
     // let token = cache.token.get();
     // if (token)
     // {
@@ -147,6 +139,7 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
 router.afterEach((to:Route) =>
 {
     document.title = '像素格子';
+    NProgress.done();
 });
 
 export default router;
