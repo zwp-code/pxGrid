@@ -1,9 +1,11 @@
 import { getCurrentInstance } from 'vue';
+import { useEditSpaceStore } from '@/store';
 
 // 处理拖拽
 function useDrag () 
 {
     const { proxy }:any = getCurrentInstance();
+    const editSpaceStore = useEditSpaceStore();
     const data = {
         draging:null as any, // 被拖拽的对象
         target:null as any, // 目标对象
@@ -15,6 +17,7 @@ function useDrag ()
     const methods = {
         onDragStart (event, pinDouMode)
         {
+            if (!editSpaceStore.isNormalProject) return;
             if (pinDouMode) return;
             data.draging = event.target;
             event.dataTransfer.effectAllowed = 'move';

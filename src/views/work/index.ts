@@ -351,6 +351,12 @@ export default defineComponent({
             },
             handleBack ()
             {
+                if (!editSpaceStore.isNormalProject)
+                {
+                    editSpaceStore.isNormalProject = true;
+                    proxy.$router.replace('/module');
+                    return;
+                }
                 if (data.isSaveProject)
                 {
                     editSpaceStore.saveProjectId('0');
@@ -3873,6 +3879,7 @@ export default defineComponent({
             },
             handleDoubleClickLayer (index, layerName)
             {
+                if (!editSpaceStore.isNormalProject) return;
                 if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 data.currentEditLayer.index = index;
                 data.currentEditLayer.name = layerName;
@@ -5123,6 +5130,7 @@ export default defineComponent({
             handleInitData ()
             {
                 data.currentTool = 0;
+                if (!editSpaceStore.isNormalProject) data.currentTool = -1;
                 data.historyRecord = [];
                 data.currentFrameIndex = 0;
                 data.currentLayerIndex = 0;
@@ -5188,10 +5196,15 @@ export default defineComponent({
             {
                 // 效验id是否为项目id
                 let projectId = proxy.$route.params.projectId;
-                let projectData = JSON.parse(JSON.stringify(editSpaceStore.getProjectById(projectId)));
                 
+                let projectData = JSON.parse(JSON.stringify(editSpaceStore.getProjectById(projectId)));
                 if (projectData)
                 {
+                    if (proxy.$route.params.type && proxy.$route.params.type === 'preview')
+                    {
+                        methods.handleInitData();
+                        data.projectData.projectName = projectData.projectName;
+                    }
                     // 读取indexdb下的数据
                     if (editSpaceStore.currentProjectId !== projectData.projectId)
                     {
@@ -5308,6 +5321,7 @@ export default defineComponent({
             },
             handleMenu (e, key, contextData)
             {
+                if (!editSpaceStore.isNormalProject) return;
                 if (data.pinDouMode) return;
                 methods.closeMenu();
                 console.log(e);
@@ -5436,6 +5450,7 @@ export default defineComponent({
             ...toRefs(data),
             ...methods,
             ...computedApi,
+            editSpaceStore,
             copyText,
             ...useDrag()
         };

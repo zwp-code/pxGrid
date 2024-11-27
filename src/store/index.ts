@@ -17,7 +17,9 @@ export const useEditSpaceStore = defineStore('editSpace', {
             isFullWork:false,
             projectList:[] as any,
             sort:'updateAt',
-            pindouMaps:{} as any
+            pindouMaps:{} as any,
+            isNormalProject:true,
+            previewProjectData:null as any
         };
     },
     getters: {
@@ -260,6 +262,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
         
         getProjectById (projectId)
         {
+            if (!this.isNormalProject) return this.previewProjectData;
             let value = this.projectList.find((v) => v.id === projectId);
             return value && value.data;
         },

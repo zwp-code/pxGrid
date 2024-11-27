@@ -5,10 +5,10 @@
                 <div class="back flex-start">
                     <el-icon @click="handleBack"><ArrowLeftBold /></el-icon>
                     <h1>{{ projectData.projectName }}
-                        <span style="color:red" v-if="!isSaveProject">*</span>
+                        <span style="color:red" v-if="!isSaveProject && editSpaceStore.isNormalProject">*</span>
                     </h1>
                 </div>
-                <div class="flex-end">
+                <div class="flex-end" v-if="editSpaceStore.isNormalProject">
                     <el-tooltip
                     content="撤销 [Alt/⌥ + z]"
                     placement="bottom">
@@ -74,7 +74,7 @@
                 </div>
             </el-header>
             <div class="flex-start flex-nowarp full-w" style="flex: 1;">
-                <div class="functionBox">
+                <div class="functionBox" v-if="editSpaceStore.isNormalProject">
                     <div class="flex-column-start">
                         <el-tooltip
                             content="画笔 [q]"
@@ -354,8 +354,8 @@
                     v-for="(item, index) in drawRecord"
                     :data-key="item.frameId"
                     data-node="LI"
-                    :disabled="pinDouMode"
-                    :key="item.frameId" trigger="hover">
+                    :disabled="pinDouMode || !editSpaceStore.isNormalProject"
+                    :key="item.frameId" trigger="contextmenu">
                         <div
                         @click="handleChangeFrame(index)"
                         class="frame-item pointer"
@@ -376,7 +376,7 @@
                     </el-dropdown>
                     <div class="frame-item pointer frame-add flex-center"
                     @click="handleAddFrame"
-                    v-if="drawRecord.length < maxFrame">
+                    v-if="drawRecord.length < maxFrame && editSpaceStore.isNormalProject">
                         <el-icon><Plus /></el-icon>
                     </div>
                 </div>
@@ -384,7 +384,7 @@
         </el-main>
         <el-aside>
             <div class="full-h flex-nowarp flex flex-column">
-                <div style="flex:1" class="full-w">
+                <div style="flex:1" class="full-w" v-if="editSpaceStore.isNormalProject">
                     <h1>属性面板</h1>
                     <el-divider border-style="dashed" />
                     <div class="function-block function-block-between">
@@ -544,7 +544,7 @@
                 </div>
                 <div style="flex: 1;margin-top: 15px;" class="full-w scrollHidden" v-if="drawRecord.length">
                     <h1 class="flex-between">图层面板 
-                        <div class="flex-end">
+                        <div class="flex-end" v-if="editSpaceStore.isNormalProject">
                             <el-icon 
                             style="margin-right: 15px;" 
                             class="pointer" 
@@ -615,7 +615,7 @@
                                 </div>
                                 <div @dblclick="handleDoubleClickLayer(index, item.layerName)" v-else>{{ item.layerName }}</div>
                             </div>
-                            <div class="flex-end">
+                            <div class="flex-end" v-if="editSpaceStore.isNormalProject">
                                 <el-icon style="margin-right:10px" class="pointer" @click.stop="handleCopyLayer(index)"><CopyDocument /></el-icon>
                                 <el-popconfirm title="确认删除该图层？" width="200" @confirm="handleDeleteLayer(index)">
                                     <template #reference>

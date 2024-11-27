@@ -1,7 +1,10 @@
 <template>
     <div 
     class="full-layout scrollbar routerview flex-center">
-        <div class="full-layout flex flex-column" v-loading="isloading" element-loading-background="#00000000">
+        <div class="full-layout flex flex-column"
+         v-loading="isloading"
+         :element-loading-text="loadingText"
+        element-loading-background="#00000000">
             <div class="flex-start searchBox">
                 <div class="input-search">
                     <el-icon><Search /></el-icon>
@@ -58,6 +61,7 @@
                                     <el-dropdown-menu>
                                         <el-dropdown-item @click="handleDownload(item.data)" icon="Download">{{ $t('message.download')}}</el-dropdown-item>
                                         <el-dropdown-item @click="handleImport(item.data)" icon="Upload">{{ $t('message.import')}}</el-dropdown-item>
+                                        <el-dropdown-item @click="handlePreview(item.data)" icon="View">{{ $t('message.preview')}}</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>
                             </el-dropdown>

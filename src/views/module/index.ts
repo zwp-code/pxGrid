@@ -30,7 +30,8 @@ export default defineComponent({
                 { value:5, label:'静态' }
             ],
             currentPage:1,
-            total:0
+            total:0,
+            loadingText:'正在加载...'
         });
 
         const computedApi = {
@@ -57,6 +58,7 @@ export default defineComponent({
                 //     return reg.test(item.data.projectName) || reg.test(item.data.desc);
                 // });
                 data.isloading = true;
+                data.loadingText = '正在搜索...';
                 methods.handleFilter(data.filterValue);
                 // if (data.searchData.length === 0)
                 // {
@@ -194,13 +196,38 @@ export default defineComponent({
                         }
                     });
                 }
-                data.isloading = false;
+                // data.isloading = false;
             },
             handleReset ()
             {
                 data.searchValue = '';
                 data.filterValue = [0];
                 methods.handleFilter(data.filterValue);
+            },
+            handlePreview (projectData)
+            {
+                axios.get(`${import.meta.env.VITE_APP_API_URL}project/${projectData.projectId}.json`)
+                    .then((res) => 
+                    {
+                        let jsonData = res.data;
+                        editSpaceStore.previewProjectData = jsonData;
+                        editSpaceStore.isNormalProject = false;
+                        data.isloading = true;
+                        data.loadingText = '正在打开项目';
+                        proxy.$router.push({
+                            name:'work',
+                            params:{
+                                projectId:jsonData.projectId,
+                                type:'preview'
+                            }
+                        });
+                        console.log(jsonData);
+                    })
+                    .catch((err) => 
+                    {
+                        proxy.$message.error('加载失败 - ' + err);
+                        console.error(err);
+                    });
             },
             handleImport (projectData)
             {
@@ -214,7 +241,7 @@ export default defineComponent({
                         jsonData.projectId = uuid.v1();
                         jsonData.tip = '新项目';
                         jsonData.isTop = 0;
-                        jsonData.frameImg = projectData.frameImg;
+                        // jsonData.frameImg = projectData.frameImg;
                         editSpaceStore.saveProject(jsonData).then((res1) => 
                         {
                             if (res1) 
@@ -237,7 +264,7 @@ export default defineComponent({
                     })
                     .catch((err) => 
                     {
-                        proxy.$message.error('下载失败 - ' + err);
+                        proxy.$message.error('导入失败 - ' + err);
                         console.error(err);
                     });
                 
@@ -256,6 +283,7 @@ export default defineComponent({
             {
                 methods.handleFilter(data.filterValue);
             }
+            if (data.searchData.length) data.isloading = false;
         });
 
         return {

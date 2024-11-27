@@ -1,6 +1,7 @@
 import message from '@/utils/message';
 import JSZip from 'jszip';
 import FileSaver from 'file-saver';
+import { addListener, launch, stop, setDetectDelay } from 'devtools-detector';
 /**
  * 转16进制
  * @param obj
@@ -481,3 +482,22 @@ export function nearestNeighborColorZoom (scaleAreaData, scaleRatio)
     }
     return scaledPixelMap;
 }
+
+export const monitorLog = () => 
+{
+    if (import.meta.env.VITE_NODE_ENV === 'production') 
+    {
+        (() => 
+        {
+            addListener((isOpen) => 
+            {
+                if (isOpen) 
+                {
+                    window.onbeforeunload = null;
+                    window.location.href = 'https://baidu.com';
+                }
+            });
+            launch();
+        })();
+    }
+};
