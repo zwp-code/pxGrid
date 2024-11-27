@@ -378,7 +378,8 @@
 
 .frame-list {
     margin-left: 20px;
-    overflow: auto;
+    overflow-x: auto;
+    
     .frame-item {
         border: 2px solid var(--el-shadow-aside);
         border-radius: 5px;

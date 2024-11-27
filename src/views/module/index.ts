@@ -206,28 +206,14 @@ export default defineComponent({
             },
             handlePreview (projectData)
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}project/${projectData.projectId}.json`)
-                    .then((res) => 
-                    {
-                        let jsonData = res.data;
-                        editSpaceStore.previewProjectData = jsonData;
-                        editSpaceStore.isNormalProject = false;
-                        data.isloading = true;
-                        data.loadingText = '正在打开项目';
-                        proxy.$router.push({
-                            name:'work',
-                            params:{
-                                projectId:jsonData.projectId,
-                                type:'preview'
-                            }
-                        });
-                        console.log(jsonData);
-                    })
-                    .catch((err) => 
-                    {
-                        proxy.$message.error('加载失败 - ' + err);
-                        console.error(err);
-                    });
+                data.isloading = true;
+                data.loadingText = '正在打开项目';
+                proxy.$router.push({
+                    name:'preview',
+                    params:{
+                        projectId:projectData.projectId
+                    }
+                });
             },
             handleImport (projectData)
             {

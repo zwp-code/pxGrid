@@ -53,6 +53,12 @@ const routes:RouteRecordRaw[] = [
                 name:'work',
                 meta:{ title:'工作台' },
                 component:() => import('@/views/work/index.vue')
+            },
+            {
+                path:'preview/:projectId',
+                name:'preview',
+                meta:{ title:'预览项目' },
+                component:() => import('@/views/preview/index.vue')
             }
         ]
     }

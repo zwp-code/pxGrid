@@ -17,7 +17,6 @@ function useDrag ()
     const methods = {
         onDragStart (event, pinDouMode)
         {
-            if (!editSpaceStore.isNormalProject) return;
             if (pinDouMode) return;
             data.draging = event.target;
             event.dataTransfer.effectAllowed = 'move';

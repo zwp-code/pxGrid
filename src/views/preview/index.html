@@ -1,0 +1,75 @@
+<div class="container full-h" 
+    :style="checkzIndex" 
+    v-loading="loading"
+    :element-loading-text="loadingText"
+    element-loading-background="#00000000">
+    <el-container class="full-h flex-warp">
+        <el-main class="flex-column-center" style="display: flex;padding: 0;min-width: 500px">
+            <el-header class="flex-between">
+                <div class="back flex-start">
+                    <el-icon @click="handleBack"><ArrowLeftBold /></el-icon>
+                    <h1>{{ projectData.projectName }}</h1>
+                </div>
+            </el-header>
+            <div class="flex-start flex-nowarp full-w" style="flex: 1;">
+                <div class="pixelBox scrollbar">
+                    <canvas id="PixelCanvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
+                    <canvas id="Canvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
+                    <canvas id="RealCanvas" v-show="false"></canvas>
+                </div>
+            </div>
+            <el-footer class="flex-start">
+                <div class="text-center">帧</div>
+                <div 
+                class="flex-start frame-list scrollbar scrollYHidden"
+                v-if="drawRecord.length"
+                ref="frameBox"
+                id="frame-box">
+                    <div
+                    v-for="(item, index) in drawRecord"
+                    :key="item.frameId"
+                    @click="handleChangeFrame(index)"
+                    class="frame-item pointer"
+                    :class="{ 'active': currentFrameIndex === index }">
+                        <img draggable="false" :src="item.currentFrameImg" v-if="item.currentFrameImg">
+                    </div>
+                </div>
+            </el-footer>
+        </el-main>
+        <el-aside>
+            <div class="full-h flex-nowarp flex flex-column">
+                <div style="flex: 1;margin-top: 15px;" class="full-w scrollHidden" v-if="drawRecord.length">
+                    <h1 class="flex-between">图层面板</h1>
+                    <el-divider border-style="dashed" />
+                    <div 
+                    ref="layerBox"
+                    id="layer-box"
+                    class="scrollbar scrollY full-w layer-list"
+                    style="height: calc(100% - 50px);">
+                        <div
+                        v-for="(item, index) in drawRecord[currentFrameIndex].layer"
+                        draggable="true"
+                        :data-key="item.layerId"
+                        data-node="LI"
+                        :key="item.layerId"
+                        class="layer-item flex-between pointer full-w"  
+                        style="gap: 10px;"
+                        :class="{ 'active': currentLayerIndex === index, 'select': selectLayerList.includes(index) }"
+                        @click="handleChangeLayer(index)">
+                            <div class="flex-start" style="gap: 10px;">
+                                <div class="pointer layer-pic" @click.stop="handleChangeLayerVisible(index)">
+                                    <img :src="requireVisibleImg(item.isRender)" />
+                                </div>
+                                <div class="layer-img flex-center" v-if="item.currentLayerImg">
+                                    <img draggable="false" :src="item.currentLayerImg">
+                                </div>
+                                <div>{{ item.layerName }}</div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </el-aside>
+    </el-container>
+</div>
