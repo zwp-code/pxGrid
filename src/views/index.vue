@@ -161,7 +161,7 @@ export default defineComponent({
                             data.notice = {
                                 'id':'1',
                                 'title':'公告',
-                                'content':"客户端异常，暂时无法使用！如长时间无法使用请联系作者\n'<span style='color:green'>作者QQ：2152456816（Java）</span>'",
+                                'content':"客户端异常，暂时无法使用！如长时间无法使用请联系作者\n<span style='color:green'>作者QQ：2152456816（Java）</span>",
                                 'isForceUpdate':'1'
                             };
                         }
@@ -170,7 +170,7 @@ export default defineComponent({
                             data.notice = {
                                 'id':'1',
                                 'title':'公告',
-                                'content':"网站异常，暂时无法使用！如长时间无法使用请联系作者\n'<span style='color:green'>作者QQ：2152456816（Java）</span>'",
+                                'content':"网站异常，暂时无法使用！如长时间无法使用请联系作者\n<span style='color:green'>作者QQ：2152456816（Java）</span>",
                                 'isForceUpdate':'1'
                             };
                         }
