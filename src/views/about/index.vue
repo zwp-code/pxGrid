@@ -1,7 +1,7 @@
 <template>
     <div class="full-layout flex-start scrollbar routerview" style="position: relative;">
         <div class="flex-start-cv full-layout">
-            <div class="full-layout pad-1 scrollAuto scrollbar">
+            <div class="full-layout pad-1 scrollAuto scrollbar" v-if="!checkIsClientEnv()">
                 <h1># {{$t('message.update')}}</h1>
 
                 <el-timeline>

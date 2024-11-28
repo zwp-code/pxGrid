@@ -1,20 +1,23 @@
 <template>
-    <el-dialog v-model="dialogVisible"
+    <el-dialog 
+    v-model="dialogVisible"
     :width="400"
     :before-close="handleClose"
     :lock-scroll="false"
     :show-close="false"
+    :close-on-click-modal="!checkIsForceUpdate"
+    :close-on-press-escape="!checkIsForceUpdate"
     class="z-dialog" center>
         <template #header="{ titleId, titleClass }">
             <div class="flex-between">
                 <h4 :id="titleId" :class="titleClass" draggable="false">{{notice.title}}</h4>
-                <div class="flex-end">
+                <div class="flex-end" v-if="!checkIsForceUpdate">
                     <el-icon class="pointer" @click="handleClose" title="关闭"><Close /></el-icon>
                 </div>
             </div>
         </template>
-        <div class="notice-content">{{notice.content}}</div>
-        <template #footer>
+        <div class="notice-content" v-html="notice.content"></div>
+        <template #footer v-if="!checkIsForceUpdate">
             <span class="dialog-footer">
                 <el-button type="primary" @click="handleHidden" class="full-w">不再提示</el-button>
             </span>
@@ -23,7 +26,7 @@
 </template>
 
 <script lang="ts">
-import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance } from 'vue';
+import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance, computed } from 'vue';
 export default defineComponent({
     name: 'NoticeDialog',
     components: {},
@@ -43,6 +46,11 @@ export default defineComponent({
         let { proxy }:any = getCurrentInstance();
         let data = reactive({
             dialogVisible:props.visible
+        });
+        const checkIsForceUpdate = computed(() => 
+        {
+            if (props.notice.isForceUpdate === '0') return false;
+            return true;
         });
         let methods = {
             handleClose ()
@@ -64,7 +72,8 @@ export default defineComponent({
         });
         return {
             ...toRefs(data),
-            ...methods
+            ...methods,
+            checkIsForceUpdate
         };
     }
 });

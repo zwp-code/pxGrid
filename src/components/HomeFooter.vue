@@ -4,7 +4,10 @@
             <div>今日浏览量：<span style="color:#e16363">{{tongjiInfo.pv}}次</span> </div>
             <div>今日访客量：<span style="color:#48a53e">{{tongjiInfo.uv}}人</span> </div>
         </div>
-        <div v-else>像素格子 © 2024 BY Java V1.6.0 </div>
+        <template v-else>
+            <div v-if="checkIsClientEnv">像素格子 © 2024 BY Java V1.0.0 </div>
+            <div v-else>像素格子 © 2024 BY Java V1.9.0 </div>
+        </template>
     </div>
 </template>
 
@@ -12,7 +15,7 @@
 import config from '@/config';
 import cache from '@/utils/cache';
 import jsonp from 'jsonp-pro';
-import { ref, reactive, toRefs, defineComponent, onMounted } from 'vue';
+import { ref, reactive, toRefs, defineComponent, onMounted, computed } from 'vue';
 export default defineComponent({
     name: 'HomeFooter',
     components: {},
@@ -23,6 +26,11 @@ export default defineComponent({
     {
         let data = reactive({
             tongjiInfo:null as any
+        });
+        const checkIsClientEnv = computed(() => 
+        {
+            if (import.meta.env.VITE_NODE_ENV === 'client') return true;
+            return false;
         });
         let methods = {
             getBaiduData ()
@@ -72,11 +80,12 @@ export default defineComponent({
 
         onMounted(() => 
         {
-            methods.getBaiduData();
+            if (import.meta.env.VITE_NODE_ENV !== 'client') methods.getBaiduData();
         });
         return {
             ...toRefs(data),
-            ...methods
+            ...methods,
+            checkIsClientEnv
         };
     }
 });

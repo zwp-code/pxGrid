@@ -1,7 +1,7 @@
 import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, watchEffect } from 'vue';
 import { Download, ArrowDownBold } from '@element-plus/icons-vue';
 import axios from 'axios';
-import { base64ToBlob, blobToBase64, downloadFile, formatTime, sortList } from '@/utils/utils';
+import { base64ToBlob, blobToBase64, downloadFile, formatTime, getRequestUrl, sortList } from '@/utils/utils';
 import { uuid } from 'vue-uuid';
 import { useEditSpaceStore } from '@/store';
 export default defineComponent({
@@ -65,7 +65,7 @@ export default defineComponent({
             },
             handleDownload ({ pindouKey, pindouName })
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}pindou/${pindouKey}.json`)
+                axios.get(`${getRequestUrl()}pindou/${pindouKey}.json`)
                     .then((res) => 
                     {
                         let projectData = res.data;
@@ -84,7 +84,7 @@ export default defineComponent({
             },
             getData ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/pindou${data.currentPage}.json`)
+                axios.get(`${getRequestUrl()}json/pindou${data.currentPage}.json`)
                     .then((res) => 
                     {
                         console.log(res.data);
@@ -203,7 +203,7 @@ export default defineComponent({
             handleImport ({ pindouKey, pindouName })
             {
                 // 导入到我的拼豆
-                axios.get(`${import.meta.env.VITE_APP_API_URL}pindou/${pindouKey}.json`)
+                axios.get(`${getRequestUrl()}pindou/${pindouKey}.json`)
                     .then((res) => 
                     {
                         let jsonData = res.data;
