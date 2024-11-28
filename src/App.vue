@@ -34,6 +34,7 @@ const getProjectList  = () =>
 onMounted(() => 
 {
     monitorLog();
+    
     getProjectList();
     // 重新刷新重置projectId
     editSpaceStore.saveProjectId('0');

@@ -501,3 +501,15 @@ export const monitorLog = () =>
         })();
     }
 };
+
+export const checkIsClientEnv = () => 
+{
+    if (import.meta.env.VITE_NODE_ENV === 'client') return true;
+    return false;
+};
+
+export const getRequestUrl = () => 
+{
+    if (import.meta.env.VITE_NODE_ENV === 'client') return import.meta.env.VITE_APP_API_URL;
+    return window.location.origin + '/';
+};

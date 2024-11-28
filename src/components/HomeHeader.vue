@@ -6,6 +6,12 @@
         </div>
         <div class="flex-end">
             <el-tooltip
+            content="客户端下载"
+            placement="bottom">
+                <el-icon style="margin-right: 25px;"><Monitor /></el-icon>
+            </el-tooltip>
+
+            <el-tooltip
             :content="editSpaceStore.themeValue ? '夜间模式' : '白天模式'"
             placement="bottom">
                 <el-icon style="margin-right: 25px;" @click="changeTheme" v-if="editSpaceStore.themeValue"><Moon /></el-icon>
