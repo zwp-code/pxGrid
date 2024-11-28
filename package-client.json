@@ -1,0 +1,31 @@
+﻿{
+  "name": "pixel-grid",
+  "version": "1.0.0",
+  "description": "像素格子",
+  "main": "index.html",
+  "window": {
+    "title": "像素格子",
+    "icon": "",
+    "width": 800,
+    "height": 600,
+    "toolbar": false,
+    "frame": true,
+    "resizable": true,
+    "position": "center",
+    "transparent": false,
+    "show": true
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "build --tasks win-x86,win-x64 --mirror https://npmmirror.com/mirrors/nwjs/ .",
+    "start": "run --x64 --mirror https://npmmirror.com/mirrors/nwjs/ ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nwjs-builder-phoenix": "^1.15.0"
+  },
+  "build": {
+    "nwVersion": "0.27.5"
+  }
+}
