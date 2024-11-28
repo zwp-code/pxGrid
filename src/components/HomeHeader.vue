@@ -88,7 +88,7 @@ export default defineComponent({
             },
             handleDownloadClient ()
             {
-                //
+                proxy.$message.info('暂无下载链接');
             }
         };
 
