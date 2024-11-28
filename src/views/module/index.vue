@@ -47,6 +47,10 @@
                         <img :src="require('@/assets/hot.png')" class="top" v-if="item.data.isTop"/>
                         <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
                         <el-tag type="danger" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
+                        <div class="author flex-start">
+                            <img :src="getAuthorImg(item.author.avatar)">
+                            <p class="oneline">{{item.author.nickname}}</p>
+                        </div>
                     </div>
                     <div class="info">
                         <div class="flex-between" style="padding-bottom: 5px;">

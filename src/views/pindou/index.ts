@@ -40,7 +40,7 @@ export default defineComponent({
                 {
                     if (value && value !== '')
                     {
-                        return `${import.meta.env.VITE_APP_API_URL}pindouImg/${value}.png`;
+                        return `${getRequestUrl()}pindouImg/${value}.png`;
                     }
                     return require('@/assets/grid.png');
                 };

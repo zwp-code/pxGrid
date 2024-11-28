@@ -5,7 +5,7 @@ import Worker from '@/utils/worker.js?worker';
 import { ArrowDownBold } from '@element-plus/icons-vue';
 import { ElMessageBox } from 'element-plus';
 import FileSaver from 'file-saver';
-import { formatTime } from '@/utils/utils';
+import { formatTime, getRequestUrl } from '@/utils/utils';
 import { uuid } from 'vue-uuid';
 export default defineComponent({
     name:'project',
@@ -37,10 +37,11 @@ export default defineComponent({
                 {
                     if (value.frameImg[0] === '/')
                     {
-                        return `${import.meta.env.VITE_APP_API_URL}moduleImg${value.frameImg}`;
+                        return `${getRequestUrl()}moduleImg${value.frameImg}`;
                     }
                     if (value.data[0].currentFrameImg !== '')
                     {
+                        if (value.data[0].currentFrameImg === null) return require('@/assets/grid.png');
                         return value.data[0].currentFrameImg;
                     }
                     // if (value.frameImg === '@')
@@ -74,7 +75,7 @@ export default defineComponent({
             {
                 // editSpaceStore.saveProjectId(project.projectId);
                 data.isloading = true;
-                data.loadingText = '正在加载项目';
+                data.loadingText = '正在打开项目';
                 setTimeout(() => 
                 {
                     data.loadingText = '首次打开项目会比较慢，请耐心等待！';

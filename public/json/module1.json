@@ -3,6 +3,10 @@
     "data":[
         {
             "id":"06c40920-9760-11ef-aa15-99205bc694bc",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"剑",
                 "desc":"这是一把剑",
@@ -19,6 +23,10 @@
         },
         {
             "id":"b86b8b30-9a58-11ef-b347-b9417e8704a9",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"蜡笔小新",
                 "projectId":"b86b8b30-9a58-11ef-b347-b9417e8704a9",
@@ -35,6 +43,10 @@
         },
         {
             "id":"9b2cbfe0-9a7f-11ef-b056-79319f535999",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"樱田妮妮",
                 "projectId":"9b2cbfe0-9a7f-11ef-b056-79319f535999",
@@ -51,6 +63,10 @@
         },
         {
             "id":"deb50d70-9a85-11ef-9db8-633369d71661",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"火焰",
                 "projectId":"deb50d70-9a85-11ef-9db8-633369d71661",
@@ -67,6 +83,10 @@
         },
         {
             "id":"6a2131b0-a4de-11ef-b45f-69db4742bdfa",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"人物行走",
                 "projectId":"6a2131b0-a4de-11ef-b45f-69db4742bdfa",
@@ -83,6 +103,10 @@
         },
         {
             "id":"5be46de0-a238-11ef-b9d1-5f4de318e898",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"永夜星河-凌妙妙",
                 "projectId":"5be46de0-a238-11ef-b9d1-5f4de318e898",
@@ -99,6 +123,10 @@
         },
         {
             "id":"eb98f840-a650-11ef-a5f7-2f0b8107343e",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"永夜星河-慕子期",
                 "projectId":"eb98f840-a650-11ef-a5f7-2f0b8107343e",
@@ -115,6 +143,10 @@
         },
         {
             "id":"2bc59230-a7cc-11ef-8903-b9b1bf0e1cf6",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"麦当劳",
                 "projectId":"2bc59230-a7cc-11ef-8903-b9b1bf0e1cf6",
@@ -131,6 +163,10 @@
         },
         {
             "id":"90941e30-a7da-11ef-b2fd-c5bd23aafbf8",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"神奇宝贝-妙蛙种子",
                 "projectId":"90941e30-a7da-11ef-b2fd-c5bd23aafbf8",
@@ -147,6 +183,10 @@
         },
         {
             "id":"37d16590-abcd-11ef-937c-ef29a7957f7d",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"神奇宝贝-小火龙",
                 "projectId":"37d16590-abcd-11ef-937c-ef29a7957f7d",
@@ -163,6 +203,10 @@
         },
         {
             "id":"8a7fcdb0-abd5-11ef-a1b8-591c5a7c34d5",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"神奇宝贝-皮卡丘",
                 "projectId":"8a7fcdb0-abd5-11ef-a1b8-591c5a7c34d5",
@@ -179,6 +223,10 @@
         },
         {
             "id":"4195b7c0-a86c-11ef-8549-c5d806872875",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"小狗",
                 "projectId":"4195b7c0-a86c-11ef-8549-c5d806872875",
@@ -195,6 +243,10 @@
         },
         {
             "id":"89585af0-aba4-11ef-b055-7b9c55b5a0bd",
+            "author":{
+                "avatar":"/logo.png",
+                "nickname":"像素格子"
+            },
             "data":{
                 "projectName":"小猫加载动画",
                 "projectId":"89585af0-aba4-11ef-b055-7b9c55b5a0bd",

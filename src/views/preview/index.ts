@@ -206,7 +206,7 @@ export default defineComponent({
                 translateY:0
             }, // 是否拖动临摹的图片
             scaleTimer:null as any,
-            loadingText:'正在加载...'
+            loadingText:'正在加载项目...'
 
             
         });

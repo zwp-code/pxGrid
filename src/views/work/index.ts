@@ -3227,13 +3227,16 @@ export default defineComponent({
                 // let index = value[0] + (value[1] * data.canvasWidth);
                 // if (index >= data.canvasWidth * data.canvasHeight) return;
                 // 处理透明度问题
-                let rgba = hexToRgba(newColor);
-                let r = rgba[0];
-                let g = rgba[1];
-                let b = rgba[2];
-                let a = (data.layerAlpha / 100);
-                let hexStr = rgbaToHex([r, g, b, a]);
-                arr[index][2] = hexStr;
+                if (newColor !== data.emptyColor)
+                {
+                    let rgba = hexToRgba(newColor);
+                    let r = rgba[0];
+                    let g = rgba[1];
+                    let b = rgba[2];
+                    let a = (data.layerAlpha / 100);
+                    let hexStr = rgbaToHex([r, g, b, a]);
+                    arr[index][2] = hexStr;
+                }
                 // console.log(data.drawRecord);
                 if (isUpdate)
                 {
@@ -3972,8 +3975,8 @@ export default defineComponent({
                     let scaleX = data.canvasWidth / img.width;
                     let scaleY = data.canvasHeight / img.height;
                     let scale = Math.min(scaleX, scaleY);
-                    imgCanvas.width = img.width * scale;
-                    imgCanvas.height =  img.height * scale;
+                    imgCanvas.width = img.width * scaleX;
+                    imgCanvas.height =  img.height * scaleY;
                     pica.resize(img, imgCanvas, {
                         unsharpAmount: 100,
                         unsharpRadius: 0.5,

@@ -46,6 +46,42 @@
             top: 5px;
             left: 5px;
         }
+        .author {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all .5s;
+            padding: 0 5px;
+            gap: 10px;
+
+            .oneline {
+                opacity: 0;
+                transition: all .5s;
+                font-size: 14px;
+            }
+
+            &:hover {
+                width: 140px;
+                background-color: var(--el-menu-active-bg-color);
+
+                .oneline {
+                    opacity: 1;
+                }
+            }
+
+            img {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                border:2px solid var(--el-color-primary);
+                transition: all .5s;
+                object-fit: cover;
+            }
+        }
     }
 
     .info {

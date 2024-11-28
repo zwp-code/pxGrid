@@ -41,9 +41,24 @@ export default defineComponent({
                 {
                     if (value && value !== '')
                     {
-                        return `${import.meta.env.VITE_APP_API_URL}moduleImg${value}`;
+                        return `${getRequestUrl()}moduleImg${value}`;
                     }
                     return require('@/assets/grid.png');
+                };
+            }),
+            getAuthorImg: computed(() => 
+            {
+                return (value) => 
+                {
+                    if (value[0] === '/')
+                    {
+                        return `${getRequestUrl()}${value.slice(1)}`;
+                    }
+                    if (value.startsWith('http'))
+                    {
+                        return value;
+                    }
+                    return require('@/assets/boy.png');
                 };
             })
         };
