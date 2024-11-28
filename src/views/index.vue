@@ -190,6 +190,18 @@ export default defineComponent({
                         // proxy.$message.error(err);
                         console.error(err);
                     });
+            },
+            getOptionsData ()
+            {
+                axios.get(`${getRequestUrl()}json/option.json`)
+                    .then((res) => 
+                    {
+                        editSpaceStore.clientDownloadLink = res.data[0].url;
+                    })
+                    .catch((err) => 
+                    {
+                        console.error(err);
+                    });
             }
             
         };
@@ -203,6 +215,7 @@ export default defineComponent({
             };
             methods.changeLanguage();
             initTheme();
+            methods.getOptionsData();
             methods.getColorModules();
             methods.getNoticeData();
 

@@ -17,7 +17,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
             isFullWork:false,
             projectList:[] as any,
             sort:'updateAt',
-            pindouMaps:{} as any
+            pindouMaps:{} as any,
+            clientDownloadLink:'null'
         };
     },
     getters: {

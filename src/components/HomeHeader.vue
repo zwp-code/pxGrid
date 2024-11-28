@@ -88,7 +88,8 @@ export default defineComponent({
             },
             handleDownloadClient ()
             {
-                proxy.$message.info('暂无下载链接');
+                if (editSpaceStore.clientDownloadLink === 'null') return proxy.$message.info('暂无下载链接');
+                window.open(editSpaceStore.clientDownloadLink, '_blank');
             }
         };
 
