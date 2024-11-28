@@ -27,6 +27,7 @@ import axios from 'axios';
 import NoticeDialog from '@/components/dialog/NoticeDialog.vue';
 import { useToggle } from '@vueuse/shared';
 import { useDark } from '@vueuse/core';
+import { checkIsClientEnv, getRequestUrl } from '@/utils/utils';
 export default defineComponent({
     name:'home',
     components: {
@@ -49,7 +50,8 @@ export default defineComponent({
             notice:{
                 id:'',
                 title:'',
-                content:''
+                content:'',
+                isForceUpdate:'0'
             },
             noticeVisible:false
         });
@@ -127,7 +129,7 @@ export default defineComponent({
             },
             getNoticeData ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/notice.json`)
+                axios.get(`${getRequestUrl()}json/notice.json`)
                     .then((res) => 
                     {
                         if (res.data.length > 0)
@@ -136,7 +138,14 @@ export default defineComponent({
                             {
                                 proxy.$utils.cache.isHideNotice.set('0');
                             }
-                            data.notice = proxy.$utils.cache.lang.get() === 'zh' ? res.data[0] : res.data[1];
+                            if (checkIsClientEnv())
+                            {
+                                data.notice = proxy.$utils.cache.lang.get() === 'zh' ? res.data[2] : res.data[3];
+                            }
+                            else
+                            {
+                                data.notice = proxy.$utils.cache.lang.get() === 'zh' ? res.data[0] : res.data[1];
+                            }
                             if (proxy.$utils.cache.isHideNotice.get() !== data.notice.id)
                             {
                                 data.noticeVisible = true;
@@ -147,12 +156,31 @@ export default defineComponent({
                     .catch((err) => 
                     {
                         // proxy.$message.error(err);
+                        if (checkIsClientEnv())
+                        {
+                            data.notice = {
+                                'id':'1',
+                                'title':'公告',
+                                'content':"客户端异常，暂时无法使用！如长时间无法使用请联系作者\n'<span style='color:green'>作者QQ：2152456816（Java）</span>'",
+                                'isForceUpdate':'1'
+                            };
+                        }
+                        else
+                        {
+                            data.notice = {
+                                'id':'1',
+                                'title':'公告',
+                                'content':"网站异常，暂时无法使用！如长时间无法使用请联系作者\n'<span style='color:green'>作者QQ：2152456816（Java）</span>'",
+                                'isForceUpdate':'1'
+                            };
+                        }
+                        data.noticeVisible = true;
                         console.error(err);
                     });
             },
             getColorModules ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/color.json`)
+                axios.get(`${getRequestUrl()}json/color.json`)
                     .then((res) => 
                     {
                         editSpaceStore.colorModules = res.data;

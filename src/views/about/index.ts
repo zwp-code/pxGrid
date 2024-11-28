@@ -1,5 +1,6 @@
 import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed } from 'vue';
 import HomeFooter from '@/components/HomeFooter.vue';
+import { checkIsClientEnv, getRequestUrl } from '@/utils/utils';
 import axios from 'axios';
 export default defineComponent({
     name:'about',
@@ -31,7 +32,7 @@ export default defineComponent({
             },
             getDonateData ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/donate.json`)
+                axios.get(`${getRequestUrl()}json/donate.json`)
                     .then((res) => 
                     {
                         data.donates = res.data;
@@ -44,7 +45,7 @@ export default defineComponent({
             },
             getUpdateData ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/update.json`)
+                axios.get(`${getRequestUrl()}json/update.json`)
                     .then((res) => 
                     {
                         if (res.data.length)
@@ -60,7 +61,7 @@ export default defineComponent({
             },
             getLinkData ()
             {
-                axios.get(`${import.meta.env.VITE_APP_API_URL}json/link.json`)
+                axios.get(`${getRequestUrl()}json/link.json`)
                     .then((res) => 
                     {
                         data.links = res.data;
@@ -82,7 +83,8 @@ export default defineComponent({
 
         return {
             ...toRefs(data),
-            ...methods
+            ...methods,
+            checkIsClientEnv
         };
     }
 });
