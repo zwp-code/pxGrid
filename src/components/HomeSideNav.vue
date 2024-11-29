@@ -20,13 +20,21 @@
                 <p style="margin-left: 10px;">{{ $t(`message.${item.title}`)}}</p>
             </template>
         </el-menu-item>
-
+        <div class="static-santa-claus" v-show="!isCollapse && checkDate('圣诞')">
+            <lottie-player src="./lottie/圣诞老人2.json"  background="transparent"  speed="1"  style="width: 100px; height: 100px;" loop autoplay></lottie-player>
+        </div>
     </el-menu>
+    <teleport to="body">
+        <div class="move-santa-claus" v-if="checkDate('圣诞')">
+            <lottie-player src="./lottie/圣诞老人1.json"  background="transparent"  speed="1"  style="width: 150px; height: 150px;" loop autoplay></lottie-player>
+        </div>
+    </teleport>
 </template>
 
 <script lang="ts">
 import { ref, reactive, toRefs, defineComponent, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
+import { checkDate } from '@/utils/utils';
 export default defineComponent({
     name: 'HomeSideNav',
     components: {},
@@ -100,7 +108,8 @@ export default defineComponent({
         
         return {
             ...toRefs(data),
-            ...methods
+            ...methods,
+            checkDate
         };
     }
 });

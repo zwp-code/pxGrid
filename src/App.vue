@@ -15,7 +15,7 @@
 import { reactive, toRefs, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue';
 import { useEditSpaceStore } from './store';
 import cache from './utils/cache';
-import { monitorLog } from './utils/utils';
+import { monitorLog, checkDate } from './utils/utils';
 const editSpaceStore = useEditSpaceStore();
 // const useDBHooks = useDB();
 const { proxy }:any = getCurrentInstance();
@@ -34,7 +34,6 @@ const getProjectList  = () =>
 onMounted(() => 
 {
     monitorLog();
-    
     getProjectList();
     // 重新刷新重置projectId
     editSpaceStore.saveProjectId('0');

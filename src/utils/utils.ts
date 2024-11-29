@@ -513,3 +513,18 @@ export const getRequestUrl = () =>
     if (import.meta.env.VITE_NODE_ENV === 'client') return import.meta.env.VITE_APP_API_URL;
     return window.location.origin + '/';
 };
+
+export const checkDate = (type) => 
+{
+    let date = new Date().getTime();
+    if (type === '圣诞')
+    {
+        if (date > 1734969601000 && date < 1735142399000) return true;
+        return false;
+    }
+    else if (type === '公祭日')
+    {
+        if (date > 1734019201000 && date < 1734105601000) return true;
+        return false;
+    }
+};
