@@ -1,7 +1,8 @@
 import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed } from 'vue';
 import HomeFooter from '@/components/HomeFooter.vue';
-import { checkIsClientEnv, getRequestUrl } from '@/utils/utils';
+import { checkIsClientEnv, getRequestUrl, checkDate } from '@/utils/utils';
 import axios from 'axios';
+import { useEditSpaceStore } from '@/store';
 export default defineComponent({
     name:'about',
     components: {
@@ -12,6 +13,7 @@ export default defineComponent({
     setup (props, context)
     {
         const { proxy }:any = getCurrentInstance();
+        const editSpaceStore = useEditSpaceStore();
         let data = reactive({
             updates:[
                 
@@ -84,7 +86,8 @@ export default defineComponent({
         return {
             ...toRefs(data),
             ...methods,
-            checkIsClientEnv
+            checkIsClientEnv,
+            checkDate
         };
     }
 });

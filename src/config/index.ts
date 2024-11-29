@@ -17,7 +17,8 @@ const config =
             id:1,
             groupName:'常用颜色',
             list:[
-                '#00000000', '#000000ff', '#ffffffff'
+                '#000000ff', '#ffffffff', '#0000ffff', '#00ff00ff', '#ff0000ff', '#ffff00ff', '#c0c0c0ff',
+                '#871f78ff'
             ]
         }
     ]
