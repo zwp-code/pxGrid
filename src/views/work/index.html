@@ -22,11 +22,11 @@
                     </el-tooltip>
 
                     <el-tooltip content="放大画布 [滚轮/Ctrl/⌘ + =]" placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(1)"><ZoomIn /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(0.1)"><ZoomIn /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip content="缩小画布 [滚轮/Ctrl/⌘ + -]" placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(-1)"><ZoomOut /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(-0.1)"><ZoomOut /></el-icon>
                     </el-tooltip>
                     
 
@@ -293,8 +293,20 @@
                 </div>
                 <div class="pixelBox scrollbar" v-loading="loading" element-loading-background="#00000000">
                     <img :src="linmoPhoto" v-show="linmoPhoto" draggable="false" :style="linmoPhotoStyle" class="linmoPhoto" id="linmoPhoto"/>
-                    <canvas id="PixelCanvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
-                    <canvas id="Canvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
+                    
+                    <canvas 
+                    id="PixelCanvas" 
+                    width="512" height="512" 
+                    @contextmenu="(e) => e.preventDefault()"
+                    :style="canvasStyle"
+                    ></canvas>
+                    <canvas 
+                    id="Canvas" 
+                    :style="canvasStyle" 
+                    width="512" height="512" 
+                    @contextmenu="(e) => e.preventDefault()"
+                    ></canvas>
+                    <canvas id="BaseCanvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
                     <canvas id="RealCanvas" v-show="false"></canvas>
                     
                     <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>

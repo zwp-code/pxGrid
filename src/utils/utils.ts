@@ -528,3 +528,22 @@ export const checkDate = (type) =>
         return false;
     }
 };
+
+export function getScaleValue (element) 
+{
+    let style:any = window.getComputedStyle(element);
+    let matrix = style.transform || style.webkitTransform || style.mozTransform;
+    let values = matrix.split('(')[1].split(')')[0].split(',');
+    let a = values[0];
+    let b = values[1];
+    // handle skew and rotation, which modify scale
+    if (a * b < 0) 
+    {
+        a = -Math.sqrt(a * a + b * b);
+    } 
+    else 
+    {
+        a = Math.sqrt(a * a + b * b);
+    }
+    return a;
+}

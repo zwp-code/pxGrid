@@ -62,14 +62,22 @@
         left: 9999px;
     }
 
-    #Canvas, #PixelCanvas {
+    #BaseCanvas {
         position: absolute;
         top: 0;
         left: 0;
         transform: translate3d(0, 0, 0);
+        pointer-events: none;
         // top: 50%;
         // left: 50%;
         // transform: translate3d(-50%, -50%, 0);
+    }
+
+    #Canvas, #PixelCanvas {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate3d(0, 0, 0) scale(1);
     }
 
     .gridInfo {
