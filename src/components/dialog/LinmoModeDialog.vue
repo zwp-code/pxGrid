@@ -58,7 +58,7 @@
             
             </div>
             <div class="item flex-between">
-                <p>取色器</p>
+                <p>取色器 [快捷键 c]</p>
                 <EyeDropper @colorPicked="handleColorPicked" class="pick-color" :style="{
                     backgroundColor:pickedColor
                 }"/>
@@ -101,10 +101,10 @@ export default defineComponent({
             zIndex:false,
             display:false,
             linmoPhotoStyle:{
-                transform: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
+                transform: 'translate3d(0px, 0px, 10px) rotate(0deg) scale(1, 1)',
                 opacity:1,
                 zIndex:0,
-                display:'block'
+                display:'none'
             },
             pickedColor:'#00000000'
 
@@ -148,10 +148,10 @@ export default defineComponent({
                 data.dialogVisible = false;
                 context.emit('close', 'linmoMode');
                 context.emit('update', {
-                    transform: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
+                    transform: 'translate3d(0px, 0px, 10px) rotate(0deg) scale(1, 1)',
                     opacity:1,
                     zIndex:0,
-                    display:'block'
+                    display:'none'
                 });
                 context.emit('upload', null);
             },
@@ -169,12 +169,13 @@ export default defineComponent({
                     data.zIndex = false;
                     data.display = false;
                     data.pickedColor = '#00000000';
+                    methods.updatelinmoPhotoStyle();
                 }
             },
             updatelinmoPhotoStyle () 
             {
                 // 根据当前的变换值更新linmoPhotoStyle对象
-                data.linmoPhotoStyle.transform = `translate(${data.posX}px, ${data.posY}px) rotate(${data.rotate}deg) scale(${data.zoomX}, ${data.zoomY})`;
+                data.linmoPhotoStyle.transform = `translate3d(${data.posX}px, ${data.posY}px, 10px) rotate(${data.rotate}deg) scale(${data.zoomX}, ${data.zoomY})`;
                 data.linmoPhotoStyle.opacity = data.opacity / 100;
                 data.linmoPhotoStyle.zIndex = data.zIndex ? 1 : 0;
                 data.linmoPhotoStyle.display = data.display ? 'none' : 'block';

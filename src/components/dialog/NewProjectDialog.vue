@@ -18,7 +18,7 @@
                         <el-input
                         v-model="itemInfo.width"
                         type="number"
-                        :max="70"
+                        :max="72"
                         :min="6"
                         @change="(e) => handleChangeCanvasSize(e, 'width')"
                         >
@@ -28,7 +28,7 @@
                         v-model="itemInfo.height"
                         style="margin-left: 10px;"
                         type="number"
-                        :max="70"
+                        :max="72"
                         :min="6"
                         @change="(e) => handleChangeCanvasSize(e, 'height')"
                         >
@@ -171,9 +171,9 @@ export default defineComponent({
             },
             handleChangeCanvasSize (e, key)
             {
-                if (e < 6 || e > 70) 
+                if (e < 6 || e > 72) 
                 {
-                    data.itemInfo[key] = e < 6 ? 6 : e > 70 ? 70 : data.itemInfo[key];
+                    data.itemInfo[key] = e < 6 ? 6 : e > 72 ? 72 : data.itemInfo[key];
                     proxy.$message.warning('画布像素必须6-70像素区间');
                 }
                 else
