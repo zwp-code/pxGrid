@@ -356,12 +356,12 @@ export function colorDistance (r1, g1, b1, r2, g2, b2)
 export function measureTextHeight (width, height)
 {
     let newHeight = height;
-    if (width >= 40) return newHeight -= 8;
-    if (width >= 35) return newHeight -= 7;
-    if (width >= 30) return newHeight -= 6;
-    if (width >= 25) return newHeight -= 5;
-    if (width >= 20) return newHeight -= 4;
-    if (width >= 15) return newHeight -= 3;
+    if (width >= 40) return newHeight -= 7;
+    if (width >= 35) return newHeight -= 6;
+    if (width >= 30) return newHeight -= 5;
+    if (width >= 25) return newHeight -= 4;
+    if (width >= 20) return newHeight -= 3;
+    if (width >= 15) return newHeight -= 2;
     return newHeight;
 }
 
@@ -546,4 +546,9 @@ export function getScaleValue (element)
         a = Math.sqrt(a * a + b * b);
     }
     return a;
+}
+
+export function isEven (num) 
+{
+    return num % 2 === 0;
 }

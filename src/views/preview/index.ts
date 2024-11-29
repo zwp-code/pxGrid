@@ -81,12 +81,12 @@ export default defineComponent({
             lastY:0,
 
             // MyColorDialogVisible:false,
-            donateVisible:false,
-            noticeVisible:false,
-            notice:{
-                title:'',
-                content:''
-            },
+            // donateVisible:false,
+            // noticeVisible:false,
+            // notice:{
+            //     title:'',
+            //     content:''
+            // },
 
             currentFrameIndex:0,
             currentLayerIndex:0,
