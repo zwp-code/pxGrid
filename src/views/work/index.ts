@@ -3218,14 +3218,11 @@ export default defineComponent({
 
             addDrawRecord (value, isUpdate = true)
             {
-                console.log(value);
                 let index = value[0] + (value[1] * data.canvasWidth);
                 if (index >= data.canvasWidth * data.canvasHeight) return;
                 let color = value[2];
                 let newColor = methods.handleTransformColorAsHex(color).toLowerCase();
                 let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                // let index = value[0] + (value[1] * data.canvasWidth);
-                // if (index >= data.canvasWidth * data.canvasHeight) return;
                 // 处理透明度问题
                 if (newColor !== data.emptyColor)
                 {
@@ -3237,7 +3234,7 @@ export default defineComponent({
                     let hexStr = rgbaToHex([r, g, b, a]);
                     arr[index][2] = hexStr;
                 }
-                // console.log(data.drawRecord);
+                
                 if (isUpdate)
                 {
                     // 更新帧图片

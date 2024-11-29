@@ -166,6 +166,11 @@ body,html{
     text-align: right;
 }
 
+.web-gray {
+    filter: grayscale(100%);
+    -webkit-filter: grayscale(100%);
+}
+
 .oneline {
     @include ellipsis(1)
 }
@@ -389,6 +394,63 @@ body,html{
     animation: Hide .3s ease-in-out 0s forwards;
 }
 
+@keyframes SantaClausMoveShow {
+    0% {
+        right: 0px;
+    }
+    1% {
+        right: 1%;
+        bottom: -20px;
+    }
+    5% {
+        right: 5%;
+        bottom: 0px;
+    }
+    15% {
+        right: 15%;
+        bottom: 30px;
+    }
+    30% {
+        right: 30%;
+        bottom: 60px;
+    }
+    45% {
+        right: 45%;
+        bottom: 90px;
+    }
+    60% {
+        right: 60%;
+        bottom: 120px;
+    }
+    75% {
+        right: 75%;
+        bottom: 150px;
+    }
+    90% {
+        right: 90%;
+        bottom: 180px;
+    }
+    100% {
+        right: 100%;
+        bottom: 210px;
+    }
+}
+
+.move-santa-claus {
+    position: fixed;
+    right: 0px;
+    bottom: -40px;
+    pointer-events: none;
+    z-index: 9999;
+    animation: SantaClausMoveShow 10s linear 2s forwards;
+}
+
+.static-santa-claus {
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50px);
+}
 
 
 
