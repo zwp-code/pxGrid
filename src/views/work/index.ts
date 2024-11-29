@@ -123,7 +123,7 @@ export default defineComponent({
             exportVisible:false,
             exportLoaidng:false,
 
-            loading:false,
+            loading:true,
             isSpace:false,
             isShift:false,
             isDragging:false,
@@ -5188,15 +5188,9 @@ export default defineComponent({
             {
                 // 效验id是否为项目id
                 let projectId = proxy.$route.params.projectId;
-                
                 let projectData = JSON.parse(JSON.stringify(editSpaceStore.getProjectById(projectId)));
                 if (projectData)
                 {
-                    // if (proxy.$route.params.type && proxy.$route.params.type === 'preview')
-                    // {
-                    //     methods.handleInitData();
-                    //     data.projectData.projectName = projectData.projectName;
-                    // }
                     // 读取indexdb下的数据
                     if (editSpaceStore.currentProjectId !== projectData.projectId)
                     {
@@ -5267,7 +5261,7 @@ export default defineComponent({
                                 catch (err)
                                 {
                                     console.log(err);
-                                    proxy.$message.error('项目异常，请重新刷新');
+                                    proxy.$message.error('项目读取异常');
                                     window.location.reload();
                                 }
                             };
@@ -5361,6 +5355,19 @@ export default defineComponent({
         {
             methods.handleDrawReferenceLine(data.canvasBeginPos.x, data.canvasBeginPos.y);
         });
+
+        watch(() => editSpaceStore.isQueryProjectData, (newValue, oldValue) => 
+        {
+            if (newValue === '1')
+            {
+                methods.handleReadProjectData();
+            }
+            else if (newValue === '2')
+            {
+                proxy.$router.replace('/project');
+            }
+        });
+
         
         onMounted(() => 
         {
@@ -5372,7 +5379,10 @@ export default defineComponent({
 
         onActivated(() =>
         {
-            methods.handleReadProjectData();
+            if (editSpaceStore.isQueryProjectData === '1')
+            {
+                methods.handleReadProjectData();
+            }
             if (data.canvas)
             {
                 methods.startDrawing();
