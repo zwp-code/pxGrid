@@ -1,4 +1,4 @@
-import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, onActivated, watch, watchEffect } from 'vue';
+import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, onActivated, watch, watchEffect, onDeactivated } from 'vue';
 import NewProjectDialog from '@/components/dialog/NewProjectDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import Worker from '@/utils/worker.js?worker';
@@ -23,7 +23,7 @@ export default defineComponent({
             isExporting:false,
             NewProjectVisible:false,
             editProjectInfo:null as any,
-            isloading:false,
+            isloading:true,
             searchValue:'',
             searchData:[] as any,
             loadingText:'正在加载...'
@@ -224,6 +224,18 @@ export default defineComponent({
                 data.searchData = [];
             }
         });
+
+        watch(() => editSpaceStore.isQueryProjectData, (newValue, oldValue) => 
+        {
+            console.log(newValue);
+            
+            if (newValue === '1' || newValue === '2')
+            {
+                data.isloading = false;
+            }
+        }, {
+            immediate:true
+        });
         
         onMounted(() => 
         {
@@ -232,11 +244,14 @@ export default defineComponent({
             
         });
 
-
         // onActivated(() => 
         // {
         //     methods.getProjectData();
         // });
+        onDeactivated(() => 
+        {
+            data.isloading = false;
+        });
         
         return {
             ...toRefs(data),

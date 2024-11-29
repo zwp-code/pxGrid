@@ -2,7 +2,7 @@
     <el-main class="routerview-right scrollbar" :class="{'relative':!editSpaceStore.isFullWork}">
         <!-- <el-backtop :right="40" :bottom="40" target=".routerview-right .scrollbar"/> -->
         <router-view v-slot="{ Component }">
-            <keep-alive :include="['about', 'work']">
+            <keep-alive :include="['about', 'work', 'project']">
                 <component :is="Component"></component>
             </keep-alive>
         </router-view>

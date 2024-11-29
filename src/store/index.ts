@@ -16,6 +16,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
             colorModules:[] as any,
             isFullWork:false,
             projectList:[] as any,
+            isQueryProjectData:'0', // 是否查询完项目列表
             sort:'updateAt',
             pindouMaps:{} as any,
             clientDownloadLink:'null'
@@ -277,6 +278,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
         {
             db.findAllDB().then((res:any) => 
             {
+                this.isQueryProjectData = '1';
                 if (res.length)
                 {
                     // this.projectList = res;
@@ -287,6 +289,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
             }).catch((err) => 
             {
                 console.error(err);
+                this.isQueryProjectData = '2';
                 message.error('获取项目列表异常 - ' + err);
             });
         },
