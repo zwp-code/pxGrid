@@ -577,8 +577,9 @@ export default defineComponent({
                     }
                 }
                 console.log(data.canvasHeight, data.canvasWidth);
-                
                 methods.computeScale();
+                data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 methods.drawPixelArea();
                 methods.handleInitEmptyLayer();
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);

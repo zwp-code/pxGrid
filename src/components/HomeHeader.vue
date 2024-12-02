@@ -1,7 +1,7 @@
 <template>
     <div class="full-w home-header">
-        <div class="flex-start">
-            <!-- <img :src="require('@/assets/logo.png')"> -->
+        <div class="flex-start" style="gap:10px">
+            <img :src="require('/logo.png')">
             <h1>{{ $t('message.webTitle') }}</h1>
         </div>
         <div class="flex-end">
@@ -121,8 +121,8 @@ export default defineComponent({
     padding: 0 20px;
 
     img {
-        width: 35px;
-        height: 35px;
+        width: 32px;
+        height: 32px;
     }
 
     h1 {

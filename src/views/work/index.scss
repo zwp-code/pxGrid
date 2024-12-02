@@ -216,6 +216,12 @@
     }
 }
 
+.el-header {
+    .active {
+        color: orange;
+    }
+}
+
 .el-footer {
     height: 80px;
 }
