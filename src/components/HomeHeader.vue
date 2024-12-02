@@ -23,7 +23,7 @@
             effect="dark"
             :content="$t('message.donate')"
             placement="bottom">
-                <el-icon style="margin-right: 25px;" @click="donateVisible=true"><ShoppingCart /></el-icon>
+                <el-icon style="margin-right: 25px;" @click="editSpaceStore.donateVisible=true"><ShoppingCart /></el-icon>
             </el-tooltip>
 
                         
@@ -49,7 +49,7 @@
         </div>
     </div>
     <Teleport to='body'>
-        <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog>
+        <DonateDialog v-if="editSpaceStore.donateVisible" :visible="editSpaceStore.donateVisible" @close="editSpaceStore.donateVisible=false"></DonateDialog>
     </Teleport>
 </template>
 

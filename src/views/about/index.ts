@@ -30,7 +30,10 @@ export default defineComponent({
         let methods = {
             handleOpen (url)
             {
-                window.open(url, '_blank');
+                if (url)
+                {
+                    window.open(url, '_blank');
+                }
             },
             getDonateData ()
             {
@@ -87,7 +90,8 @@ export default defineComponent({
             ...toRefs(data),
             ...methods,
             checkIsClientEnv,
-            checkDate
+            checkDate,
+            editSpaceStore
         };
     }
 });

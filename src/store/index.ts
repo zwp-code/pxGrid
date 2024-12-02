@@ -19,7 +19,8 @@ export const useEditSpaceStore = defineStore('editSpace', {
             isQueryProjectData:'0', // 是否查询完项目列表
             sort:'updateAt',
             pindouMaps:{} as any,
-            clientDownloadLink:'null'
+            clientDownloadLink:'null',
+            donateVisible:false
         };
     },
     getters: {

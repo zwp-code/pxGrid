@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="dialogVisible" :title="$t('message.donate')"
+    <el-dialog v-model="dialogVisible" title="微信赞赏码"
     :width="500"
     :lock-scroll="false"
     :before-close="handleClose"
@@ -9,7 +9,7 @@
                 <el-image
                 :src="require('@/assets/wxDonate.png')"
                 fit="contain" />
-                <p>（赞助备注了名称才会在列表展示喔！）</p>
+                <p>（请您在微信支付时填写留言(昵称),以便在赞助列表中展示！）</p>
             </div>
             <div v-if="false">
                 <h3>赞助者</h3>
@@ -89,8 +89,8 @@ export default defineComponent({
     .price-item {
         flex-direction: column;
         cursor: pointer;
-        padding: 0 50px;
-        margin: 10px;
+        // padding: 0 50px;
+        margin: 10px 0;
         transition: .4s;
         animation: AnimationShow 1s forwards;
 
@@ -99,7 +99,7 @@ export default defineComponent({
         }
 
         p {
-            padding: 10px 0;
+            padding: 15px 0 0 0;
             text-align: center;
             font-size: 15px;
         }

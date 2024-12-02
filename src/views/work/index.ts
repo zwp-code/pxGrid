@@ -3812,11 +3812,11 @@ export default defineComponent({
                 
                 let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth - data.pindouScaleValue, data.canvasHeight - data.pindouScaleValue);
                 data.scale = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
-                console.log(data.scale);
-                data.canvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
-                data.canvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
-                data.bgCanvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
-                data.bgCanvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
+                console.log(data.scale, data.pindouScaleValue);
+                data.canvas.width = (Number(data.canvasWidth) + data.pindouScaleValue) * data.scale;
+                data.canvas.height = (Number(data.canvasHeight) + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.width = (Number(data.canvasWidth) + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.height = (Number(data.canvasHeight) + data.pindouScaleValue) * data.scale;
                 if (isCenter) methods.setCanvasCenter();
                 console.log(data.scale, data.baseCanvas.width, pixelBox?.clientWidth);
                 // data.brushSize = data.scale;
@@ -4007,7 +4007,7 @@ export default defineComponent({
                 };
                 methods.handleAddHistory();
             },
-            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1, options = data.exportStyleOptions)
+            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1, options = data.exportStyleOptions, type = 'pic')
             {
                 let { isShowGrid } = options;
                 const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
@@ -4026,7 +4026,7 @@ export default defineComponent({
                     for (let x = 0; x < data.canvasWidth; x++) 
                     {
                         let color = imageData[x + (y * data.canvasWidth)][2];
-                        
+                        if (type === 'gif' && color === '#000000ff') color = '#010101ff';
                         // 在新的 canvas 上绘制缩小后的像素
                         data.ctx3.fillStyle = color;
                         data.ctx3.fillRect(x * scale, y * scale, scale, scale);
@@ -4328,7 +4328,7 @@ export default defineComponent({
                 }
                 
             },
-            handleExportFrame (index, isDownload = true, scale = 1, options = data.exportStyleOptions)
+            handleExportFrame (index, isDownload = true, scale = 1, options = data.exportStyleOptions, type = 'pic')
             {
                 let { isShowGrid } = options;
                 data.ctx3.globalAlpha = 1;
@@ -4347,16 +4347,12 @@ export default defineComponent({
                 {
                     if (imageData[i].isRender)
                     {
-                        // for (let j = 0; j < imageData[i].layerData.length; j++)
-                        // {
-                        //     layerArr.push(imageData[i].layerData[j]);
-                        // }
                         for (let y = 0; y < data.canvasHeight; y++) 
                         {
                             for (let x = 0; x < data.canvasWidth; x++) 
                             {
                                 let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
-                                
+                                if (type === 'gif' && color === '#000000ff') color = '#010101ff';
                                 // 在新的 canvas 上绘制缩小后的像素
                                 data.ctx3.fillStyle = color;
                                 data.ctx3.fillRect(x * scale, y * scale, scale, scale);
@@ -4457,7 +4453,7 @@ export default defineComponent({
                 document.body.removeChild(input);
             },
             // 帧结束
-            async handleExport (type, filename, scale = 1, isBack = false, options = data.exportStyleOptions)
+            async handleExport (type, filename, scale = 1, isBack = false, options = data.exportStyleOptions, gifSpeed = 2)
             {
                 if (!isBack) data.exportLoaidng = true;
                 if (data.isExportProject)
@@ -4570,28 +4566,49 @@ export default defineComponent({
                         workerScript: './gif-js/dist/gif.worker.js',
                         workers: 2,
                         quality: 10,
-                        background: 'rgba(0,0,0,0)',
-                        transparent:'rgba(0,0,0,0)'
+                        // background: '#00000000',
+                        transparent: 0x000000
                     });
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
-                        methods.handleExportFrame(i, false, scale);
+                        methods.handleExportFrame(i, false, scale, data.exportStyleOptions, 'gif');
                         canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
                     }
+                    let promises = [] as any;
                     for (let i = 0; i < canavsUrlData.length; i++)
                     {
                         const imgElement = document.createElement('img');
                         imgElement.src = canavsUrlData[i];
                         imgElement.width = data.canvasWidth * scale;
                         imgElement.height = data.canvasHeight * scale;
-                        gif.addFrame(imgElement, {delay: 200});
+                        let promise = new Promise((resolve, reject) => 
+                        {
+                            imgElement.onload = function ()
+                            {
+                                resolve(imgElement);
+                            };
+                        });
+                        promises.push(promise);
                     }
+                    let count = 0;
+                    await Promise.all(promises).then(async () => 
+                    {
+                        for (let i = 0; i < promises.length; i++)
+                        {
+                            console.log(promises);
+                            
+                            let imgElement = await promises[i];
+                            gif.addFrame(imgElement, {delay: gifSpeed * 100});
+                            count++;
+                        }
+                        if (count >= promises.length) gif.render();
+
+                    });
                     gif.on('finished', function (blob) 
                     {
                         downloadImageByDataURL(filename, URL.createObjectURL(blob));
                         gif.abort();
                     });
-                    gif.render();
                 }
                 else if (type === 6)
                 {
@@ -4622,7 +4639,7 @@ export default defineComponent({
                         let count = 0;
                         for (let j = currentFrameLayerLength - 1; j >= 0; j--)
                         {
-                            methods.handleExportLayer(i, j, false, scale);
+                            methods.handleExportLayer(i, j, false, scale, data.exportStyleOptions, 'gif');
                             canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth * scale, data.canvasHeight * scale);
                             count++;
                         }
@@ -4635,8 +4652,8 @@ export default defineComponent({
                             workerScript: './gif-js/dist/gif.worker.js',
                             workers: 2,
                             quality: 10,
-                            background: 'rgba(0,0,0,0)',
-                            transparent:'rgba(0,0,0,0)'
+                            // background: 'rgba(0,0,0,0)',
+                            transparent: 0x000000
                         });
                         for (let i = 0; i < canavsData.length; i++)
                         {
@@ -4647,7 +4664,7 @@ export default defineComponent({
                                 newCanvas.height = data.canvasHeight * scale;
                                 let newCtx:any = newCanvas.getContext('2d');
                                 newCtx.putImageData(canavsData[i][l], 0, 0);
-                                gif.addFrame(newCanvas, {delay: 200});
+                                gif.addFrame(newCanvas, {delay: gifSpeed * 100});
                                 continue;
                             }
                         }
@@ -5354,8 +5371,8 @@ export default defineComponent({
                         data.projectData.updateAt = projectData.updateAt;
                         data.projectData.createAt = projectData.createAt;
                         data.projectData.desc = projectData.desc;
-                        data.canvasWidth = projectData.width;
-                        data.canvasHeight = projectData.height;
+                        data.canvasWidth = Number(projectData.width);
+                        data.canvasHeight = Number(projectData.height);
                         data.projectData.frameImg = projectData.frameImg;
                         data.projectData.tip = projectData.tip;
                         data.projectData.isTop = projectData.isTop;

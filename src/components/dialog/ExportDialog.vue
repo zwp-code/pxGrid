@@ -22,7 +22,29 @@
                     <el-checkbox v-model="checked5" label="GIF动图（不区分图层）" :disabled="options.isShowGrid" @change="handleChange($evnet, 5)"/>
                     <el-checkbox v-model="checked6" label="GIF动图（区分图层）" :disabled="options.isShowGrid" @change="handleChange($evnet, 6)"/>
                 </div>
-                <div class="flex-start" style="gap:10px">
+                <div class="flex-start" style="gap:10px" v-if="!options.isShowGrid && (checked5 || checked6)">
+                    <p>速率</p>
+                    <div>
+                        <el-radio-group v-model="gifSpeed" :disabled="options.isShowGrid">
+                            <el-radio :value="0.2">0.2s</el-radio>
+                            <el-radio :value="0.4">0.4s</el-radio>
+                            <el-radio :value="0.5">0.5s</el-radio>
+                        </el-radio-group>
+                    </div>
+                    <el-input-number
+                    v-model="gifSpeed"
+                    style="max-width: 110px"
+                    size="small"
+                    :step="0.1"
+                    :max="1"
+                    :min="0.1"
+                    >
+                        <template #suffix>
+                            <span>秒</span>
+                        </template>
+                    </el-input-number>
+                </div>
+                <div class="flex-start" style="gap:10px" v-if="!options.isShowGrid">
                     <p>倍图</p>
                     <div>
                         <el-radio-group v-model="radio" :disabled="options.isShowGrid">
@@ -33,6 +55,18 @@
                             <el-radio :value="5">x5</el-radio>
                         </el-radio-group>
                     </div>
+                    <el-input-number
+                    v-model="radio"
+                    style="max-width: 110px"
+                    size="small"
+                    :step="1"
+                    :max="10"
+                    :min="1"
+                    >
+                        <template #prefix>
+                            <span>x</span>
+                        </template>
+                    </el-input-number>
                 </div>
                 <div class="flex-start" style="gap:10px">
                     <p>样式</p>
@@ -40,7 +74,7 @@
                         <el-checkbox v-model="options.isShowGrid" label="网格图" @change="handleChangeGrid"/>
                         <div class="flex-start" style="gap:10px;height: 32px;" v-if="options.isShowGrid">
                             <el-color-picker v-model="options.gridBackgroundColor" show-alpha size="small"/>
-                            <span style="line-height:1;">网格背景</span>
+                            <span style="line-height:1;">网格背景色</span>
                         </div>
                     </div>
                 </div>
@@ -96,7 +130,8 @@ export default defineComponent({
             options:{
                 isShowGrid:false,
                 gridBackgroundColor:'#ffffffff'
-            }
+            },
+            gifSpeed:0.2
             
         });
         let methods = {
@@ -133,7 +168,7 @@ export default defineComponent({
             handleConfirm ()
             {
                 if (data.fileName.trim() === '') return proxy.$message.warning('请输入文件名称');
-                context.emit('export', data.type, data.fileName, data.radio, false, data.options);
+                context.emit('export', data.type, data.fileName, data.radio, false, data.options, data.gifSpeed * 10);
             }
         };
 
@@ -158,6 +193,14 @@ export default defineComponent({
         p {
             margin: 10px 0;
         }
+    }
+
+    .el-radio {
+        margin-right: 15px;
+    }
+
+    :deep(.el-input-group__prepend) {
+        padding: 0 10px;
     }
 }
 </style>
