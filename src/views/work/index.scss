@@ -62,14 +62,22 @@
         left: 9999px;
     }
 
-    #Canvas, #PixelCanvas {
+    #BaseCanvas {
         position: absolute;
         top: 0;
         left: 0;
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 10px);
+        pointer-events: none;
         // top: 50%;
         // left: 50%;
         // transform: translate3d(-50%, -50%, 0);
+    }
+
+    #Canvas, #PixelCanvas {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate3d(0, 0, 0) scale(1);
     }
 
     .gridInfo {
@@ -78,6 +86,7 @@
         right: 50%;
         transform: translate(50%, 0);
         z-index: 2;
+        pointer-events: none;
     }
 
     .cancelSelect {
@@ -379,7 +388,7 @@
 .frame-list {
     margin-left: 20px;
     overflow-x: auto;
-    
+
     .frame-item {
         border: 2px solid var(--el-shadow-aside);
         border-radius: 5px;

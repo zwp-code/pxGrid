@@ -22,11 +22,11 @@
                     </el-tooltip>
 
                     <el-tooltip content="放大画布 [滚轮/Ctrl/⌘ + =]" placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(1)"><ZoomIn /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(0.1)"><ZoomIn /></el-icon>
                     </el-tooltip>
 
                     <el-tooltip content="缩小画布 [滚轮/Ctrl/⌘ + -]" placement="bottom">
-                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(-1)"><ZoomOut /></el-icon>
+                        <el-icon style="margin-right: 25px;" @click="handleResizeCanvas(-0.1)"><ZoomOut /></el-icon>
                     </el-tooltip>
                     
 
@@ -293,8 +293,20 @@
                 </div>
                 <div class="pixelBox scrollbar" v-loading="loading" element-loading-background="#00000000">
                     <img :src="linmoPhoto" v-show="linmoPhoto" draggable="false" :style="linmoPhotoStyle" class="linmoPhoto" id="linmoPhoto"/>
-                    <canvas id="PixelCanvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
-                    <canvas id="Canvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
+                    
+                    <canvas 
+                    id="PixelCanvas" 
+                    width="512" height="512" 
+                    @contextmenu="(e) => e.preventDefault()"
+                    :style="canvasStyle"
+                    ></canvas>
+                    <canvas 
+                    id="Canvas" 
+                    :style="canvasStyle" 
+                    width="512" height="512" 
+                    @contextmenu="(e) => e.preventDefault()"
+                    ></canvas>
+                    <canvas id="BaseCanvas" width="512" height="512" @contextmenu="(e) => e.preventDefault()"></canvas>
                     <canvas id="RealCanvas" v-show="false"></canvas>
                     
                     <p v-if="gridInfo!=='[]'" class="gridInfo">{{ gridInfo }}</p>
@@ -518,9 +530,10 @@
                                 </el-input>
                             </div>
                         </div>
-                        <div style="margin-top: 10px;">
+                        <div style="margin-top: 10px;" class="flex-between symmetric-box full-w">
                             <el-checkbox v-model="isCheckedRatio" size="small" label="保持横纵比" @change="handleChangeRatio" :disabled="pinDouMode"/>
-                            <el-checkbox v-model="isShowReferenceLine" size="small" label="参考线" :disabled="pinDouMode"/>
+                            <el-checkbox v-model="isShowReferenceLine" size="small" label="显示参考线" :disabled="pinDouMode"/>
+                            <el-checkbox v-model="isShowGridLine" size="small" label="显示网格线" :disabled="pinDouMode"/>
                         </div>
                         <div style="margin-top: 10px;" v-show="currentTool === 0" class="flex-between symmetric-box full-w">
                             <el-checkbox v-model="isHorizontal" size="small" label="水平对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isHorizontal')"/>

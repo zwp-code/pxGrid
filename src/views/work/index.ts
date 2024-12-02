@@ -6,7 +6,7 @@ import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import LayerMenu from '@/components/menu/LayerMenu.vue';
 import LinmoModeDialog from '@/components/dialog/LinmoModeDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getScaleValue, hexToRgba, isEven, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -51,9 +51,11 @@ export default defineComponent({
                 tip:''
             } as any,
             emptyColor:'#00000000',
+            baseCanvas:null as any,
             bgCanvas:null as any,
             canvas:null as any,
             realCanvas:null as any,
+            ctx0:null as any,
             ctx1:null as any,
             ctx2:null as any,
             ctx3:null as any,
@@ -100,12 +102,12 @@ export default defineComponent({
             lastY:0,
 
             // MyColorDialogVisible:false,
-            donateVisible:false,
-            noticeVisible:false,
-            notice:{
-                title:'',
-                content:''
-            },
+            // donateVisible:false,
+            // noticeVisible:false,
+            // notice:{
+            //     title:'',
+            //     content:''
+            // },
 
             currentFrameIndex:0,
             currentLayerIndex:0,
@@ -211,10 +213,10 @@ export default defineComponent({
             linmoMode:false, // 是否启用临摹模式
             linmoPhoto:null as any, // 临摹的图片URL
             linmoPhotoStyle:{
-                transform: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
+                transform: 'translate3d(0px, 0px, 10px) rotate(0deg) scale(1, 1)',
                 opacity:1,
                 zIndex:0,
-                display:'block'
+                display:'none'
             }, // 临摹的图片的样式
             linmoPhotoDom:null as any, // 临摹的图片dom
             dragLinmoPhoto:{
@@ -224,7 +226,13 @@ export default defineComponent({
                 translateX:0,
                 translateY:0
             }, // 是否拖动临摹的图片
-            scaleTimer:null as any
+            scaleTimer:null as any,
+            canvasStyle:{
+                transform: 'translate3d(0, 0, 10px) scale(1)',
+                transformOrigin:'center center'
+            },
+            isShowGridLine:false,
+            pindouScaleValue:0
 
             
         });
@@ -636,13 +644,13 @@ export default defineComponent({
             drawPixelArea (beginX = 0, beginY = 0)
             {
                 // 绘制像素透明格子
-                if (beginX === 0 && beginY === 0)
-                {
-                    beginX = data.canvasBeginPos.x;
-                    beginY = data.canvasBeginPos.y;
-                    data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
-                    data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
-                }
+                // if (beginX === 0 && beginY === 0)
+                // {
+                //     beginX = data.canvasBeginPos.x;
+                //     beginY = data.canvasBeginPos.y;
+                //     data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                //     data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
+                // }
                 data.drawAreaList = [];
                 data.ctx2.clearRect(0, 0, data.bgCanvas.width, data.bgCanvas.height);
                 data.ctx2.globalAlpha = 0.25;
@@ -670,27 +678,56 @@ export default defineComponent({
                         
                     }
                 }
-                methods.handleDrawReferenceLine(beginX, beginY);
+                methods.handleDrawReferenceLine();
+                methods.handleDrawGridLine();
                 // methods.drawScaleFrame();
             },
-            handleDrawReferenceLine (beginX, beginY)
+            handleDrawGridLine ()
             {
+                if (data.isShowGridLine)
+                {
+                    data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
+                    data.ctx2.globalAlpha = 0.5;
+                    data.ctx2.lineWidth = 1;
+                    for (let i = 0; i <= data.canvasHeight; i++)
+                    {
+                        // 绘制水平网格线
+                        data.ctx2.beginPath();
+                        data.ctx2.moveTo(0, i * data.scale);
+                        data.ctx2.lineTo(data.canvasWidth * data.scale, i * data.scale);
+                        data.ctx2.stroke();
+                    }
+                    for (let j = 0; j <= data.canvasWidth; j++) 
+                    {
+                        // 绘制垂直网格线
+                        data.ctx2.beginPath();
+                        data.ctx2.moveTo(j * data.scale, 0);
+                        data.ctx2.lineTo(j * data.scale, data.canvasHeight * data.scale);
+                        data.ctx2.stroke();
+                    }
+                }
+            },
+            handleDrawReferenceLine ()
+            {
+                data.ctx0.clearRect(0, 0, data.baseCanvas.width, data.baseCanvas.height);
                 if (data.isShowReferenceLine)
                 {
                     // 绘制参考线
-                    data.ctx2.globalAlpha = 0.5;
-                    data.ctx2.lineWidth = 2;
-                    data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
-                    data.ctx2.beginPath();
-                    data.ctx2.setLineDash([5, 3]);
-                    data.ctx2.moveTo(beginX + (data.canvasWidth * data.scale) / 2, 0);
-                    data.ctx2.lineTo(beginX + (data.canvasWidth * data.scale) / 2, data.bgCanvas.height);
-                    data.ctx2.stroke();
+                    let offsetLeft = data.canvas.offsetLeft;
+                    let offsetTop = data.canvas.offsetTop;
+                    data.ctx0.globalAlpha = 0.5;
+                    data.ctx0.lineWidth = 2;
+                    data.ctx0.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
+                    data.ctx0.beginPath();
+                    data.ctx0.setLineDash([5, 3]);
+                    data.ctx0.moveTo(offsetLeft + (data.canvasWidth * data.scale) / 2, 0);
+                    data.ctx0.lineTo(offsetLeft + (data.canvasWidth * data.scale) / 2, data.baseCanvas.height);
+                    data.ctx0.stroke();
 
-                    data.ctx2.beginPath();
-                    data.ctx2.moveTo(0, beginY + (data.canvasHeight * data.scale) / 2);
-                    data.ctx2.lineTo(data.bgCanvas.width, beginY + (data.canvasHeight * data.scale) / 2);
-                    data.ctx2.stroke();
+                    data.ctx0.beginPath();
+                    data.ctx0.moveTo(0, offsetTop + (data.canvasHeight * data.scale) / 2);
+                    data.ctx0.lineTo(data.baseCanvas.width, offsetTop + (data.canvasHeight * data.scale) / 2);
+                    data.ctx0.stroke();
                 }
             },
             drawLoop () 
@@ -1235,13 +1272,53 @@ export default defineComponent({
             },
             handleWheelEvent (event)
             {
-                event.preventDefault();
-                const delta = event.deltaY > 0 ? -1 : 1;
-                data.scale += delta;
-                data.scale = Math.max(1, data.scale);
-                if (data.scale > 60) data.scale = 60;
-                console.log(data.scale);
-                methods.handleResizeDraw();
+                // event.preventDefault();
+                // const delta = event.deltaY > 0 ? -1 : 1;
+                // data.scale += delta;
+                // data.scale = Math.max(1, data.scale);
+                // if (data.scale > 60) data.scale = 60;
+                // console.log(data.scale);
+                // methods.handleResizeDraw();
+                // ---- v2.0
+                if (data.pinDouMode)
+                {
+                    const delta = event.deltaY > 0 ? -1 : 1;
+                    data.pindouScaleValue += delta;
+                    data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
+                    if (data.pindouScaleValue > 20) data.pindouScaleValue = 20;
+                    console.log(data.pindouScaleValue);
+                    
+                    methods.computeScale();
+                    methods.handleResizeDraw();
+                    return;
+                }
+                const delta = event.deltaY > 0 ? -0.1 : 0.1;
+                console.log(getScaleValue(data.canvas));
+                let currentScale = getScaleValue(data.canvas);
+                currentScale += delta;
+                let scale = Math.max(0.1, currentScale);
+                if (scale > 10) scale = 10;
+                console.log(scale);
+                // if (event.offsetX < data.canvas.width / 2 && event.offsetY < data.canvas.height / 2)
+                // {
+                //     data.canvasStyle.transformOrigin = `top left`;
+                // }
+                // else if (event.offsetX > data.canvas.width / 2 && event.offsetY < data.canvas.height / 2)
+                // {
+                //     data.canvasStyle.transformOrigin = `top right`;
+                // }
+                // else if (event.offsetX < data.canvas.width / 2 && event.offsetY > data.canvas.height / 2)
+                // {
+                //     data.canvasStyle.transformOrigin = `bottom left`;
+                // }
+                // else if (event.offsetX > data.canvas.width / 2 && event.offsetY > data.canvas.height / 2)
+                // {
+                //     data.canvasStyle.transformOrigin = `bottom right`;
+                // }
+                // data.canvasStyle.transformOrigin = `${event.offsetX}px ${event.offsetY}px`;
+                data.canvasStyle.transform = `translate3d(0, 0, 10px) scale(${scale})`;
+                console.log(data.canvasStyle.transform);
+                
                 // data.scaleTimer && clearTimeout(data.scaleTimer);
                 // data.scaleTimer = setTimeout(() => 
                 // {
@@ -1294,10 +1371,25 @@ export default defineComponent({
             },
             handleResizeCanvas (delta)
             {
-                data.scale += delta;
-                data.scale = Math.max(1, data.scale);
-                if (data.scale > 60) data.scale = 60;
-                methods.handleResizeDraw();
+                // data.scale += delta;
+                // data.scale = Math.max(1, data.scale);
+                // if (data.scale > 60) data.scale = 60;
+                // methods.handleResizeDraw();
+                if (data.pinDouMode)
+                {
+                    data.pindouScaleValue += delta * 10;
+                    data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
+                    if (data.pindouScaleValue > 20) data.pindouScaleValue = 20;
+                    methods.computeScale();
+                    methods.handleResizeDraw();
+                    return;
+                }
+                let currentScale = getScaleValue(data.canvas);
+                currentScale += delta;
+                let scale = Math.max(0.1, currentScale);
+                if (scale > 10) scale = 10;
+                data.canvasStyle.transformOrigin = `center center`;
+                data.canvasStyle.transform = `translate3d(0, 0, 10px) scale(${scale})`;
             },
             handleResizeDraw ()
             {
@@ -1343,8 +1435,10 @@ export default defineComponent({
                 data.dragLinmoPhoto.enable = true;
                 data.dragLinmoPhoto.startX = event.offsetX;
                 data.dragLinmoPhoto.startY = event.offsetY;
-                data.dragLinmoPhoto.translateX = parseInt(getComputedStyle(data.linmoPhotoDom).transform.split(' ')[4]);
-                data.dragLinmoPhoto.translateY = parseInt(getComputedStyle(data.linmoPhotoDom).transform.split(' ')[5]);
+                data.dragLinmoPhoto.translateX = parseInt(getComputedStyle(data.linmoPhotoDom).transform.split(' ')[12]);
+                data.dragLinmoPhoto.translateY = parseInt(getComputedStyle(data.linmoPhotoDom).transform.split(' ')[13]);
+                console.log(getComputedStyle(data.linmoPhotoDom).transform.split(' '));
+                
                 document.addEventListener('mousemove', methods.linmoPhotoMove);
                 document.addEventListener('touchmove', methods.linmoPhotoMobileMove);
                 document.addEventListener('mouseup', methods.linmoPhotoStop);
@@ -1370,7 +1464,7 @@ export default defineComponent({
                     proxy.$refs.LinmoModeDialog.posY = data.dragLinmoPhoto.translateY;
                     let rotateStr = data.linmoPhotoStyle.transform.split(') ')[1] + ')';
                     let scaleStr = data.linmoPhotoStyle.transform.split(') ')[2];
-                    data.linmoPhotoStyle.transform = `translate(${data.dragLinmoPhoto.translateX}px, ${data.dragLinmoPhoto.translateY}px) ${rotateStr} ${scaleStr}`;
+                    data.linmoPhotoStyle.transform = `translate3d(${data.dragLinmoPhoto.translateX}px, ${data.dragLinmoPhoto.translateY}px, 10px) ${rotateStr} ${scaleStr}`;
                 }
                 
             },
@@ -1400,24 +1494,26 @@ export default defineComponent({
             start (event) 
             {
                 // 判断是否在可绘画区域
-                if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && 
-                    event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
+                // if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && 
+                //     event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
+                // {
+                if (event)
                 {
-                    methods.stop();
+                    methods.stop(); // 清空状态
                     // data.ctx1.restore();
                     const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
                     const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
                     if (data.isSpace)
                     {
                         data.isDragging = true;
-                        let gridX = (col * data.scale) + data.canvasBeginPos.x;
-                        let gridY = (row * data.scale) + data.canvasBeginPos.y;
-                        data.dragData.x = gridX;
-                        data.dragData.y = gridY;
-                        console.log(data.canvas.offsetLeft);
+                        // let gridX = (col * data.scale) + data.canvasBeginPos.x;
+                        // let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                        // data.dragData.x = gridX;
+                        // data.dragData.y = gridY;
+                        // console.log(data.canvas.offsetLeft);
                         
-                        // data.dragData.x = event.clientX - data.canvas.offsetLeft;
-                        // data.dragData.y = event.clientY - data.canvas.offsetTop;
+                        data.dragData.x = event.clientX - data.canvas.offsetLeft;
+                        data.dragData.y = event.clientY - data.canvas.offsetTop;
                         return;
                     }
                     if (data.currentTool === 0) 
@@ -1930,7 +2026,8 @@ export default defineComponent({
             },
             draw (event) 
             {
-                if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
+                // if (event.offsetX >= data.drawAreaList[0][0] && event.offsetX < data.drawAreaList[data.drawAreaList.length - 1][0] + data.scale && event.offsetY >= data.drawAreaList[0][1] && event.offsetY < data.drawAreaList[data.drawAreaList.length - 1][1] + data.scale)
+                if (event)
                 {
                     const row = Math.floor((event.offsetY - data.drawAreaList[0][1]) / data.scale);
                     const col = Math.floor((event.offsetX - data.drawAreaList[0][0]) / data.scale);
@@ -1940,18 +2037,19 @@ export default defineComponent({
                         // 处理拖拽的逻辑
                         console.log('正在拖拽');
                         data.canvas.style.cursor = 'grabbing';
-                        // if (data.isDragging)
-                        // {
-                        //     const dx = event.clientX - data.dragData.x;
-                        //     const dy = event.clientY - data.dragData.y;
-                        //     data.canvas.style.left = `${dx}px`;
-                        //     data.canvas.style.top = `${dy}px`;
-                        //     data.bgCanvas.style.left = `${dx}px`;
-                        //     data.bgCanvas.style.top = `${dy}px`;
-                        // }
-                        let gridX = (col * data.scale) + data.canvasBeginPos.x;
-                        let gridY = (row * data.scale) + data.canvasBeginPos.y;
-                        methods.startDrag(gridX, gridY);
+                        if (data.isDragging)
+                        {
+                            const dx = event.clientX - data.dragData.x;
+                            const dy = event.clientY - data.dragData.y;
+                            data.canvas.style.left = `${dx}px`;
+                            data.canvas.style.top = `${dy}px`;
+                            data.bgCanvas.style.left = `${dx}px`;
+                            data.bgCanvas.style.top = `${dy}px`;
+                            methods.handleDrawReferenceLine();
+                        }
+                        // let gridX = (col * data.scale) + data.canvasBeginPos.x;
+                        // let gridY = (row * data.scale) + data.canvasBeginPos.y;
+                        // methods.startDrag(gridX, gridY);
                         return;
                     }
                     if (data.isShift && data.isMoving && data.isSelecting)
@@ -3275,7 +3373,7 @@ export default defineComponent({
                 // 画拼豆
                 ctx.clearRect(0, 0, data.canvas.width, data.canvas.height);
                 let arr = data.pinDouData.variables;
-                ctx.imageSmoothingEnabled = false;
+                ctx.imageSmoothingEnabled = true;
                 for (let i = arr.length - 1; i >= 0; i--)
                 {
                     // 从最后一项开始绘制
@@ -3435,8 +3533,8 @@ export default defineComponent({
                 if (data.isDragging)
                 {
                     data.isDragging = false;
-                    data.canvasBeginPos.x = data.drawAreaList[0][0];
-                    data.canvasBeginPos.y = data.drawAreaList[0][1];
+                    // data.canvasBeginPos.x = data.drawAreaList[0][0];
+                    // data.canvasBeginPos.y = data.drawAreaList[0][1];
                 }
                 if (data.isMoving && !data.isSelecting)
                 {
@@ -3455,6 +3553,7 @@ export default defineComponent({
                     }
                     data.moveData.list = [];
                     data.isMoving = false;
+                    methods.drawPixelArea();
                     methods.reDraw();
                     
                 }
@@ -3695,10 +3794,25 @@ export default defineComponent({
             },
             computeScale ()
             {
-                if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2) * 2);
-                else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
-                data.scale = Math.round(data.scale) - 2;
+                // if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2) * 2);
+                // else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
+                // data.scale = Math.round(data.scale) - 2;
+
+                // v2.0-----
+                const pixelBox:any = document.querySelector('.pixelBox');
+                data.baseCanvas.width = pixelBox?.clientWidth;
+                data.baseCanvas.height = pixelBox?.clientHeight;
+                let pixelBoxHeight = pixelBox?.clientHeight;
+                
+                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth + data.pindouScaleValue, data.canvasHeight + data.pindouScaleValue);
+                data.scale = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
                 console.log(data.scale);
+                data.canvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
+                data.canvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
+                methods.setCanvasCenter();
+                console.log(data.scale, data.baseCanvas.width, pixelBox?.clientWidth);
                 // data.brushSize = data.scale;
                 
             },
@@ -4880,6 +4994,15 @@ export default defineComponent({
                 //     methods.handleChangeTool(3);
                 //     methods.drawShape('curve'); // 打开曲线
                 // }
+                else if (event.key === 'c') 
+                {
+                    if (data.linmoMode)
+                    {
+                        console.log(document.querySelector('.pick-color'));
+                        document.querySelector('.pick-color')?.click();
+                        
+                    }
+                }
                 
                 
                 else if (event.key === 'ArrowUp')
@@ -4966,16 +5089,16 @@ export default defineComponent({
             handleResizeWindowEvent (event)
             {
                 methods.computeScale();
-                const pixelBox = document.querySelector('.pixelBox');
-                data.canvas.width = pixelBox?.clientWidth;
-                data.canvas.height = pixelBox?.clientHeight;
-                data.bgCanvas.width = pixelBox?.clientWidth;
-                data.bgCanvas.height = pixelBox?.clientHeight;
-                data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-                data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                // const pixelBox = document.querySelector('.pixelBox');
+                // data.canvas.width = pixelBox?.clientWidth;
+                // data.canvas.height = pixelBox?.clientHeight;
+                // data.bgCanvas.width = pixelBox?.clientWidth;
+                // data.bgCanvas.height = pixelBox?.clientHeight;
+                // data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                // data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
                 data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
                 data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
-                // methods.computeScale();
+
                 methods.drawPixelArea();
                 if (data.isScaling)
                 {
@@ -5117,7 +5240,9 @@ export default defineComponent({
             },
             handleResetCanvas ()
             {
-                methods.computeScale();
+                // methods.computeScale();
+                data.pindouScaleValue = 0;
+                data.canvasStyle.transform = 'translate3d(0, 0, 10px) scale(1)';
                 methods.handleResizeWindowEvent('');
             },
             handleInitData ()
@@ -5132,6 +5257,7 @@ export default defineComponent({
                 data.brushColor = '#000000ff';
                 data.isCheckedRatio = true;
                 data.isShowReferenceLine = false;
+                data.isShowGridLine = false;
                 data.isVertical = false;
                 data.isHorizontal = false;
                 data.isCenter = false;
@@ -5171,6 +5297,17 @@ export default defineComponent({
                 data.linmoMode = false;
                 data.linmoPhoto = null;
                 data.currentHistoryIndex = 0;
+                data.canvasStyle = {
+                    transform:'translate3d(0, 0, 10px) scale(1)',
+                    transformOrigin:'center center'
+                };
+                data.linmoPhotoStyle = {
+                    transform: 'translate3d(0px, 0px, 10px) rotate(0deg) scale(1, 1)',
+                    opacity:1,
+                    zIndex:0,
+                    display:'none'
+                };
+                data.pindouScaleValue = 0;
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()
@@ -5183,6 +5320,16 @@ export default defineComponent({
                         data.emptyLayerData.push([j, i, data.emptyColor]);
                     }
                 }
+            },
+            setCanvasCenter ()
+            {
+                // 设置画布居中
+                let dx = data.baseCanvas.width / 2 - data.canvas.width / 2;
+                let dy = data.baseCanvas.height / 2 - data.canvas.height / 2;
+                data.canvas.style.left = `${dx}px`;
+                data.canvas.style.top = `${dy}px`;
+                data.bgCanvas.style.left = `${dx}px`;
+                data.bgCanvas.style.top = `${dy}px`;
             },
             handleReadProjectData ()
             {
@@ -5208,29 +5355,38 @@ export default defineComponent({
                         data.projectData.isTop = projectData.isTop;
                         data.projectData.data = projectData.data;
                         methods.getMyColorList();
-                        const pixelBox = document.querySelector('.pixelBox');
+                        // const pixelBox = document.querySelector('.pixelBox');
+                        data.baseCanvas = document.getElementById('BaseCanvas');
                         data.canvas = document.getElementById('Canvas');
                         data.bgCanvas = document.getElementById('PixelCanvas');
                         data.realCanvas = document.getElementById('RealCanvas');
                         data.linmoPhotoDom = document.getElementById('linmoPhoto');
-                        data.canvas.width = pixelBox?.clientWidth;
-                        data.canvas.height = pixelBox?.clientHeight;
-                        data.bgCanvas.width = pixelBox?.clientWidth;
-                        data.bgCanvas.height = pixelBox?.clientHeight;
+                        // data.canvas.width = pixelBox?.clientWidth;
+                        // data.canvas.height = pixelBox?.clientHeight;
+                        // data.baseCanvas.width = pixelBox?.clientWidth;
+                        // data.baseCanvas.height = pixelBox?.clientHeight;
+                        // v2.0 通过像素宽高去设置画布的宽高，方便拖拽移动和放大，不会频繁触发像素重绘，同时也可以减少鼠标移动绘画的区域判断
+                        methods.computeScale(); // 根据像素宽高设置画布比例
+                        // data.canvas.width = data.canvasWidth * data.scale;
+                        // data.canvas.height = data.canvasHeight * data.scale;
+                        // data.bgCanvas.width = data.canvasWidth * data.scale;
+                        // data.bgCanvas.height = data.canvasHeight * data.scale;
+                        // methods.setCanvasCenter();
+                        data.ctx0 = data.baseCanvas.getContext('2d');
                         data.ctx1 = data.canvas.getContext('2d');
                         data.ctx2 = data.bgCanvas.getContext('2d');
                         data.ctx3 = data.realCanvas.getContext('2d');
-                        methods.computeScale();
+                        // methods.computeScale();
                         data.ctx1.lineCap = 'square';
                         // data.ctx1.globalCompositeOperation = 'source-over';
                         // data.ctx1.globalAlpha = 1;
                         // data.ctx1.lineWidth = data.scale;
                         data.ctx1.save();
-                        data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
-                        data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
+                        // data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
+                        // data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
                         data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
                         data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
-                        console.log(data.canvasBeginPos, data.scale);
+                        // console.log(data.canvasBeginPos, data.scale);
                         
                         methods.drawPixelArea();
                         methods.handleInitEmptyLayer();
@@ -5324,9 +5480,15 @@ export default defineComponent({
 
         watch(() => data.isShowReferenceLine, (newValue, oldValue) => 
         {
-            methods.handleResizeDraw();
+            // methods.handleResizeDraw();
+            methods.handleDrawReferenceLine();
             // methods.drawPixelArea();
             // methods.reDraw(false);
+        });
+
+        watch(() => data.isShowGridLine, (newValue, oldValue) => 
+        {
+            methods.drawPixelArea();
         });
 
         watch(() => data.pinDouMode, (newValue, oldValue) => 
@@ -5353,7 +5515,8 @@ export default defineComponent({
 
         watch(() => editSpaceStore.themeValue, (newValue, oldValue) => 
         {
-            methods.handleDrawReferenceLine(data.canvasBeginPos.x, data.canvasBeginPos.y);
+            methods.handleDrawReferenceLine();
+            methods.handleDrawGridLine();
         });
 
         watch(() => editSpaceStore.isQueryProjectData, (newValue, oldValue) => 
