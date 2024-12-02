@@ -1,7 +1,7 @@
 <template>
     <div class="full-w home-header">
-        <div class="flex-start">
-            <!-- <img :src="require('@/assets/logo.png')"> -->
+        <div class="flex-start" style="gap:10px">
+            <img :src="require('/logo.png')">
             <h1>{{ $t('message.webTitle') }}</h1>
         </div>
         <div class="flex-end">
@@ -23,7 +23,7 @@
             effect="dark"
             :content="$t('message.donate')"
             placement="bottom">
-                <el-icon style="margin-right: 25px;" @click="donateVisible=true"><ShoppingCart /></el-icon>
+                <el-icon style="margin-right: 25px;" @click="editSpaceStore.donateVisible=true"><ShoppingCart /></el-icon>
             </el-tooltip>
 
                         
@@ -49,7 +49,7 @@
         </div>
     </div>
     <Teleport to='body'>
-        <DonateDialog v-if="donateVisible" :visible="donateVisible" @close="donateVisible=false"></DonateDialog>
+        <DonateDialog v-if="editSpaceStore.donateVisible" :visible="editSpaceStore.donateVisible" @close="editSpaceStore.donateVisible=false"></DonateDialog>
     </Teleport>
 </template>
 
@@ -121,8 +121,8 @@ export default defineComponent({
     padding: 0 20px;
 
     img {
-        width: 35px;
-        height: 35px;
+        width: 32px;
+        height: 32px;
     }
 
     h1 {

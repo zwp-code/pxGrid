@@ -231,7 +231,8 @@ export default defineComponent({
                 transform: 'translate3d(0, 0, 10px) scale(1)',
                 transformOrigin:'center center'
             },
-            isShowGridLine:false
+            isShowGridLine:false,
+            pindouScaleValue:0
 
             
         });
@@ -493,6 +494,7 @@ export default defineComponent({
             {
                 // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 // if (data.isScaling) methods.handleCancelScale();
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.isHideLinmoMode)
                 {
                     data.isHideLinmoMode = false;
@@ -510,6 +512,7 @@ export default defineComponent({
                 if (mode === 'preview' && !data.pinDouMode) 
                 {
                     if (data.pinDouDrawMode) return proxy.$message.warning('请先退出拼豆绘图模式');
+                    methods.handleResetCanvas();
                     data.currentTool = 5;
                     data.loading = true;
                     methods.handlePindouEvent();
@@ -574,8 +577,9 @@ export default defineComponent({
                     }
                 }
                 console.log(data.canvasHeight, data.canvasWidth);
-                
                 methods.computeScale();
+                data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
+                data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 methods.drawPixelArea();
                 methods.handleInitEmptyLayer();
                 // data.ctx1.clearRect(0, 0, data.canvas.width, data.canvas.height);
@@ -1279,6 +1283,19 @@ export default defineComponent({
                 // console.log(data.scale);
                 // methods.handleResizeDraw();
                 // ---- v2.0
+                if (data.pinDouMode)
+                {
+                    const delta = event.deltaY > 0 ? -2 : 2;
+                    data.pindouScaleValue += delta;
+                    data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
+                    if (data.pindouScaleValue >= data.canvasWidth - 2 || data.pindouScaleValue >= data.canvasHeight - 2) 
+                    {
+                        data.pindouScaleValue = Math.max(data.canvasWidth - 2, data.canvasHeight - 2);
+                    }
+                    methods.computeScale(false);
+                    methods.handleResizeDraw();
+                    return;
+                }
                 const delta = event.deltaY > 0 ? -0.1 : 0.1;
                 console.log(getScaleValue(data.canvas));
                 let currentScale = getScaleValue(data.canvas);
@@ -1362,6 +1379,18 @@ export default defineComponent({
                 // data.scale = Math.max(1, data.scale);
                 // if (data.scale > 60) data.scale = 60;
                 // methods.handleResizeDraw();
+                if (data.pinDouMode)
+                {
+                    data.pindouScaleValue += delta * 20;
+                    data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
+                    if (data.pindouScaleValue >= data.canvasWidth - 2 || data.pindouScaleValue >= data.canvasHeight - 2) 
+                    {
+                        data.pindouScaleValue = Math.max(data.canvasWidth - 2, data.canvasHeight - 2);
+                    }
+                    methods.computeScale(false);
+                    methods.handleResizeDraw();
+                    return;
+                }
                 let currentScale = getScaleValue(data.canvas);
                 currentScale += delta;
                 let scale = Math.max(0.1, currentScale);
@@ -3770,7 +3799,7 @@ export default defineComponent({
                 link.href = data.canvas.toDataURL('image/png');
                 link.click();
             },
-            computeScale ()
+            computeScale (isCenter = true)
             {
                 // if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2) * 2);
                 // else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
@@ -3781,13 +3810,15 @@ export default defineComponent({
                 data.baseCanvas.width = pixelBox?.clientWidth;
                 data.baseCanvas.height = pixelBox?.clientHeight;
                 let pixelBoxHeight = pixelBox?.clientHeight;
-                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth, data.canvasHeight);
+                
+                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth - data.pindouScaleValue, data.canvasHeight - data.pindouScaleValue);
                 data.scale = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
-                data.canvas.width = data.canvasWidth * data.scale;
-                data.canvas.height = data.canvasHeight * data.scale;
-                data.bgCanvas.width = data.canvasWidth * data.scale;
-                data.bgCanvas.height = data.canvasHeight * data.scale;
-                methods.setCanvasCenter();
+                console.log(data.scale, data.pindouScaleValue);
+                data.canvas.width = (Number(data.canvasWidth) + data.pindouScaleValue) * data.scale;
+                data.canvas.height = (Number(data.canvasHeight) + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.width = (Number(data.canvasWidth) + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.height = (Number(data.canvasHeight) + data.pindouScaleValue) * data.scale;
+                if (isCenter) methods.setCanvasCenter();
                 console.log(data.scale, data.baseCanvas.width, pixelBox?.clientWidth);
                 // data.brushSize = data.scale;
                 
@@ -3977,7 +4008,7 @@ export default defineComponent({
                 };
                 methods.handleAddHistory();
             },
-            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1, options = data.exportStyleOptions)
+            handleExportLayer (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex, isDownload = true, scale = 1, options = data.exportStyleOptions, type = 'pic')
             {
                 let { isShowGrid } = options;
                 const imageData = data.drawRecord[frameIndex].layer[layerIndex].layerData;
@@ -3996,7 +4027,7 @@ export default defineComponent({
                     for (let x = 0; x < data.canvasWidth; x++) 
                     {
                         let color = imageData[x + (y * data.canvasWidth)][2];
-                        
+                        if (type === 'gif' && color === '#000000ff') color = '#010101ff';
                         // 在新的 canvas 上绘制缩小后的像素
                         data.ctx3.fillStyle = color;
                         data.ctx3.fillRect(x * scale, y * scale, scale, scale);
@@ -4298,7 +4329,7 @@ export default defineComponent({
                 }
                 
             },
-            handleExportFrame (index, isDownload = true, scale = 1, options = data.exportStyleOptions)
+            handleExportFrame (index, isDownload = true, scale = 1, options = data.exportStyleOptions, type = 'pic')
             {
                 let { isShowGrid } = options;
                 data.ctx3.globalAlpha = 1;
@@ -4317,16 +4348,12 @@ export default defineComponent({
                 {
                     if (imageData[i].isRender)
                     {
-                        // for (let j = 0; j < imageData[i].layerData.length; j++)
-                        // {
-                        //     layerArr.push(imageData[i].layerData[j]);
-                        // }
                         for (let y = 0; y < data.canvasHeight; y++) 
                         {
                             for (let x = 0; x < data.canvasWidth; x++) 
                             {
                                 let color = imageData[i].layerData[x + (y * data.canvasWidth)][2];
-                                
+                                if (type === 'gif' && color === '#000000ff') color = '#010101ff';
                                 // 在新的 canvas 上绘制缩小后的像素
                                 data.ctx3.fillStyle = color;
                                 data.ctx3.fillRect(x * scale, y * scale, scale, scale);
@@ -4427,7 +4454,7 @@ export default defineComponent({
                 document.body.removeChild(input);
             },
             // 帧结束
-            async handleExport (type, filename, scale = 1, isBack = false, options = data.exportStyleOptions)
+            async handleExport (type, filename, scale = 1, isBack = false, options = data.exportStyleOptions, gifSpeed = 2)
             {
                 if (!isBack) data.exportLoaidng = true;
                 if (data.isExportProject)
@@ -4540,28 +4567,49 @@ export default defineComponent({
                         workerScript: './gif-js/dist/gif.worker.js',
                         workers: 2,
                         quality: 10,
-                        background: 'rgba(0,0,0,0)',
-                        transparent:'rgba(0,0,0,0)'
+                        // background: '#00000000',
+                        transparent: 0x000000
                     });
                     for (let i = 0; i < data.drawRecord.length; i++)
                     {
-                        methods.handleExportFrame(i, false, scale);
+                        methods.handleExportFrame(i, false, scale, data.exportStyleOptions, 'gif');
                         canavsUrlData.push(data.realCanvas.toDataURL('image/png'));
                     }
+                    let promises = [] as any;
                     for (let i = 0; i < canavsUrlData.length; i++)
                     {
                         const imgElement = document.createElement('img');
                         imgElement.src = canavsUrlData[i];
                         imgElement.width = data.canvasWidth * scale;
                         imgElement.height = data.canvasHeight * scale;
-                        gif.addFrame(imgElement, {delay: 200});
+                        let promise = new Promise((resolve, reject) => 
+                        {
+                            imgElement.onload = function ()
+                            {
+                                resolve(imgElement);
+                            };
+                        });
+                        promises.push(promise);
                     }
+                    let count = 0;
+                    await Promise.all(promises).then(async () => 
+                    {
+                        for (let i = 0; i < promises.length; i++)
+                        {
+                            console.log(promises);
+                            
+                            let imgElement = await promises[i];
+                            gif.addFrame(imgElement, {delay: gifSpeed * 100});
+                            count++;
+                        }
+                        if (count >= promises.length) gif.render();
+
+                    });
                     gif.on('finished', function (blob) 
                     {
                         downloadImageByDataURL(filename, URL.createObjectURL(blob));
                         gif.abort();
                     });
-                    gif.render();
                 }
                 else if (type === 6)
                 {
@@ -4592,7 +4640,7 @@ export default defineComponent({
                         let count = 0;
                         for (let j = currentFrameLayerLength - 1; j >= 0; j--)
                         {
-                            methods.handleExportLayer(i, j, false, scale);
+                            methods.handleExportLayer(i, j, false, scale, data.exportStyleOptions, 'gif');
                             canavsData[i][count] = data.ctx3.getImageData(0, 0, data.canvasWidth * scale, data.canvasHeight * scale);
                             count++;
                         }
@@ -4605,8 +4653,8 @@ export default defineComponent({
                             workerScript: './gif-js/dist/gif.worker.js',
                             workers: 2,
                             quality: 10,
-                            background: 'rgba(0,0,0,0)',
-                            transparent:'rgba(0,0,0,0)'
+                            // background: 'rgba(0,0,0,0)',
+                            transparent: 0x000000
                         });
                         for (let i = 0; i < canavsData.length; i++)
                         {
@@ -4617,7 +4665,7 @@ export default defineComponent({
                                 newCanvas.height = data.canvasHeight * scale;
                                 let newCtx:any = newCanvas.getContext('2d');
                                 newCtx.putImageData(canavsData[i][l], 0, 0);
-                                gif.addFrame(newCanvas, {delay: 200});
+                                gif.addFrame(newCanvas, {delay: gifSpeed * 100});
                                 continue;
                             }
                         }
@@ -5217,6 +5265,7 @@ export default defineComponent({
             handleResetCanvas ()
             {
                 // methods.computeScale();
+                data.pindouScaleValue = 0;
                 data.canvasStyle.transform = 'translate3d(0, 0, 10px) scale(1)';
                 methods.handleResizeWindowEvent('');
             },
@@ -5282,6 +5331,7 @@ export default defineComponent({
                     zIndex:0,
                     display:'none'
                 };
+                data.pindouScaleValue = 0;
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()
@@ -5322,8 +5372,8 @@ export default defineComponent({
                         data.projectData.updateAt = projectData.updateAt;
                         data.projectData.createAt = projectData.createAt;
                         data.projectData.desc = projectData.desc;
-                        data.canvasWidth = projectData.width;
-                        data.canvasHeight = projectData.height;
+                        data.canvasWidth = Number(projectData.width);
+                        data.canvasHeight = Number(projectData.height);
                         data.projectData.frameImg = projectData.frameImg;
                         data.projectData.tip = projectData.tip;
                         data.projectData.isTop = projectData.isTop;
@@ -5471,7 +5521,8 @@ export default defineComponent({
             {
                 data.currentTool = 0;
                 data.pindouHighlight = null;
-                methods.reDraw(false);
+                methods.handleResetCanvas();
+                // methods.reDraw(false);
             }
         });
 

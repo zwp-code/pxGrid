@@ -69,7 +69,10 @@
                     <el-tooltip
                     content="全屏 [Alt/⌥ + f]"
                     placement="bottom">
-                        <el-icon style="margin-right: 0px;" @click="handleScreenFull"><FullScreen /></el-icon>
+                        <el-icon
+                        :class="{ 'active': editSpaceStore.isFullWork }"
+                        style="margin-right: 0px;" 
+                        @click="handleScreenFull"><FullScreen /></el-icon>
                     </el-tooltip>
                 </div>
             </el-header>
