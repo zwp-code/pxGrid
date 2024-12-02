@@ -494,6 +494,7 @@ export default defineComponent({
             {
                 // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
                 // if (data.isScaling) methods.handleCancelScale();
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
                 if (data.isHideLinmoMode)
                 {
                     data.isHideLinmoMode = false;
@@ -511,6 +512,7 @@ export default defineComponent({
                 if (mode === 'preview' && !data.pinDouMode) 
                 {
                     if (data.pinDouDrawMode) return proxy.$message.warning('请先退出拼豆绘图模式');
+                    methods.handleResetCanvas();
                     data.currentTool = 5;
                     data.loading = true;
                     methods.handlePindouEvent();
@@ -1282,13 +1284,14 @@ export default defineComponent({
                 // ---- v2.0
                 if (data.pinDouMode)
                 {
-                    const delta = event.deltaY > 0 ? -1 : 1;
+                    const delta = event.deltaY > 0 ? -2 : 2;
                     data.pindouScaleValue += delta;
                     data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
-                    if (data.pindouScaleValue > 20) data.pindouScaleValue = 20;
-                    console.log(data.pindouScaleValue);
-                    
-                    methods.computeScale();
+                    if (data.pindouScaleValue >= data.canvasWidth - 2 || data.pindouScaleValue >= data.canvasHeight - 2) 
+                    {
+                        data.pindouScaleValue = Math.max(data.canvasWidth - 2, data.canvasHeight - 2);
+                    }
+                    methods.computeScale(false);
                     methods.handleResizeDraw();
                     return;
                 }
@@ -1377,10 +1380,13 @@ export default defineComponent({
                 // methods.handleResizeDraw();
                 if (data.pinDouMode)
                 {
-                    data.pindouScaleValue += delta * 10;
+                    data.pindouScaleValue += delta * 20;
                     data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
-                    if (data.pindouScaleValue > 20) data.pindouScaleValue = 20;
-                    methods.computeScale();
+                    if (data.pindouScaleValue >= data.canvasWidth - 2 || data.pindouScaleValue >= data.canvasHeight - 2) 
+                    {
+                        data.pindouScaleValue = Math.max(data.canvasWidth - 2, data.canvasHeight - 2);
+                    }
+                    methods.computeScale(false);
                     methods.handleResizeDraw();
                     return;
                 }
@@ -3792,7 +3798,7 @@ export default defineComponent({
                 link.href = data.canvas.toDataURL('image/png');
                 link.click();
             },
-            computeScale ()
+            computeScale (isCenter = true)
             {
                 // if (data.canvasWidth > data.canvasHeight) data.scale = Math.max(1, (data.canvas.width / data.canvasWidth / 2) * 2);
                 // else data.scale = Math.max(1, (data.canvas.height / data.canvasHeight / 2) * 2);
@@ -3804,14 +3810,14 @@ export default defineComponent({
                 data.baseCanvas.height = pixelBox?.clientHeight;
                 let pixelBoxHeight = pixelBox?.clientHeight;
                 
-                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth + data.pindouScaleValue, data.canvasHeight + data.pindouScaleValue);
+                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth - data.pindouScaleValue, data.canvasHeight - data.pindouScaleValue);
                 data.scale = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
                 console.log(data.scale);
                 data.canvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
                 data.canvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
                 data.bgCanvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
                 data.bgCanvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
-                methods.setCanvasCenter();
+                if (isCenter) methods.setCanvasCenter();
                 console.log(data.scale, data.baseCanvas.width, pixelBox?.clientWidth);
                 // data.brushSize = data.scale;
                 
@@ -5497,7 +5503,8 @@ export default defineComponent({
             {
                 data.currentTool = 0;
                 data.pindouHighlight = null;
-                methods.reDraw(false);
+                methods.handleResetCanvas();
+                // methods.reDraw(false);
             }
         });
 
