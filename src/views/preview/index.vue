@@ -2,6 +2,6 @@
 </template>
 <script src='./index.ts' lang="ts">
 </script>
-<style lang='scss' scoped src='../work/index.scss'>
+<style lang='scss' scoped src='./index.scss'>
 </style>
 
