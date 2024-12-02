@@ -231,7 +231,8 @@ export default defineComponent({
                 transform: 'translate3d(0, 0, 10px) scale(1)',
                 transformOrigin:'center center'
             },
-            isShowGridLine:false
+            isShowGridLine:false,
+            pindouScaleValue:0
 
             
         });
@@ -1279,6 +1280,18 @@ export default defineComponent({
                 // console.log(data.scale);
                 // methods.handleResizeDraw();
                 // ---- v2.0
+                if (data.pinDouMode)
+                {
+                    const delta = event.deltaY > 0 ? -1 : 1;
+                    data.pindouScaleValue += delta;
+                    data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
+                    if (data.pindouScaleValue > 20) data.pindouScaleValue = 20;
+                    console.log(data.pindouScaleValue);
+                    
+                    methods.computeScale();
+                    methods.handleResizeDraw();
+                    return;
+                }
                 const delta = event.deltaY > 0 ? -0.1 : 0.1;
                 console.log(getScaleValue(data.canvas));
                 let currentScale = getScaleValue(data.canvas);
@@ -1362,6 +1375,15 @@ export default defineComponent({
                 // data.scale = Math.max(1, data.scale);
                 // if (data.scale > 60) data.scale = 60;
                 // methods.handleResizeDraw();
+                if (data.pinDouMode)
+                {
+                    data.pindouScaleValue += delta * 10;
+                    data.pindouScaleValue = Math.max(0, data.pindouScaleValue);
+                    if (data.pindouScaleValue > 20) data.pindouScaleValue = 20;
+                    methods.computeScale();
+                    methods.handleResizeDraw();
+                    return;
+                }
                 let currentScale = getScaleValue(data.canvas);
                 currentScale += delta;
                 let scale = Math.max(0.1, currentScale);
@@ -3781,12 +3803,14 @@ export default defineComponent({
                 data.baseCanvas.width = pixelBox?.clientWidth;
                 data.baseCanvas.height = pixelBox?.clientHeight;
                 let pixelBoxHeight = pixelBox?.clientHeight;
-                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth, data.canvasHeight);
+                
+                let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth + data.pindouScaleValue, data.canvasHeight + data.pindouScaleValue);
                 data.scale = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
-                data.canvas.width = data.canvasWidth * data.scale;
-                data.canvas.height = data.canvasHeight * data.scale;
-                data.bgCanvas.width = data.canvasWidth * data.scale;
-                data.bgCanvas.height = data.canvasHeight * data.scale;
+                console.log(data.scale);
+                data.canvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
+                data.canvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.width = (data.canvasWidth + data.pindouScaleValue) * data.scale;
+                data.bgCanvas.height = (data.canvasHeight + data.pindouScaleValue) * data.scale;
                 methods.setCanvasCenter();
                 console.log(data.scale, data.baseCanvas.width, pixelBox?.clientWidth);
                 // data.brushSize = data.scale;
@@ -5217,6 +5241,7 @@ export default defineComponent({
             handleResetCanvas ()
             {
                 // methods.computeScale();
+                data.pindouScaleValue = 0;
                 data.canvasStyle.transform = 'translate3d(0, 0, 10px) scale(1)';
                 methods.handleResizeWindowEvent('');
             },
@@ -5282,6 +5307,7 @@ export default defineComponent({
                     zIndex:0,
                     display:'none'
                 };
+                data.pindouScaleValue = 0;
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()
