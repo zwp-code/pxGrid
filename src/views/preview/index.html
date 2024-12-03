@@ -10,6 +10,19 @@
                     <el-icon @click="handleBack"><ArrowLeftBold /></el-icon>
                     <h1>{{ projectData.projectName }}</h1>
                 </div>
+                <div class="flex-end">
+                    <el-tooltip
+                    content="导入项目"
+                    placement="bottom">
+                        <el-icon style="margin-right: 25px;" @click="handleImportProject"><FolderAdd /></el-icon>
+                    </el-tooltip>
+
+                    <el-tooltip
+                    content="下载项目"
+                    placement="bottom">
+                        <el-icon @click="handleDownloadProject"><Download /></el-icon>
+                    </el-tooltip>
+                </div>
             </el-header>
             <div class="flex-start flex-nowarp full-w" style="flex: 1;">
                 <div class="pixelBox scrollbar">

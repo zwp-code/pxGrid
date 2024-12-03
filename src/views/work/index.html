@@ -4,7 +4,7 @@
             <el-header class="flex-between">
                 <div class="back flex-start">
                     <el-icon @click="handleBack"><ArrowLeftBold /></el-icon>
-                    <h1>{{ projectData.projectName }}
+                    <h1 class="oneline">{{ projectData.projectName }}
                         <span style="color:red" v-if="!isSaveProject">*</span>
                     </h1>
                 </div>
@@ -538,7 +538,7 @@
                             <el-checkbox v-model="isShowReferenceLine" size="small" label="显示参考线" :disabled="pinDouMode"/>
                             <el-checkbox v-model="isShowGridLine" size="small" label="显示网格线" :disabled="pinDouMode"/>
                         </div>
-                        <div style="margin-top: 10px;" v-show="currentTool === 0" class="flex-between symmetric-box full-w">
+                        <div style="margin-top: 10px;" v-show="currentTool === 0 || currentTool === 1" class="flex-between symmetric-box full-w">
                             <el-checkbox v-model="isHorizontal" size="small" label="水平对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isHorizontal')"/>
                             <el-checkbox v-model="isVertical" size="small" label="垂直对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isVertical')"/>
                             <el-checkbox v-model="isCenter" size="small" label="中心对称" :disabled="pinDouMode" @change="handleChangeBrushSymmetric($event, 'isCenter')"/>
@@ -632,6 +632,8 @@
                                 <div @dblclick="handleDoubleClickLayer(index, item.layerName)" v-else>{{ item.layerName }}</div>
                             </div>
                             <div class="flex-end">
+                                <el-icon style="margin-right:10px" color="#0052d9" class="pointer" v-if="item.isLock" @click.stop="handleLockLayer(index, false)"><Lock /></el-icon>
+                                <el-icon style="margin-right:10px" class="pointer" v-else @click.stop="handleLockLayer(index, true)"><Unlock /></el-icon>
                                 <el-icon style="margin-right:10px" class="pointer" @click.stop="handleCopyLayer(index)"><CopyDocument /></el-icon>
                                 <el-popconfirm title="确认删除该图层？" width="200" @confirm="handleDeleteLayer(index)">
                                     <template #reference>

@@ -27,6 +27,8 @@ export default {
         'saveFailed':'保存失败',
         'importSucceeded':'导入成功',
         'importFailed':'导入失败',
+        'downloadFailed':'下载失败',
+        'downloadSucceeded':'下载成功',
         'cancelTop':'取消置顶',
         'top':'置 顶',
         'download':'下 载',

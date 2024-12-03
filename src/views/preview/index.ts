@@ -1,7 +1,7 @@
 import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch, onDeactivated, onActivated, onBeforeUnmount } from 'vue';
 
 import { useEditSpaceStore } from '@/store';
-import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getRequestUrl, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { blobToBase64, copyText, downloadFile, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getRequestUrl, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -732,6 +732,41 @@ export default defineComponent({
                 data.linmoPhoto = null;
                 data.currentHistoryIndex = 0;
             },
+            handleImportProject ()
+            {
+                if (!data.projectData) return proxy.$message.error(proxy.$t('message.importFailed'));
+                let jsonData = JSON.parse(JSON.stringify(data.projectData));
+                jsonData.createAt = formatTime();
+                jsonData.updateAt = jsonData.createAt;
+                jsonData.projectId = uuid.v1();
+                jsonData.tip = '新项目';
+                jsonData.isTop = 0;
+                // jsonData.frameImg = projectData.frameImg;
+                editSpaceStore.saveProject(jsonData).then((res1) => 
+                {
+                    if (res1) 
+                    {
+                        proxy.$message.success(proxy.$t('message.importSucceeded') + '，请在我的项目中查看');
+                        // proxy.$router.push({
+                        //     name:'work',
+                        //     params:{
+                        //         projectId:data.itemInfo.projectId
+                        //     }
+                        // });
+                        // editSpaceStore.saveProjectId(data.itemInfo.projectId);
+                    }
+                }).catch((err) => 
+                {
+                    console.log(err);
+                    proxy.$message.error(proxy.$t('message.importFailed'));
+                });
+            },
+            handleDownloadProject ()
+            {
+                if (!data.projectData) return proxy.$message.error(proxy.$t('message.downloadFailed'));
+                let projectData = JSON.parse(JSON.stringify(data.projectData));
+                downloadFile(JSON.stringify(projectData), 'application/json', projectData.projectName);
+            },
             handleReadProjectData ()
             {
                 // 效验id是否为项目id
@@ -762,8 +797,10 @@ export default defineComponent({
                     data.projectData.updateAt = projectData.updateAt;
                     data.projectData.createAt = projectData.createAt;
                     data.projectData.desc = projectData.desc;
-                    data.canvasWidth = projectData.width;
-                    data.canvasHeight = projectData.height;
+                    data.canvasWidth = Number(projectData.width);
+                    data.canvasHeight = Number(projectData.height);
+                    data.projectData.width = projectData.width;
+                    data.projectData.height = projectData.height;
                     data.projectData.frameImg = projectData.frameImg;
                     data.projectData.tip = projectData.tip;
                     data.projectData.isTop = projectData.isTop;

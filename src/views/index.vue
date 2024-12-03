@@ -1,6 +1,6 @@
 <template>
     <el-config-provider :locale="locale">
-        <div class="full-layout flex-column-center" style="min-height:400px">
+        <div class="full-layout flex-column-center" style="min-width:450px">
             <HomeHeader @changeLanguage="changeLanguage" @changeTheme="changeTheme"></HomeHeader>
             <el-container direction='horizontal' class="home-box">
                 <HomeSideNav></HomeSideNav>

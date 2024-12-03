@@ -620,6 +620,7 @@ export default defineComponent({
                                 layerId:uuid.v4(),
                                 layerName:'图层1',
                                 alpha:100,
+                                isLock:false,
                                 currentLayerImg:methods.handleGridImg(),
                                 isRender:true, // 是否渲染
                                 layerData:layerArr // 绘画信息
@@ -753,6 +754,10 @@ export default defineComponent({
             getCurrentFrameId (frameIndex = data.currentFrameIndex)
             {
                 return data.drawRecord[frameIndex].frameId;
+            },
+            getCurrentLayerIsLock (frameIndex = data.currentFrameIndex, layerIndex = data.currentLayerIndex)
+            {
+                return data.drawRecord[frameIndex].layer[layerIndex].isLock;
             },
             drawScaleFrame ()
             {
@@ -1253,6 +1258,39 @@ export default defineComponent({
                     // data.drawList.push([arr[j][0], arr[j][1], arr[j][2]]);
                 }
                 // data.drawList = [...data.drawList, ...arr];
+            },
+            removeDrawTransformSymmetric ()
+            {
+                let arr = []  as any;
+                for (let i = 0; i < data.removeDrawList.length; i++)
+                {
+                    if (data.isHorizontal)
+                    {
+                        let newX = (data.canvasWidth - 1) - data.removeDrawList[i][0];
+                        let newY = data.removeDrawList[i][1];
+                        arr.push([newX, newY, data.removeDrawList[i][2]]);
+                    }
+                    else if (data.isVertical)
+                    {
+                        let newX = data.removeDrawList[i][0];
+                        let newY = (data.canvasHeight - 1) - data.removeDrawList[i][1];
+                        arr.push([newX, newY, data.removeDrawList[i][2]]);
+                    }
+                    else if (data.isCenter)
+                    {
+                        let gridX = (data.removeDrawList[i][0] * data.scale) + data.canvasBeginPos.x;
+                        let gridY = (data.removeDrawList[i][1] * data.scale) + data.canvasBeginPos.y;
+                        let newX = 2 * data.canvasBeginPos.centerX - (gridX + data.scale / 2);
+                        let newY = 2 * data.canvasBeginPos.centerY - (gridY + data.scale / 2);
+                        let col1 = Math.floor((newX - data.canvasBeginPos.x) / data.scale);
+                        let row1 = Math.floor((newY - data.canvasBeginPos.y) / data.scale);
+                        arr.push([col1, row1, data.removeDrawList[i][2]]);
+                    }
+                }
+                for (let j = 0; j < arr.length; j++)
+                {
+                    methods.addRemoveDrawList(arr[j][0], arr[j][1], arr[j][2]);
+                }
             },
             handleChangeBrushSymmetric (e, symmetric)
             {
@@ -2120,7 +2158,20 @@ export default defineComponent({
                                 // data.ctx1.fillStyle = arr[i].layerData[v][2];
                                 // data.ctx1.fillStyle = data.brushColor;
                                 // data.ctx1.save();
-                                data.ctx1.fillRect(gridX1, gridY1, data.scale, data.scale);
+                                if (!methods.getCurrentLayerIsLock())
+                                {
+                                    data.ctx1.fillRect(gridX1, gridY1, data.scale, data.scale);
+                                }
+                                else
+                                {
+                                    // 判断当前位置是否有颜色,没有颜色才能继续绘画
+                                    let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                                    let index = data.drawList[i][0] + (data.drawList[i][1] * data.canvasWidth);
+                                    if (arr[index][2] === data.emptyColor)
+                                    {
+                                        data.ctx1.fillRect(gridX1, gridY1, data.scale, data.scale);
+                                    }
+                                }
                                 // data.ctx1.restore();
                             }
                             // let gridX = (col * data.scale) + data.canvasBeginPos.x;
@@ -2163,6 +2214,10 @@ export default defineComponent({
                                     methods.addRemoveDrawList(col1, row1, data.brushColor);
                                 }
                             }
+                        }
+                        if (data.isHorizontal || data.isVertical || data.isCenter)
+                        {
+                            methods.removeDrawTransformSymmetric();
                         }
                         if (data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].isRender)
                         {
@@ -3510,7 +3565,21 @@ export default defineComponent({
                     data.isDrawing = false;
                     for (let i = 0; i < data.drawList.length; i++)
                     {
-                        methods.addDrawRecord([data.drawList[i][0], data.drawList[i][1], data.brushColor], false);
+                        if (!methods.getCurrentLayerIsLock())
+                        {
+                            methods.addDrawRecord([data.drawList[i][0], data.drawList[i][1], data.brushColor], false);
+                        }
+                        else
+                        {
+                            // 判断当前位置是否有颜色,没有颜色才能继续绘画
+                            let arr = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                            let index = data.drawList[i][0] + (data.drawList[i][1] * data.canvasWidth);
+                            if (arr[index][2] === data.emptyColor)
+                            {
+                                methods.addDrawRecord([data.drawList[i][0], data.drawList[i][1], data.brushColor], false);
+                            }
+                        }
+                       
                     }
                     methods.reDraw();
                 }
@@ -3865,6 +3934,7 @@ export default defineComponent({
                     layerId:uuid.v4(),
                     layerName: `图层${length + 1}`,
                     alpha:100,
+                    isLock:false,
                     currentLayerImg:methods.handleGridImg(),
                     isRender:true, // 是否渲染
                     layerData:layerArr // 绘画信息
@@ -3948,6 +4018,12 @@ export default defineComponent({
                 if (data.selectData.selectList.length) return methods.handleCancelSelect();
                 methods.reDraw(true, false);
                 // methods.handleAddHistory();
+            },
+            handleLockLayer (index, value)
+            {
+                // 设置图层颜色锁定
+                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                data.drawRecord[data.currentFrameIndex].layer[index].isLock = value;
             },
             handleDeleteLayer (index)
             {
@@ -4179,6 +4255,7 @@ export default defineComponent({
                             layerId:uuid.v4(),
                             layerName: '图层1',
                             alpha:100,
+                            isLock:false,
                             currentLayerImg:methods.handleGridImg(),
                             isRender:true, // 是否渲染
                             layerData:layerArr // 绘画信息

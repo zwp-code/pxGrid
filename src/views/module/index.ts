@@ -247,7 +247,7 @@ export default defineComponent({
                         {
                             if (res1) 
                             {
-                                proxy.$message.success(proxy.$t('message.importSucceeded'));
+                                proxy.$message.success(proxy.$t('message.importSucceeded') + '，请在我的项目中查看');
                                 // proxy.$router.push({
                                 //     name:'work',
                                 //     params:{

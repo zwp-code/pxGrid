@@ -64,7 +64,7 @@
                                 <template #dropdown>
                                     <el-dropdown-menu>
                                         <el-dropdown-item @click="handleDownload(item.data)" icon="Download">{{ $t('message.download')}}</el-dropdown-item>
-                                        <el-dropdown-item @click="handleImport(item.data)" icon="Upload">{{ $t('message.import')}}</el-dropdown-item>
+                                        <el-dropdown-item @click="handleImport(item.data)" icon="FolderAdd">{{ $t('message.import')}}</el-dropdown-item>
                                         <el-dropdown-item @click="handlePreview(item.data)" icon="View">{{ $t('message.preview')}}</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>

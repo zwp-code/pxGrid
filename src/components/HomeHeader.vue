@@ -1,5 +1,5 @@
 <template>
-    <div class="full-w home-header">
+    <div class="full-w home-header" :class="{ 'web-gray': checkDate('公祭日') }">
         <div class="flex-start" style="gap:10px">
             <img :src="require('/logo.png')">
             <h1>{{ $t('message.webTitle') }}</h1>
@@ -59,7 +59,7 @@ import { useI18n } from 'vue-i18n';
 import fullScreen from '@/hooks/fullScreen';
 import DonateDialog from '@/components/dialog/DonateDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import { checkIsClientEnv } from '@/utils/utils';
+import { checkIsClientEnv, checkDate } from '@/utils/utils';
 export default defineComponent({
     name: 'HomeHeader',
     components: { DonateDialog },
@@ -104,6 +104,7 @@ export default defineComponent({
             ...methods,
             ...fullScreen(),
             checkIsClientEnv,
+            checkDate,
             editSpaceStore
         };
     }

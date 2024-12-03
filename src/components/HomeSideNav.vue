@@ -4,6 +4,7 @@
         router
         :collapse="isCollapse"
         style="min-width: 60px;"
+        :class="{ 'web-gray': checkDate('公祭日') }"
         >
 
         <el-menu-item 
