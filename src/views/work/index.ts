@@ -192,7 +192,7 @@ export default defineComponent({
                 visible:false,
                 top:0,
                 left:0,
-                contextData:null
+                contextData:null as any
             }, // 右键菜单
             selectLayerList:[] as any, // 选择的图层
             pindouHighlight:null as any, // 拼豆高亮显示
@@ -3614,18 +3614,25 @@ export default defineComponent({
                 }
                 if (data.isMoving && !data.isSelecting)
                 {
-                    let layerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
-                    for (let i = 0; i < layerData.length; i++)
+                    // let layerData = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                    // for (let i = 0; i < layerData.length; i++)
+                    // {
+                    //     let findData = data.moveData.list.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
+                    //     if (findData)
+                    //     {
+                    //         layerData[i][2] = findData[2];
+                    //     }
+                    //     else
+                    //     {
+                    //         layerData[i][2] = data.emptyColor;
+                    //     }
+                    // }
+                    data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = JSON.parse(JSON.stringify(data.emptyLayerData));
+                    for (let i = 0; i < data.moveData.list.length; i++)
                     {
-                        let findData = data.moveData.list.find((item) => item[0] === layerData[i][0] && item[1] === layerData[i][1]);
-                        if (findData)
-                        {
-                            layerData[i][2] = findData[2];
-                        }
-                        else
-                        {
-                            layerData[i][2] = data.emptyColor;
-                        }
+                        if (data.moveData.list[i][0] >= data.canvasWidth || data.moveData.list[i][1] >= data.canvasHeight || data.moveData.list[i][0] < 0 || data.moveData.list[i][1] < 0) continue;
+                        let index = data.moveData.list[i][0] + (data.moveData.list[i][1] * data.canvasWidth);
+                        data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData[index][2] = data.moveData.list[i][2];
                     }
                     data.moveData.list = [];
                     data.isMoving = false;
@@ -3706,7 +3713,20 @@ export default defineComponent({
                         let arr = methods.drawCircle(startX, startY, endX, endY, data.scale);
                         for (let i = 0; i < arr.length; i++)
                         {
-                            methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            if (!methods.getCurrentLayerIsLock())
+                            {
+                                methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            }
+                            else
+                            {
+                                // 判断当前位置是否有颜色,没有颜色才能继续绘画
+                                let arr1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                                let index = arr[i][0] + (arr[i][1] * data.canvasWidth);
+                                if (arr1[index][2] === data.emptyColor)
+                                {
+                                    methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                                }
+                            }
                         }
                     }
                     else if (data.currentDrawShape === 'rect')
@@ -3719,7 +3739,21 @@ export default defineComponent({
                         let arr = methods.drawRect(startX, startY, endX, endY);
                         for (let i = 0; i < arr.length; i++)
                         {
-                            methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            if (!methods.getCurrentLayerIsLock())
+                            {
+                                methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            }
+                            else
+                            {
+                                // 判断当前位置是否有颜色,没有颜色才能继续绘画
+                                let arr1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                                let index = arr[i][0] + (arr[i][1] * data.canvasWidth);
+                                if (arr1[index][2] === data.emptyColor)
+                                {
+                                    methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                                }
+                            }
+                            // methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
                         }
                         
                     }
@@ -3733,7 +3767,21 @@ export default defineComponent({
                         let arr = methods.drawFillRect(startX, startY, endX, endY);
                         for (let i = 0; i < arr.length; i++)
                         {
-                            methods.addDrawRecord([arr[i][0], arr[i][1], arr[i][2]], false);
+                            if (!methods.getCurrentLayerIsLock())
+                            {
+                                methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            }
+                            else
+                            {
+                                // 判断当前位置是否有颜色,没有颜色才能继续绘画
+                                let arr1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                                let index = arr[i][0] + (arr[i][1] * data.canvasWidth);
+                                if (arr1[index][2] === data.emptyColor)
+                                {
+                                    methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                                }
+                            }
+                            // methods.addDrawRecord([arr[i][0], arr[i][1], arr[i][2]], false);
                         }
                        
                     }
@@ -3747,7 +3795,21 @@ export default defineComponent({
                         let arr = methods.drawLine(startX, startY, endX, endY);
                         for (let i = 0; i < arr.length; i++)
                         {
-                            methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            if (!methods.getCurrentLayerIsLock())
+                            {
+                                methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                            }
+                            else
+                            {
+                                // 判断当前位置是否有颜色,没有颜色才能继续绘画
+                                let arr1 = data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData;
+                                let index = arr[i][0] + (arr[i][1] * data.canvasWidth);
+                                if (arr1[index][2] === data.emptyColor)
+                                {
+                                    methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
+                                }
+                            }
+                            // methods.addDrawRecord([arr[i][0], arr[i][1], data.brushColor], false);
                         }
                     }
                     else if (data.currentDrawShape === 'curve')
@@ -4077,6 +4139,7 @@ export default defineComponent({
             },
             handleEditLayerName ()
             {
+                if (data.currentEditLayer.name.trim() === '') return proxy.$message.warning('请填写图层名称');
                 data.drawRecord[data.currentFrameIndex].layer[data.currentEditLayer.index].layerName = data.currentEditLayer.name;
                 data.currentEditLayer = {
                     index: -1,
@@ -4237,6 +4300,20 @@ export default defineComponent({
                     methods.reDraw();
                 };
             },
+            handleCopyLayerData ()
+            {
+                // 只把图层数据复制进去，不影响图层名称以及其他属性
+                editSpaceStore.layerCopyData = JSON.parse(JSON.stringify(data.LayerMenu.contextData?.layerData));
+                proxy.$message.success('复制成功');
+            },
+            handlePasteLayerData ()
+            {
+                if (!editSpaceStore.layerCopyData) return proxy.$message.warning('数据不存在');
+                let pasteData = editSpaceStore.layerCopyData;
+                data.drawRecord[data.currentFrameIndex].layer[data.currentLayerIndex].layerData = JSON.parse(JSON.stringify(pasteData.layerData));
+                proxy.$message.success('粘贴成功');
+                methods.reDraw(true, true);
+            },
             // 图层结束
 
             // 帧开始
@@ -4281,9 +4358,9 @@ export default defineComponent({
             },
             handleCopyFrame (index, type = 'copy')
             {
-                if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
-                if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
-                if (data.isScaling) methods.handleCancelScale();
+                // if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                // if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                // if (data.isScaling) methods.handleCancelScale();
                 if (type === 'copyData')
                 {
                     editSpaceStore.frameCopyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
@@ -4304,11 +4381,15 @@ export default defineComponent({
                         data.drawRecord[index].layer = JSON.parse(JSON.stringify(pasteData.layer));
                     }
                     proxy.$message.success('粘贴成功');
-                    methods.reDraw(true, true);
+                    if (index === data.currentFrameIndex) methods.reDraw(true, true);
+                    // methods.reDraw(true, true);
 
                 }
                 else if (type === 'copy')
                 {
+                    if (data.pinDouMode) return proxy.$message.warning('请先退出拼豆预览模式');
+                    if (data.selectData.selectList.length) return proxy.$message.warning('请先取消选中区域');
+                    if (data.isScaling) methods.handleCancelScale();
                     if (data.drawRecord.length >= data.maxFrame) return proxy.$message.warning('帧数量达到上限');
                     let copyData = JSON.parse(JSON.stringify(data.drawRecord[index]));
                     copyData.frameId = uuid.v1();

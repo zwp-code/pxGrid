@@ -13,6 +13,7 @@ export const useEditSpaceStore = defineStore('editSpace', {
             themeValue:false,
             myColorList:[] as any,
             frameCopyData:null as any,
+            layerCopyData:null as any,
             colorModules:[] as any,
             isFullWork:false,
             projectList:[] as any,

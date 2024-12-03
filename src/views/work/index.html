@@ -701,6 +701,8 @@
         :left="LayerMenu.left"
         :top="LayerMenu.top"
         :contextData="LayerMenu.contextData"
+        @copy="handleCopyLayerData"
+        @paste="handlePasteLayerData"
         @import="handleImportLayer"
         @export="handleExportLayer">
         </LayerMenu>

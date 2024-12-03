@@ -12,6 +12,14 @@
             <span>导出图像</span>
             <el-icon><Camera /></el-icon>
         </li>
+        <li class="flex-between" @click="handleCopy">
+            <span>复制数据</span>
+            <el-icon><DocumentCopy /></el-icon>
+        </li>
+        <li class="flex-between" @click="handlePaste">
+            <span>粘贴数据</span>
+            <el-icon><Document /></el-icon>
+        </li>
     </ul>
 </template>
 
@@ -40,7 +48,7 @@ export default {
     components: {
 
     },
-    emits:['import', 'export'],
+    emits:['import', 'export', 'copy', 'paste'],
     setup (props, context) 
     {
         const { proxy }:any = getCurrentInstance();
@@ -58,6 +66,14 @@ export default {
             handleExport ()
             {
                 context.emit('export');
+            },
+            handleCopy ()
+            {
+                context.emit('copy');
+            },
+            handlePaste ()
+            {
+                context.emit('paste');
             }
 
         };
