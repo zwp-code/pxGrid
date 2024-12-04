@@ -106,14 +106,15 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
     }
     else
     {
-        if (!allowRoutes.find((item) => to.path === item))
-        {
-            next('/404');
-        }
-        else
-        {
-            next();
-        }
+        next();
+        // if (!allowRoutes.find((item) => to.path === item))
+        // {
+        //     // next('/404');
+        // }
+        // else
+        // {
+        //     next();
+        // }
     }
     // let token = cache.token.get();
     // if (token)
