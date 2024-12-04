@@ -9,6 +9,13 @@
       <component :is="Component"></component>
     </keep-alive>
   </router-view>
+  <!-- <div class="flex-center">
+    <el-empty
+      :image="require('@/assets/404.png')"
+      description="找不到页面"
+      :image-size="400"
+      />
+  </div> -->
 </template>
 
 <script setup lang="ts">

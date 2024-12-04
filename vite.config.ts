@@ -11,7 +11,8 @@ export default defineConfig(({ command, mode }) =>
 {
     loadEnv(mode, process.cwd());
     return {
-        base: '../',
+        // base: '../',
+        base: '/',
         define: {
             'process.env': {
                 // 'VUE_APP_API_URL':'http://192.168.1.7:5001',

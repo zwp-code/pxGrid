@@ -1,10 +1,10 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
+import { createRouter, createWebHashHistory, RouteRecordRaw, RouteLocationNormalized, createWebHistory } from 'vue-router';
 import cache from '@/utils/cache';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 
 let router:any = null;
-// const allowRoutes: = ['/login', '/price', '/home'];
+const allowRoutes = ['/home', '/about', '/project', '/module', '/pindou', '/work', '/preview', '/404'];
 const routes:RouteRecordRaw[] = [
     {
         path:'/home',
@@ -61,7 +61,7 @@ const routes:RouteRecordRaw[] = [
                 component:() => import('@/views/preview/index.vue')
             }
         ]
-    }
+    },
     // {
     //     path:'/',
     //     redirect:'/home',
@@ -74,16 +74,16 @@ const routes:RouteRecordRaw[] = [
     //     meta:
     //     { title:'首页', keepAlive:true }
     // }
-    // {
-    //     path:'/login',
-    //     name:'login',
-    //     component:() => import('@/views/login/index.vue'),
-    //     meta:{ title:'登陆', keepAlive:false }
-    // }
+    {
+        path:'/404',
+        name:'404',
+        component:() => import('@/views/404/index.vue'),
+        meta:{ title:'404' }
+    }
 ];
 
 router = createRouter({
-    history: createWebHashHistory(),
+    history: createWebHistory(),
     routes
 });
 
@@ -106,7 +106,14 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
     }
     else
     {
-        next();
+        if (!allowRoutes.find((item) => to.path === item))
+        {
+            next('/404');
+        }
+        else
+        {
+            next();
+        }
     }
     // let token = cache.token.get();
     // if (token)
