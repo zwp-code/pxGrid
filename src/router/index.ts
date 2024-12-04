@@ -4,7 +4,7 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 
 let router:any = null;
-const allowRoutes = ['/home', '/about', '/project', '/module', '/pindou', '/work', '/preview', '/404'];
+const allowRoutes = ['home', 'about', 'project', 'module', 'pindou', 'work', 'preview', '404'];
 const routes:RouteRecordRaw[] = [
     {
         path:'/home',
@@ -106,15 +106,17 @@ router.beforeEach((to:Route, from:Route, next:(value?:string)=>void):void =>
     }
     else
     {
-        next();
-        // if (!allowRoutes.find((item) => to.path === item))
-        // {
-        //     // next('/404');
-        // }
-        // else
-        // {
-        //     next();
-        // }
+        // console.log(to);
+        
+        // next();
+        if (!allowRoutes.find((item) => to.name === item))
+        {
+            next('/404');
+        }
+        else
+        {
+            next();
+        }
     }
     // let token = cache.token.get();
     // if (token)
