@@ -120,7 +120,7 @@ export default defineComponent({
             },
             
             FrameTimer:null as any,
-            maxFrame:12,
+            maxFrame:15,
             maxLayer:30,
             exportVisible:false,
             exportLoaidng:false,
@@ -232,7 +232,11 @@ export default defineComponent({
                 transformOrigin:'center center'
             },
             isShowGridLine:false,
-            pindouScaleValue:0
+            pindouScaleValue:0,
+            drawAreaGridColor:{
+                light:['rgba(100, 100, 100, 0.5)', 'rgba(0, 0, 0, 0.5)'], // 浅色 深色
+                dark:['rgba(150, 150, 150, 0.5)', 'rgba(100, 100, 100, 0.5)']
+            }
 
             
         });
@@ -655,6 +659,7 @@ export default defineComponent({
                 //     data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;
                 //     data.canvasBeginPos.centerY = data.canvasBeginPos.y + data.scale * data.canvasHeight / 2;
                 // }
+                let currentThemeColor = editSpaceStore.themeValue ? data.drawAreaGridColor.dark : data.drawAreaGridColor.light;
                 data.drawAreaList = [];
                 data.ctx2.clearRect(0, 0, data.bgCanvas.width, data.bgCanvas.height);
                 data.ctx2.globalAlpha = 0.25;
@@ -665,18 +670,19 @@ export default defineComponent({
                         if ((i + j) % 2 === 0) 
                         {
                         // 深色格子
-                            data.ctx2.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                            data.ctx2.fillStyle = currentThemeColor[1];
                         } 
                         else 
                         {
                         // 浅色格子
-                            data.ctx2.fillStyle = 'rgba(100, 100, 100, 0.5)';
+                            data.ctx2.fillStyle = currentThemeColor[0];
                         }
-                        let px = data.scale;
-                        let py = data.scale;
-                        let originX = j * px + beginX;
-                        let originY = i * py + beginY;
-                        data.ctx2.fillRect(originX, originY, px, py);
+                        // let px = data.scale;
+                        // let py = data.scale;
+                        let originX = j * data.scale;
+                        let originY = i * data.scale;
+                        // data.ctx2.fillRect(originX, originY, px, py);
+                        data.ctx2.fillRect(originX, originY, data.scale, data.scale);
                         data.drawAreaList.push([originX, originY]);
                         // data.drawRecord.push([i, j, data.emptyColor]);
                         
@@ -693,6 +699,7 @@ export default defineComponent({
                     data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
                     data.ctx2.globalAlpha = 0.5;
                     data.ctx2.lineWidth = 1;
+                    data.ctx2.setLineDash([]);
                     for (let i = 0; i <= data.canvasHeight; i++)
                     {
                         // 绘制水平网格线
@@ -5187,7 +5194,7 @@ export default defineComponent({
                 }
                 
                 
-                else if (event.key === 'ArrowUp')
+                else if (event.altKey && event.key === 'ArrowUp')
                 {
                     // 切换图层
                     if (data.isShift) return;
@@ -5198,7 +5205,7 @@ export default defineComponent({
                     }
                     data.selectLayerList = [data.currentLayerIndex];
                 }
-                else if (event.key === 'ArrowDown')
+                else if (event.altKey && event.key === 'ArrowDown')
                 {
                     // 切换图层
                     if (data.isShift) return;
@@ -5209,8 +5216,9 @@ export default defineComponent({
                     }
                     data.selectLayerList = [data.currentLayerIndex];
                 }
-                else if (event.key === 'ArrowLeft')
+                else if (event.altKey && event.key === 'ArrowLeft')
                 {
+                    event.preventDefault();
                     // 切换帧
                     data.currentFrameIndex--;
                     if (data.currentFrameIndex < 0)
@@ -5220,8 +5228,9 @@ export default defineComponent({
                     }
                     methods.handleChangeFrame(data.currentFrameIndex);
                 }
-                else if (event.key === 'ArrowRight')
+                else if (event.altKey && event.key === 'ArrowRight')
                 {
+                    event.preventDefault();
                     // 切换帧
                     data.currentFrameIndex++;
                     if (data.currentFrameIndex > data.drawRecord.length - 1)
@@ -5698,8 +5707,12 @@ export default defineComponent({
 
         watch(() => editSpaceStore.themeValue, (newValue, oldValue) => 
         {
-            methods.handleDrawReferenceLine();
-            methods.handleDrawGridLine();
+            if (data.canvas && data.bgCanvas)
+            {
+                methods.drawPixelArea();
+            }
+            // methods.handleDrawReferenceLine();
+            // methods.handleDrawGridLine();
         });
 
         watch(() => editSpaceStore.isQueryProjectData, (newValue, oldValue) => 

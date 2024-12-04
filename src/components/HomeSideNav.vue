@@ -3,7 +3,7 @@
         :default-active="$route.path"
         router
         :collapse="isCollapse"
-        style="min-width: 60px;"
+        style="min-width: 60px;position: relative;"
         :class="{ 'web-gray': checkDate('公祭日') }"
         >
 
@@ -21,6 +21,10 @@
                 <p style="margin-left: 10px;">{{ $t(`message.${item.title}`)}}</p>
             </template>
         </el-menu-item>
+        <div class="collapseIcon flex-center" @click="isCollapse=!isCollapse">
+            <el-icon v-if="isCollapse"><DArrowRight /></el-icon>
+            <el-icon v-else><DArrowLeft /></el-icon>
+        </div>
         <div class="static-santa-claus" v-show="!isCollapse && checkDate('圣诞')">
             <lottie-player src="./lottie/圣诞老人2.json"  background="transparent"  speed="1"  style="width: 100px; height: 100px;" loop autoplay></lottie-player>
         </div>
@@ -126,6 +130,24 @@ export default defineComponent({
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+}
+.collapseIcon {
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-15px);
+    background: var(--el-menu-active-bg-color);
+    box-shadow: 0px 0px 6px 3px var(--el-shadow-aside);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .3s;
+
+    &:hover {
+        background: var(--el-menu-hover-bg-color);
     }
 }
 
