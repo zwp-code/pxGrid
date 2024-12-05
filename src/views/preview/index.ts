@@ -810,7 +810,8 @@ export default defineComponent({
                     {
                         data.worker.postMessage({
                             type:4,
-                            variables:JSON.parse(JSON.stringify(projectData.data))
+                            variables:JSON.parse(JSON.stringify(projectData.data)),
+                            canvasWidth:data.canvasWidth
                         });
                         data.worker.onmessage = (event) => 
                         {

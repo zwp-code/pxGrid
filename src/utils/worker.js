@@ -1,4 +1,4 @@
-import { rgbaToHex, colorDistance, hexToRgba } from '@/utils/utils';
+import { rgbaToHex, colorDistance, hexToRgba, isArray } from '@/utils/utils';
 // import pindouMap from '@/config/pindou';
 import cache from '@/utils/cache';
 addEventListener('message', (e) => 
@@ -79,15 +79,42 @@ addEventListener('message', (e) =>
     {
         // 导入项目
         let dataTable = data.variables;
+        let canvasWidth = data.canvasWidth;
         for (let i = 0; i < dataTable.length; i++)
         {
             for (let j = 0; j < dataTable[i].layer.length; j++)
             {
                 for (let k = 0; k < dataTable[i].layer[j].layerData.length; k++)
                 {
-                    if (dataTable[i].layer[j].layerData[k][2] === '#')
+                    if (isArray(dataTable[i].layer[j].layerData[k]) && dataTable[i].layer[j].layerData[k].length > 1)
                     {
-                        dataTable[i].layer[j].layerData[k][2] = '#00000000';
+                        if (dataTable[i].layer[j].layerData[k][2] === '#')
+                        {
+                            dataTable[i].layer[j].layerData[k][2] = '#00000000';
+                        }
+                    }
+                    else
+                    {
+                        if (isArray(dataTable[i].layer[j].layerData[k]))
+                        {
+                            let col = k % canvasWidth;
+                            let row = Math.floor(k / canvasWidth);
+                            let color = dataTable[i].layer[j].layerData[k][0];
+                            dataTable[i].layer[j].layerData[k][0] = col;
+                            dataTable[i].layer[j].layerData[k][1] = row;
+                            dataTable[i].layer[j].layerData[k][2] = color === '' || color === '#' ? '#00000000' : color;
+                        }
+                        else
+                        {
+                            let col = k % canvasWidth;
+                            let row = Math.floor(k / canvasWidth);
+                            let color = dataTable[i].layer[j].layerData[k];
+                            dataTable[i].layer[j].layerData[k] = [];
+                            dataTable[i].layer[j].layerData[k][0] = col;
+                            dataTable[i].layer[j].layerData[k][1] = row;
+                            dataTable[i].layer[j].layerData[k][2] = color == 0 ? '#00000000' : color;
+                        }
+
                     }
                 }
             }

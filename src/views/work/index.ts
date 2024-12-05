@@ -4536,10 +4536,22 @@ export default defineComponent({
                     {
                         for (let k = 0; k < compressValue[i].layer[j].layerData.length; k++)
                         {
-                            if (compressValue[i].layer[j].layerData[k][2] === '#00000000')
+                            // if (compressValue[i].layer[j].layerData[k][2] === '#00000000')
+                            // {
+                            //     compressValue[i].layer[j].layerData[k][2] = '#';
+                            // }
+                            let color = compressValue[i].layer[j].layerData[k][2];
+                            if (color === data.emptyColor)
                             {
-                                compressValue[i].layer[j].layerData[k][2] = '#';
+                                compressValue[i].layer[j].layerData[k] = 0;
                             }
+                            else
+                            {
+                                compressValue[i].layer[j].layerData[k] = color;
+
+                            }
+                            // compressValue[i].layer[j].layerData[k] = [];
+                            // compressValue[i].layer[j].layerData[k][0] = color === '#00000000' ? '' : color;
                         }
                     }
                 }
@@ -4560,7 +4572,7 @@ export default defineComponent({
                 console.log(fileData);
                 
                 fileData.data = methods.compressDrawRecordData();
-                fileData.frameImg = data.drawRecord[0].currentFrameImg;
+                fileData.frameImg = '@';
                 const d = JSON.stringify(fileData);
                 const blob = new Blob([d], {type: ''});
                 FileSaver.saveAs(blob, `${filename}.json`);
@@ -5577,7 +5589,8 @@ export default defineComponent({
                         {
                             data.worker.postMessage({
                                 type:4,
-                                variables:JSON.parse(JSON.stringify(projectData.data))
+                                variables:JSON.parse(JSON.stringify(projectData.data)),
+                                canvasWidth:data.canvasWidth
                             });
                             data.worker.onmessage = (event) => 
                             {
