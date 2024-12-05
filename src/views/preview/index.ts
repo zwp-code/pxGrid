@@ -1,7 +1,7 @@
 import { reactive, toRefs, onMounted, defineComponent, getCurrentInstance, computed, watch, onDeactivated, onActivated, onBeforeUnmount } from 'vue';
 
 import { useEditSpaceStore } from '@/store';
-import { blobToBase64, copyText, downloadFile, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getRequestUrl, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { blobToBase64, copyText, downloadFile, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getProjectTemplate, getRequestUrl, hexToRgba, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -18,19 +18,7 @@ export default defineComponent({
         const { proxy }:any = getCurrentInstance();
         const editSpaceStore = useEditSpaceStore();
         let data = reactive({
-            projectData:{
-                projectName:'',
-                projectId:'',
-                updateAt:'',
-                createAt:'',
-                desc:'',
-                width:'',
-                height:'',
-                frameImg:'',
-                data:null,
-                isTop:0,
-                tip:''
-            } as any,
+            projectData:getProjectTemplate(),
             emptyColor:'#00000000',
             bgCanvas:null as any,
             canvas:null as any,
@@ -702,19 +690,7 @@ export default defineComponent({
                 data.selectType = 'select';
                 data.currentDrawShape = 'rect';
                 data.currentDrawTransform = 'hReverse';
-                data.projectData = {
-                    projectName:'',
-                    projectId:'',
-                    updateAt:'',
-                    createAt:'',
-                    desc:'',
-                    width:'',
-                    height:'',
-                    frameImg:'',
-                    data:null,
-                    isTop:0,
-                    tip:''
-                };
+                data.projectData = getProjectTemplate();
                 data.pinDouMode = false;
                 data.pinDouDrawMode = false;
                 data.selectLayerList = [data.currentLayerIndex];

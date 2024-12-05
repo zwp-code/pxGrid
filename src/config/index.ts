@@ -21,7 +21,20 @@ const config =
                 '#871f78ff'
             ]
         }
-    ]
+    ],
+    projectTemplate:{
+        projectName:'',
+        projectId:'',
+        updateAt:'',
+        createAt:'',
+        desc:'',
+        width:0,
+        height:0,
+        frameImg:'',
+        data:null,
+        isTop:0,
+        tip:''
+    }
 };
 
 export default config;

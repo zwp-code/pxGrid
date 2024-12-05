@@ -6,7 +6,7 @@ import ExportDialog from '@/components/dialog/ExportDialog.vue';
 import LayerMenu from '@/components/menu/LayerMenu.vue';
 import LinmoModeDialog from '@/components/dialog/LinmoModeDialog.vue';
 import { useEditSpaceStore } from '@/store';
-import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getScaleValue, hexToRgba, isEven, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
+import { blobToBase64, copyText, downloadIamgeByUrl, downloadImage, downloadImageByDataURL, exportImageForZip, extractRgbaValues, formatTime, generateIamge, getFontColor, getOrderedRectangleCoordinates, getProjectTemplate, getScaleValue, hexToRgba, isEven, isHexColor, measureTextHeight, nearestNeighborColorZoom, nearestNeighborCoordZoom, removeNullArray, removeNullFrom2DArray, rgbaToHex, unique2DArray } from '@/utils/utils';
 import axios from 'axios';
 import { uuid } from 'vue-uuid';
 import Worker from '@/utils/worker.js?worker';
@@ -37,19 +37,7 @@ export default defineComponent({
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const pica = require('pica')();
         let data = reactive({
-            projectData:{
-                projectName:'',
-                projectId:'',
-                updateAt:'',
-                createAt:'',
-                desc:'',
-                width:'',
-                height:'',
-                frameImg:'',
-                data:null,
-                isTop:0,
-                tip:''
-            } as any,
+            projectData:getProjectTemplate(),
             emptyColor:'#00000000',
             baseCanvas:null as any,
             bgCanvas:null as any,
@@ -696,25 +684,25 @@ export default defineComponent({
             {
                 if (data.isShowGridLine)
                 {
-                    data.ctx2.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
-                    data.ctx2.globalAlpha = 0.5;
-                    data.ctx2.lineWidth = 1;
-                    data.ctx2.setLineDash([]);
+                    data.ctx1.strokeStyle = editSpaceStore.themeValue ? 'white' : 'black';
+                    // data.ctx1.globalAlpha = 0.5;
+                    data.ctx1.lineWidth = 1;
+                    data.ctx1.setLineDash([]);
                     for (let i = 0; i <= data.canvasHeight; i++)
                     {
                         // 绘制水平网格线
-                        data.ctx2.beginPath();
-                        data.ctx2.moveTo(0, i * data.scale);
-                        data.ctx2.lineTo(data.canvasWidth * data.scale, i * data.scale);
-                        data.ctx2.stroke();
+                        data.ctx1.beginPath();
+                        data.ctx1.moveTo(0, i * data.scale);
+                        data.ctx1.lineTo(data.canvasWidth * data.scale, i * data.scale);
+                        data.ctx1.stroke();
                     }
                     for (let j = 0; j <= data.canvasWidth; j++) 
                     {
                         // 绘制垂直网格线
-                        data.ctx2.beginPath();
-                        data.ctx2.moveTo(j * data.scale, 0);
-                        data.ctx2.lineTo(j * data.scale, data.canvasHeight * data.scale);
-                        data.ctx2.stroke();
+                        data.ctx1.beginPath();
+                        data.ctx1.moveTo(j * data.scale, 0);
+                        data.ctx1.lineTo(j * data.scale, data.canvasHeight * data.scale);
+                        data.ctx1.stroke();
                     }
                 }
             },
@@ -1620,6 +1608,15 @@ export default defineComponent({
                                     {
                                         proxy.$refs.ReplaceColorDialog.handleUpdate(data.brushColor);
                                     }
+                                    if (data.pinDouDrawMode)
+                                    {
+                                        let obj = {
+                                            color:data.brushColor,
+                                            col,
+                                            row
+                                        };
+                                        proxy.$refs.PindouDialog.selectedObj = obj;
+                                    }
                                     break;
                                 }
                             }
@@ -1830,6 +1827,7 @@ export default defineComponent({
             {
                 // let replaceColor = methods.handleTransformColorAsHex(value.originObj.color);
                 // let newColor = methods.handleTransformColorAsHex(value.replaceObj.color);
+                if (data.pinDouDrawMode) return methods.handleConfirmReplaceColor(value, callback);
                 let newColor = rgbaToHex(hexToRgba(value.replaceObj.color));
                 let arr = data.pinDouData.variables;
                 if (value.type === 1)
@@ -2116,7 +2114,6 @@ export default defineComponent({
                     data.gridInfo = `[${col}, ${row}]`;
                     if (data.isDrawing)
                     {
-                        
                         let gridX = (col * data.scale) + data.canvasBeginPos.x;
                         let gridY = (row * data.scale) + data.canvasBeginPos.y;
                         console.log(col, row, gridX, gridY);
@@ -3549,6 +3546,7 @@ export default defineComponent({
                         if (isSelfRender) methods.reDrawSelectData(beginPos);
                     }
                 }
+                methods.handleDrawGridLine();
                 // methods.handleDrawReferenceLine();
                 // methods.reDrawSelectData(beginPos);
                 if (isRenderFrameImg)
@@ -5459,19 +5457,7 @@ export default defineComponent({
                 data.selectType = 'select';
                 data.currentDrawShape = 'rect';
                 data.currentDrawTransform = 'hReverse';
-                data.projectData = {
-                    projectName:'',
-                    projectId:'',
-                    updateAt:'',
-                    createAt:'',
-                    desc:'',
-                    width:'',
-                    height:'',
-                    frameImg:'',
-                    data:null,
-                    isTop:0,
-                    tip:''
-                };
+                data.projectData = getProjectTemplate();
                 data.pinDouMode = false;
                 data.pinDouDrawMode = false;
                 data.selectLayerList = [data.currentLayerIndex];
@@ -5499,6 +5485,7 @@ export default defineComponent({
                     display:'none'
                 };
                 data.pindouScaleValue = 0;
+                data.isSpace = false;
                 methods.handleCancelSelect();
             },
             handleInitEmptyLayer ()
@@ -5679,7 +5666,9 @@ export default defineComponent({
 
         watch(() => data.isShowGridLine, (newValue, oldValue) => 
         {
-            methods.drawPixelArea();
+            // methods.drawPixelArea();
+            methods.reDraw(false);
+            // methods.handleDrawGridLine();
         });
 
         watch(() => data.pinDouMode, (newValue, oldValue) => 

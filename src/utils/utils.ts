@@ -2,6 +2,7 @@ import message from '@/utils/message';
 import JSZip from 'jszip';
 import FileSaver from 'file-saver';
 import { addListener, launch, stop, setDetectDelay } from 'devtools-detector';
+import config from '@/config';
 /**
  * 转16进制
  * @param obj
@@ -551,4 +552,9 @@ export function getScaleValue (element)
 export function isEven (num) 
 {
     return num % 2 === 0;
+}
+
+export function getProjectTemplate ()
+{
+    return JSON.parse(JSON.stringify(config.projectTemplate));
 }

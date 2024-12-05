@@ -38,9 +38,15 @@
             <div>
                 <div class="item flex-start" v-if="selectedObj">
                     <p>当前选择的颜色</p>
-                    <div class="flex-center color-item" 
+                    <div class="flex-center color-item"
+                    v-if="selectedObj.name"
                     :style="{backgroundColor:selectedObj.color, color:getFontColor(selectedObj.color)}">
-                        {{selectedObj.name}}
+                        {{ selectedObj.name }}
+                    </div>
+                    <div class="flex-center color-item"
+                    style="width:40px; height:30px"
+                    v-else
+                    :style="{backgroundColor:selectedObj.color, color:getFontColor(selectedObj.color)}">
                     </div>
                 </div>
                 <div class="item flex-start" style="gap:15px" v-if="selectedObj || isDrawMode">
@@ -74,16 +80,22 @@
                             </div>
                         </template>
                     </el-select-v2>
-                    <div class="flex-center color-item" v-if="replaceObj" style="width:40px; height:30px"
+                    <div class="flex-center color-item pointer" v-if="replaceObj" style="width:40px; height:30px"
+                    @click="copyText('#' + replaceObj.color)"
                     :style="{backgroundColor:'#' + replaceObj.color}">
                     </div>
                 </div>
-                <div v-if="selectedObj">
+                <div v-if="selectedObj && !isDrawMode">
                     <el-checkbox v-model="checked1" label="单独像素" @change="handleChange($evnet, 1)"/>
                     <el-checkbox v-model="checked2" label="所有像素" @change="handleChange($evnet, 2)"/>
                     <el-checkbox v-model="isHighlight" label="高亮显示" @change="handleHighLight"/>
                 </div>
+                <div v-if="selectedObj && isDrawMode">
+                    <el-checkbox v-model="checked1" label="当前图层" @change="handleChange($evnet, 1)"/>
+                    <el-checkbox v-model="checked2" label="所有图层" @change="handleChange($evnet, 2)"/>
+                </div>
             </div>
+            <el-tag type="info" v-if="isDrawMode">可通过吸管工具选取颜色进行批量替换喔</el-tag>
             <div class="item" v-if="!isDrawMode">
                 <el-collapse accordion>
                     <el-collapse-item name="1">
@@ -108,8 +120,8 @@
             
         </div>
         <template #footer>
-            <span class="dialog-footer" v-if="!isDrawMode">
-                <el-button type="success" @click="handleExport" :disabled="loading"
+            <span class="dialog-footer">
+                <el-button type="success" @click="handleExport" :disabled="loading" v-if="!isDrawMode"
                 >导出拼豆图</el-button>
                 <el-button type="primary" @click="handleReplace" :loading="loading" v-if="selectedObj"
                 >替换颜色</el-button>
@@ -126,7 +138,7 @@
 import { useEditSpaceStore } from '@/store';
 import { ref, reactive, toRefs, defineComponent, onMounted, getCurrentInstance } from 'vue';
 import pindouMap from '@/config/pindou'; 
-import { getFontColor } from '@/utils/utils'; 
+import { getFontColor, copyText } from '@/utils/utils'; 
 import CustomPindouDialog from '@/components/dialog/CustomPindouDialog.vue';
 export default defineComponent({
     name: 'PindouDialog',
@@ -247,6 +259,11 @@ export default defineComponent({
                 // 替换颜色
                 if (!data.replaceObj) return proxy.$message.warning('替换颜色不能为空');
                 data.loading = true;
+                if (data.isDrawMode)
+                {
+                    context.emit('replace', { type:data.type, replaceColor:data.selectedObj.color, newColor:'#' + data.replaceObj.color}, () => data.loading = false);
+                    return;
+                }
                 context.emit('replace', { type:data.type, replaceObj:data.replaceObj, originObj:data.selectedObj }, () => data.loading = false);
             },
             handleChangeBrand (e)
@@ -297,7 +314,8 @@ export default defineComponent({
         return {
             ...toRefs(data),
             ...methods,
-            getFontColor
+            getFontColor,
+            copyText
         };
     }
 });

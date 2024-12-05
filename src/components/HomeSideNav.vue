@@ -26,12 +26,12 @@
             <el-icon v-else><DArrowLeft /></el-icon>
         </div>
         <div class="static-santa-claus" v-show="!isCollapse && checkDate('圣诞')">
-            <lottie-player src="./lottie/圣诞老人2.json"  background="transparent"  speed="1"  style="width: 100px; height: 100px;" loop autoplay></lottie-player>
+            <lottie-player src="/lottie/圣诞老人2.json"  background="transparent"  speed="1"  style="width: 100px; height: 100px;" loop autoplay></lottie-player>
         </div>
     </el-menu>
     <teleport to="body">
         <div class="move-santa-claus" v-if="checkDate('圣诞')">
-            <lottie-player src="./lottie/圣诞老人1.json"  background="transparent"  speed="1"  style="width: 150px; height: 150px;" loop autoplay></lottie-player>
+            <lottie-player src="/lottie/圣诞老人1.json"  background="transparent"  speed="1"  style="width: 150px; height: 150px;" loop autoplay></lottie-player>
         </div>
     </teleport>
 </template>

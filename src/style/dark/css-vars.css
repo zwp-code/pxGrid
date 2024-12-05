@@ -39,6 +39,7 @@ html.dark {
     --el-menu-hover-bg-color:#1f1b1b;
 
     --icon-svg-fill:#ffffff;
+    --el-shadow-canvas:#0e0e0e;
 }
 
 html.light {
@@ -80,6 +81,7 @@ html.light {
     --el-menu-hover-bg-color:#e1e1e1;
 
     --icon-svg-fill:#000000;
+    --el-shadow-canvas:#979797;
 }
 
 html {
@@ -121,4 +123,5 @@ html {
     --el-menu-hover-bg-color:#e1e1e1;
 
     --icon-svg-fill:#000000;
+    --el-shadow-canvas:#979797;
 }
