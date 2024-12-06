@@ -126,7 +126,7 @@ export default defineComponent({
                 // }
                 data.locale = zhCn;
                 // editSpaceStore.lang = localStorage.getItem('px-lang') || language.split('-')[0] || 'zh';
-                editSpaceStore.lang = localStorage.getItem('px-lang') || language;
+                editSpaceStore.lang = language;
                 localStorage.setItem('px-lang', editSpaceStore.lang);
                 
             },

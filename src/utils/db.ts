@@ -25,6 +25,54 @@ const $DB = {
             });
         });
     },
+    // 分页查询
+    findDBByPage (id, tableName = 'pixelGrid')
+    {
+        return new Promise((resolve, reject) => 
+        {
+            $zdb.then((res) => 
+            {
+                res.queryPage_by_cursor_index({
+                    tableName,
+                    indexName:'id',
+                    indexValue:id,
+                    success: async (res1) => 
+                    {
+                        resolve(res1);
+                    }
+                });
+            }, 
+            (err) => 
+            {
+                reject(err);
+                console.error('读取数据失败' + err.message);
+            });
+        });
+    },
+    // 模糊搜索
+    fuzzySerachDB (id, tableName = 'pixelGrid')
+    {
+        return new Promise((resolve, reject) => 
+        {
+            $zdb.then((res) => 
+            {
+                res.query_by_cursor_index({
+                    tableName,
+                    indexName:'id',
+                    indexValue:id,
+                    success: async (res1) => 
+                    {
+                        resolve(res1);
+                    }
+                });
+            }, 
+            (err) => 
+            {
+                reject(err);
+                console.error('读取数据失败' + err.message);
+            });
+        });
+    },
     findAllDB (tableName = 'pixelGrid')
     {
         return new Promise((resolve, reject) => 
@@ -81,14 +129,27 @@ const $DB = {
         {
             $zdb.then((res) => 
             {
-                res.delete_by_index({
+                // res.delete_by_index({
+                //     tableName,
+                //     indexName:'id',
+                //     indexValue:key,
+                //     success:() => 
+                //     {
+                //         console.log('删除成功');
+                //         resolve(true);
+                //     }
+                // });
+                res.delete_by_primaryKey({
                     tableName,
-                    indexName:'id',
-                    indexValue:key,
-                    success:() => 
+                    target:key,
+                    success:(res) => 
                     {
                         console.log('删除成功');
                         resolve(true);
+                    },
+                    error:(err) => 
+                    {
+                        reject(err);
                     }
                 });
             },
@@ -107,16 +168,31 @@ const $DB = {
         {
             $zdb.then((res) => 
             {
-                res.update({
+                // res.update({
+                //     tableName,
+                //     condition:(item) => item.id === valueData.id,
+                //     handle: (r) => 
+                //     {
+                //         r.data = valueData.data; 
+                //     },
+                //     success:(res) => 
+                //     {
+                //         resolve(true);
+                //     }
+                // });
+                // 根据主键修改
+                res.update_by_primaryKey({
                     tableName,
-                    condition:(item) => item.id === valueData.id,
+                    target:valueData.id,
+                    // condition:(item) => item.id === valueData.id,
                     handle: (r) => 
                     {
                         r.data = valueData.data; 
                     },
                     success:(res) => 
                     {
-                        resolve(true);
+                        if (res) resolve(true);
+                        reject(new Error('修改数据不存在'));
                     }
                 });
             },

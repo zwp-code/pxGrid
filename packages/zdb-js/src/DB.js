@@ -50,13 +50,14 @@ class DB
 
       request.onsuccess = e => {
         this.db = e.target.result;
+        // console.log(this.__create_transaction('pixelGrid', 'readwrite').getIndex('id'));
         success(this.db);
         this._dep_.notify();
       };
 
       request.onupgradeneeded = e => {
         this.idb = e.target.result;
-
+        // console.log(this.idb.getObjectStore('pixelGrid'));
         for (let i = 0; i < this.table.length; i++) {
           this.__create_table(this.idb, this.table[i]);
         }
@@ -161,6 +162,83 @@ class DB
       this.__action(handler);
     }
 
+    // 分页+游标
+    queryPage_by_cursor({ tableName, condition, page, pageSize, success = () => {} }) 
+    {
+      if (typeof success !== 'function') {
+        logError('query方法中success必须是一个Function类型');
+        return;
+      }
+
+      if (typeof condition !== 'function') {
+        logError('in query,condition is required,and type is function');
+        return;
+      }
+      const handler = () => 
+      {
+        let res = [];
+        let counter = 0;
+        let cursor;
+
+        this.__create_transaction(
+          tableName,
+          'readonly'
+        ).openCursor().onsuccess = (e) =>
+        {
+          cursor = e.target.result;
+          if (cursor) 
+          {
+            const currentValue = cursor.value;
+            if (condition(currentValue))
+            {
+              if (counter >= pageSize * (page - 1) && counter < pageSize * page) 
+              {
+                res.push(currentValue);
+              }
+              counter++;
+              if (counter < pageSize)
+              {
+                cursor.continue();
+              }
+              else
+              {
+                cursor = null;
+                success(res);
+              }
+            }
+            else
+            {
+              if (counter >= pageSize * (page - 1) && counter < pageSize * page) 
+              {
+                res.push(cursor.value);
+              }
+              counter++;
+              if (counter < pageSize)
+              {
+                cursor.continue();
+              }
+              else
+              {
+                cursor = null;
+                success(res);
+              }
+            }
+          } 
+          else 
+          {
+            success(res);
+          }
+        }
+          // this.__cursor_success(e, {
+          //   condition,
+          //   handler: ({ currentValue }) => res.push(currentValue),
+          //   over: () => success(res)
+          // });
+      };
+
+      this.__action(handler);
+    }
+
     /**
      * @method 增加数据
      * @param {Object}
@@ -257,8 +335,8 @@ class DB
         const request = this.__create_transaction(tableName, 'readwrite').delete(
           target
         );
-        request.onsuccess = () => success();
-        request.onerror = () => error();
+        request.onsuccess = (e) => success(e);
+        request.onerror = (e) => error(e);
       });
     }
 
@@ -292,7 +370,8 @@ class DB
           else
           {
             // 不存在
-            store.add([]);
+            // store.add([]);
+            success(null);
           }
           success(currentValue);
         };
@@ -490,14 +569,35 @@ class DB
               this.__create_index(store, indexItem);
             }
         }
+        // else
+        // {
+        //   const objectStore = this.__create_transaction(tableName, 'readwrite');
+        //   for (let indexItem of indexs) {
+        //     if (!objectStore.getIndex(indexItem.key))
+        //     {
+        //       // 新建索引
+        //       this.__create_index(objectStore, indexItem);
+        //     }
+        //   }
+
+        // }
     }
 
     /**
      * 创建索引
      * @option<Object> unique是否是唯一值
      * */
-    __create_index(store, { key, option }) {
-        store.createIndex(key, key, option);
+    __create_index(store, { key, option, value }) {
+        console.log('创建索引');
+        if (key === 'topTimeIndex')
+        {
+          // 创建复合索引
+          store.createIndex(key, value, option);
+        }
+        else
+        {
+          store.createIndex(key, key, option);
+        }
     }
 
     /**
