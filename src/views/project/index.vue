@@ -6,20 +6,25 @@
         element-loading-background="#00000000">
             <div class="flex-between flex-warp" style="padding:20px 20px 10px;row-gap: 10px;">
                 <h2>{{$t('message.mineProject')}}</h2>
-                <div class="flex-end" style="gap:10px">
-                    <el-input v-model="searchValue" placeholder="请搜索项目" @keyup.enter="handleSearch"></el-input>
-                    <el-button type="primary"  @click="handleImportProject">{{ $t('message.importProject') }}</el-button>
-                    <el-button type="primary"  @click="NewProjectVisible=true;editProjectInfo=null" style="margin-left:0">{{ $t('message.newProject') }}</el-button>
+                <div class="flex-start flex-warp" style="gap:10px;">
+                    <el-input v-model="searchValue" :placeholder="$t('message.pleaseSearchProject')" @keyup.enter="handleSearch" style="max-width:150px"></el-input>
+                    <el-button type="primary" @click="handleReset">{{ $t('message.reset') }}</el-button>
+                    <el-button type="primary" @click="handleBatchExportProject" style="margin-left:0;">{{ $t('message.batchExport') }}</el-button>
+                    <el-button type="primary"  @click="UploadFileVisible=true;" style="margin-left:0;">{{ $t('message.importProject') }}</el-button>
+                    <el-button type="primary"  @click="NewProjectVisible=true;editProjectInfo=null" style="margin-left:0;">{{ $t('message.newProject') }}</el-button>
                 </div>
             </div>
             <div class="full-layout scrollbar scrollAuto grid-box"
             v-if="(editSpaceStore.projectList.length || searchData.length) && !isloading">
-                <div v-for="item in searchData.length ? searchData : editSpaceStore.projectList" :key="item.id" class="project-item">
+                <div v-for="item in searchData.length ? searchData : editSpaceStore.projectList"
+                :class="{ 'active': selectedProject.has(item.id) }"
+                @click="handleSelectProject(item.data)"
+                :key="item.id" class="project-item">
                     <div class="frameImg flex-center">
                         <img :src="require('@/assets/grid.png')" v-if="item.data.frameImg===''" class="emptyImg"/>
                         <img :src="getFrameImg(item.data)" v-else class="previewImg"/>
                         <!-- <img :src="require('@/assets/top.png')" class="top" v-if="item.data.isTop"/> -->
-                        <el-tag type="danger" effect="dark" v-if="item.data.isTop" class="top">置顶</el-tag>
+                        <el-tag type="danger" effect="dark" v-if="item.data.isTop" class="top">{{$t('message.top')}}</el-tag>
                         <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
                         <el-tag type="primary" effect="dark" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
                     </div>
@@ -31,6 +36,7 @@
                                 type="primary" 
                                 :icon="ArrowDownBold"
                                 size="small"
+                                @click.stop
                                 style="margin-left:5px"/>
                                 <template #dropdown>
                                     <el-dropdown-menu>
@@ -55,7 +61,7 @@
                 </div>
             </div>
             <div 
-            v-else-if="!isloading && (!editSpaceStore.projectList.length || !searchData.length)" 
+            v-else-if="!isloading && (!searchData.length || !editSpaceStore.projectList.length)" 
             class="full-layout flex-center scrollbar scrollAuto">
                 <el-empty
                 :image="require('@/assets/empty.png')"
@@ -70,6 +76,12 @@
             @save="handleOpenProject"
             @close="NewProjectVisible=false">
             </NewProjectDialog>
+            <UploadFileDialog 
+            v-if="UploadFileVisible" 
+            :visible="UploadFileVisible"
+            @reload="handleImportProject"
+            @close="UploadFileVisible=false">
+            </UploadFileDialog>
         </div>
     </div>
 </template>

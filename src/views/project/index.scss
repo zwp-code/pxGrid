@@ -10,6 +10,7 @@
     // max-width: 250px;
     min-height: 250px;
     max-height: 250px;
+    cursor: pointer;
 
     .frameImg {
         position: relative;
@@ -59,6 +60,11 @@
         }
     }
 }
+
+.active {
+    border: 2px solid;
+}
+
 
 :deep(.el-divider__text) {
     font-size: 12px;

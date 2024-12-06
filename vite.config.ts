@@ -87,7 +87,9 @@ export default defineConfig(({ command, mode }) =>
             port: 8088,
             cors: true,
             open: true,
-            hmr: true
+            hmr: {
+                overlay: false
+            }
             // https: {
             //     // 主要是下面两行的配置文件，不要忘记引入 fs 和 path 两个对象
             //     cert: fs.readFileSync(path.join(__dirname, 'src/ssl/cert.crt')),

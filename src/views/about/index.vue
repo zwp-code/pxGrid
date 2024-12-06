@@ -33,7 +33,7 @@
 
                 <h2 class="flex-start" style="gap:10px"># {{$t('message.donate')}}
                     ·
-                    <el-link type="success" :underline="false" style="font-size:24px;font-weight:400" @click="editSpaceStore.donateVisible=true">我要赞助</el-link>
+                    <el-link type="success" :underline="false" style="font-size:24px;font-weight:400" @click="editSpaceStore.donateVisible=true">{{$t('message.iwantDonate')}}</el-link>
                 </h2>
                 <div class="flex-warp flex-start thanks-box">
                     <div v-for="item in donates" :key="item.id">

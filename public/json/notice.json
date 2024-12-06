@@ -1,16 +1,26 @@
 [
     {
-        "id":"1039934554001",
-        "title":"2024/12/05 更新",
-        "content":"1.新增拼豆绘画模式批量替换颜色\n2.优化网格显示\n3.优化项目文件体积大小",
+        "id":"1039934554002",
+        "title":"2024/12/06 更新",
+        "content":"1.新增项目的批量导出\n2.新增项目的批量导入",
         "isForceUpdate":"0"
     },
-    {},
+    {
+        "id":"1039934554002",
+        "title":"2024/12/06 UPDATE",
+        "content":"1.Batch export of new projects \n2.Batch import of new projects",
+        "isForceUpdate":"0"
+    },
     {
         "id":"client001",
         "title":"公告",
         "content":"客户端上线啦！\n客户端是免费使用的喔，如遇到收费的情况请勿相信；如在使用过程中遇到问题，请及时联系作者。\n<span style='color:green'>作者QQ：2152456816（Java）</span>",
         "isForceUpdate":"0"
     },
-    {}
+    {
+        "id":"client001",
+        "title":"NOTICE",
+        "content":"The client is online! \nThe client is free to use, please do not believe it if there is a charging situation; If you encounter any problems during use, please contact the author promptly.\n<span style='color:green'>Author Email：zwpyyds007@gmail.com/span>",
+        "isForceUpdate":"0"
+    }
 ]

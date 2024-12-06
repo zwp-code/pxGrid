@@ -43,7 +43,8 @@ export default defineComponent({
     setup (props, context)
     {
         const { proxy }:any = getCurrentInstance();
-        const language = (navigator.language || 'en').toLocaleLowerCase();
+        // const language = (navigator.language || 'en').toLocaleLowerCase();
+        const language = 'zh';
         const editSpaceStore = useEditSpaceStore();
         let data = reactive({
             locale:zhCn,
@@ -111,19 +112,21 @@ export default defineComponent({
             },
             changeLanguage ()
             {
-                if (localStorage.getItem('px-lang'))
-                {
-                    data.locale = localStorage.getItem('px-lang') === 'zh' ? zhCn : en;
-                }
-                else if (language.split('-')[0])
-                {
-                    data.locale = language.split('-')[0] === 'zh' ? zhCn : en;
-                }
-                else 
-                {
-                    data.locale = zhCn;
-                }
-                editSpaceStore.lang = localStorage.getItem('px-lang') || language.split('-')[0] || 'zh';
+                // if (localStorage.getItem('px-lang'))
+                // {
+                //     data.locale = localStorage.getItem('px-lang') === 'zh' ? zhCn : en;
+                // }
+                // else if (language.split('-')[0])
+                // {
+                //     data.locale = language.split('-')[0] === 'zh' ? zhCn : en;
+                // }
+                // else 
+                // {
+                //     data.locale = zhCn;
+                // }
+                data.locale = zhCn;
+                // editSpaceStore.lang = localStorage.getItem('px-lang') || language.split('-')[0] || 'zh';
+                editSpaceStore.lang = localStorage.getItem('px-lang') || language;
                 localStorage.setItem('px-lang', editSpaceStore.lang);
                 
             },

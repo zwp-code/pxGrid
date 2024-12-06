@@ -37,7 +37,13 @@ export default {
         'newFailed':'新建失败',
         'pindouShop':'拼 豆',
         'feedback':'反 馈',
-        'preview':'预 览'
+        'preview':'预 览',
+        'reset':'重 置',
+        'batchExport': '批量导出',
+        'pleaseSearchProject':'请搜索项目',
+        'iwantDonate':'我要赞助',
+        'todayPv':'今日浏览量',
+        'todayUv':'今日访客量'
 
     }
 };

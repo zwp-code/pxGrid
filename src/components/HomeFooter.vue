@@ -1,12 +1,12 @@
 <template>
     <div class="full-w home-footer">
         <div class="flex-center" v-if="tongjiInfo">
-            <div>今日浏览量：<span style="color:#e16363">{{tongjiInfo.pv}}次</span> </div>
-            <div>今日访客量：<span style="color:#48a53e">{{tongjiInfo.uv}}人</span> </div>
+            <div>{{$t('message.todayPv')}}：<span style="color:#e16363">{{tongjiInfo.pv}}{{ $utils.cache.lang.get() === 'zh' ? '次':''}}</span> </div>
+            <div>{{$t('message.todayUv')}}：<span style="color:#48a53e">{{tongjiInfo.uv}}{{ $utils.cache.lang.get() === 'zh' ? '人':''}}</span> </div>
         </div>
         <template v-else>
-            <div v-if="checkIsClientEnv">像素格子 © 2024 BY Java V1.0.0 </div>
-            <div v-else>像素格子 © 2024 BY Java V1.9.0 </div>
+            <div v-if="checkIsClientEnv">{{$t('message.webTitle')}} © 2024 BY Java V1.0.0 </div>
+            <div v-else>{{$t('message.webTitle')}} © 2024 BY Java V2.1.0 </div>
         </template>
     </div>
 </template>

@@ -7,10 +7,13 @@ import { ElMessageBox } from 'element-plus';
 import FileSaver from 'file-saver';
 import { formatTime, getRequestUrl } from '@/utils/utils';
 import { uuid } from 'vue-uuid';
+import UploadFileDialog from '@/components/dialog/UploadFileDialog.vue';
+import JSZip from 'jszip';
 export default defineComponent({
     name:'project',
     components: {
-        NewProjectDialog
+        NewProjectDialog,
+        UploadFileDialog
     },
     props:{},
     emits:[],
@@ -26,7 +29,10 @@ export default defineComponent({
             isloading:true,
             searchValue:'',
             searchData:[] as any,
-            loadingText:'正在加载...'
+            loadingText:'正在加载...',
+            selectedProject:new Map(),
+            UploadFileVisible:false,
+            count:0
         });
 
 
@@ -54,6 +60,62 @@ export default defineComponent({
      
        
         let methods = {
+            handleReset ()
+            {
+                data.selectedProject.clear();
+                data.searchData.length = 0;
+                data.searchValue = '';
+            },
+            handleSelectProject (project)
+            {
+                if (data.selectedProject.has(project.projectId))
+                {
+                    data.selectedProject.delete(project.projectId);
+                }
+                else
+                {
+                    data.selectedProject.set(project.projectId, project);
+                }
+            },
+            handleBatchExportProject ()
+            {
+                // 批量导出选择的项目
+                if (data.selectedProject.size === 0) return proxy.$message.warning('请选择项目后导出');
+                ElMessageBox.prompt('请输入导出的文件名称', '批量导出项目', {
+                    confirmButtonText: '确 认',
+                    cancelButtonText: '取 消'
+                })
+                    .then(async ({ value }) => 
+                    {
+                        // 执行导出操作
+                        const zip:any = new JSZip();
+                        let count = 0;
+                        Array.from(data.selectedProject.keys()).forEach((item) => 
+                        {
+                            let projectName = data.selectedProject.get(item).projectName;
+                            const d = JSON.stringify(data.selectedProject.get(item));
+                            const blob = new Blob([d], {type: ''});
+                            zip.file(`${projectName}.json`, blob, { blob:true });
+                            count++;
+                            if (count >= data.selectedProject.size)
+                            {
+                                zip.generateAsync({ type: 'blob' }).then((content) => 
+                                {
+                                    // 生成二进制流   然后保存文件（如果这个下载不了 也可以将下方这一行换成a标签下载逻辑）
+                                    FileSaver.saveAs(content, `${value}.zip`); // 利用file-saver保存文件  自定义文件名
+                                    proxy.$message.success('导出成功');
+                                });
+                            }
+                        });
+                    })
+                    .catch((err) => 
+                    {
+                        //
+                        console.log(err);
+                        
+                    }); 
+
+            },
             // getProjectData ()
             // {
             //     let projectData = proxy.$utils.cache.project.get();
@@ -70,6 +132,7 @@ export default defineComponent({
                 {
                     return reg.test(item.data.projectName);
                 });
+                if (!data.searchData.length) return proxy.$message.warning('搜索不到该项目');
             },
             async handleOpenProject (project)
             {
@@ -157,7 +220,62 @@ export default defineComponent({
                         //
                     });
             },
-            handleImportProject ()
+            handleImportProject (files)
+            {
+                data.isloading = true;
+                data.loadingText = '正在导入项目';
+                console.log(files);
+                for (let i = 0; i < files.length; i++)
+                {
+                    const reader = new FileReader();
+                    reader.onload = function (e:any) 
+                    {
+                        const jsonData = JSON.parse(e.target.result);
+                        if (!jsonData.projectId) 
+                        {
+                            data.count++;
+                            if (data.count >= files.length)
+                            {
+                                proxy.$message.error(files[i].name + proxy.$t('message.importFailed') + '，请检查项目文件是否完整！');
+                                data.isloading = false;
+                                data.count = 0;
+                            }
+                            return;
+                        }
+                        jsonData.projectId = uuid.v1();
+                        jsonData.createAt = formatTime();
+                        jsonData.updateAt = jsonData.createAt;
+                        jsonData.tip = '新项目';
+                        editSpaceStore.saveProject(jsonData).then((res) => 
+                        {
+                            if (res) 
+                            {
+                                data.count++;
+                                if (data.count >= files.length)
+                                {
+                                    proxy.$message.success(proxy.$t('message.importSucceeded'));
+                                    data.isloading = false;
+                                    data.count = 0;
+                                }
+                            }
+                        }).catch((err) => 
+                        {
+                            console.log(err);
+                            data.count++;
+                            proxy.$message.error(files[i].name + proxy.$t('message.importFailed'));
+                            if (data.count >= files.length)
+                            {
+                                data.isloading = false;
+                                data.count = 0;
+                            }
+                            // data.isloading = false;
+                        });
+                    };
+                    reader.readAsText(files[i].raw);
+                   
+                }
+            },
+            handleImportProject1 ()
             {
                 const input:any = document.createElement('input');
                 input.type = 'file';
