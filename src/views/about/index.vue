@@ -65,7 +65,7 @@ h2 {
 }
 
 .pad-1 {
-    padding: 50px;
+    padding: 30px;
     flex: 1;
 
     .time {

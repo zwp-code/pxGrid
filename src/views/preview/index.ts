@@ -650,12 +650,13 @@ export default defineComponent({
             },
             handleResizeWindowEvent (event)
             {
-                methods.computeScale();
+                // methods.computeScale();
                 const pixelBox = document.querySelector('.pixelBox');
                 data.canvas.width = pixelBox?.clientWidth;
                 data.canvas.height = pixelBox?.clientHeight;
                 data.bgCanvas.width = pixelBox?.clientWidth;
                 data.bgCanvas.height = pixelBox?.clientHeight;
+                methods.computeScale();
                 data.canvasBeginPos.x = ((data.bgCanvas.width / 2) - data.canvasWidth * data.scale / 2);
                 data.canvasBeginPos.y = ((data.bgCanvas.height / 2) - data.canvasHeight * data.scale / 2);
                 data.canvasBeginPos.centerX = data.canvasBeginPos.x + data.scale * data.canvasWidth / 2;

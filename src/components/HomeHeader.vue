@@ -2,20 +2,20 @@
     <div class="full-w home-header" :class="{ 'web-gray': checkDate('公祭日') }">
         <div class="flex-start" style="gap:10px">
             <img :src="require('/logo.png')">
-            <h1>{{ $t('message.webTitle') }}</h1>
+            <h1 class="isShowWebTitle">{{ $t('message.webTitle') }}</h1>
         </div>
         <div class="flex-end">
             <el-tooltip
             content="客户端下载"
             placement="bottom">
-                <el-icon style="margin-right: 25px;" v-if="!checkIsClientEnv()" @click="handleDownloadClient"><Monitor /></el-icon>
+                <el-icon style="margin-right: 20px;" v-if="!checkIsClientEnv()" @click="handleDownloadClient"><Monitor /></el-icon>
             </el-tooltip>
 
             <el-tooltip
             :content="editSpaceStore.themeValue ? '夜间模式' : '白天模式'"
             placement="bottom">
-                <el-icon style="margin-right: 25px;" @click="changeTheme" v-if="editSpaceStore.themeValue"><Moon /></el-icon>
-                <el-icon style="margin-right: 25px;" @click="changeTheme" v-else><Sunny /></el-icon>
+                <el-icon style="margin-right: 20px;" @click="changeTheme" v-if="editSpaceStore.themeValue"><Moon /></el-icon>
+                <el-icon style="margin-right: 20px;" @click="changeTheme" v-else><Sunny /></el-icon>
             </el-tooltip>
 
 
@@ -23,7 +23,7 @@
             effect="dark"
             :content="$t('message.donate')"
             placement="bottom">
-                <el-icon style="margin-right: 25px;" @click="editSpaceStore.donateVisible=true"><ShoppingCart /></el-icon>
+                <el-icon style="margin-right: 20px;" @click="editSpaceStore.donateVisible=true"><ShoppingCart /></el-icon>
             </el-tooltip>
 
                         
@@ -31,7 +31,7 @@
             effect="dark"
             :content="$t('message.fullscreen')"
             placement="bottom">
-                <el-icon style="margin-right: 25px;" @click="ScreenFull"><FullScreen /></el-icon>
+                <el-icon style="margin-right: 20px;" @click="ScreenFull"><FullScreen /></el-icon>
             </el-tooltip>
 
             <el-dropdown trigger="click" @command="handleCommand">
@@ -119,7 +119,7 @@ export default defineComponent({
     z-index: 12;
     background-color: var(--el-bg-color);
     box-shadow: 0px 0px 4px 4px var(--el-shadow-nav);
-    padding: 0 20px;
+    padding: 0 16px;
 
     img {
         width: 32px;

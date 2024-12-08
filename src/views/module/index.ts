@@ -103,6 +103,7 @@ export default defineComponent({
             },
             getData ()
             {
+                data.isloading = true;
                 axios.get(`${getRequestUrl()}json/module${data.currentPage}.json`)
                     .then((res) => 
                     {

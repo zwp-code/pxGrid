@@ -198,6 +198,12 @@
     }
 }
 
+.draw-panel {
+    display: flex;
+    flex: 4;
+    flex-basis: 500px;
+}
+
 .el-main {
     height: auto;
     flex: 4;
