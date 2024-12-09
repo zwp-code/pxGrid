@@ -18,7 +18,7 @@
                 </div>
             </div>
         </template>
-        <div class="content">
+        <div class="content scrollbar">
             <el-tag type="info">颜色仅供参考，以实际为准</el-tag>
             <div class="item flex-start">
                 <p>拼豆品牌</p>
@@ -57,7 +57,7 @@
                     filterable
                     @change="handleChangeColor"
                     :options="pindouColorList" 
-                    placeholder="请搜索" 
+                    placeholder="请搜索色号" 
                     style="width:200px">
                         <!-- <el-option
                             v-for="(item, index) in pindouColorList"

@@ -38,6 +38,7 @@
                             <el-checkbox v-model="isCheckedRatio" label="保持横纵比" @change="handleChangeRatio" />
                         </div>
                     </div>
+                    <el-tag type="info" style="margin-top:10px">目前画布最大支持 72*72 大小喔！</el-tag>
                     <div class="flex-between full-w" style="gap:10px;margin-top:10px">
                         <div v-for="item in canvasTemplate" :key="item.label" class="template-box pointer" 
                         @click="handleSelectTemplate(item)"

@@ -1,11 +1,11 @@
 html.dark {
     /* 自定义深色背景颜色 */
-    --el-color-primary: #0052d9c9;
-    --el-color-success: #00a870c9;
-    --el-color-warning: #ebb105c9;
-    --el-color-danger: #f56c6cc9;
-    --el-color-error: #e34d59c9;
-    --el-color-info: #a6a6a6c9;
+    --el-color-primary: #0052d9;
+    --el-color-success: #00a870;
+    --el-color-warning: #ebb105;
+    --el-color-danger: #f56c6c;
+    --el-color-error: #e34d59;
+    --el-color-info: #a6a6a6;
 
     --el-text-color:#ffffff;
     --el-bg-color:#242424;

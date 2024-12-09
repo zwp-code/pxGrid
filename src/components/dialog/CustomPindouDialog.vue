@@ -7,7 +7,7 @@
     :before-close="handleClose"
     :lock-scroll="false"
     class="z-dialog" center>
-        <div class="content">
+        <div class="content scrollbar">
             <div class="item flex-start">
                 <el-select 
                 v-model="pindouBrand" 

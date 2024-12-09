@@ -1,7 +1,7 @@
 <template>
     <div class="full-w home-header" :class="{ 'web-gray': checkDate('公祭日') }">
         <div class="flex-start" style="gap:10px">
-            <img :src="require('/logo.png')">
+            <img :src="require('/logo.png')" class="pointer" @click="$router.push('/')">
             <h1 class="isShowWebTitle">{{ $t('message.webTitle') }}</h1>
         </div>
         <div class="flex-end">

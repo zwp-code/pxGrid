@@ -40,7 +40,16 @@
             v-if="(list.length || searchData.length) && !isloading">
                 <div v-for="item in searchData.length ? searchData : list" :key="item.id" class="download-item">
                     <div class="frameImg">
-                        <img :src="getFrameImg(item.data.pindouKey)"/>
+                        <!-- <img :src="getFrameImg(item.data.pindouKey)"/> -->
+                        <el-image :src="getFrameImg(item.data.pindouKey)" fit="contain" class="full-layout">
+                            <template #placeholder>
+                                <el-skeleton animated class="full-layout">
+                                    <template #template>
+                                        <el-skeleton-item variant="image" style="height:100%"/>
+                                    </template>
+                                </el-skeleton>
+                            </template>
+                        </el-image>
                         <img :src="require('@/assets/hot.png')" class="top" v-if="item.data.isTop"/>
                         <el-tag type="danger" v-if="item.data.tip!==''" class="size">{{ item.data.tip }}</el-tag>
                     </div>

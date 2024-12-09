@@ -7,7 +7,7 @@
             <div class="flex-between flex-warp" style="padding:20px 20px 10px;row-gap: 10px;">
                 <h2>{{$t('message.mineProject')}}</h2>
                 <div class="flex-start flex-warp" style="gap:10px;">
-                    <el-input v-model="searchValue" :placeholder="$t('message.pleaseSearchProject')" @keyup.enter="handleSearch" style="max-width:150px"></el-input>
+                    <el-input v-model="searchValue" clearable :placeholder="$t('message.pleaseSearchProject')" @keyup.enter="handleSearch" style="max-width:150px"></el-input>
                     <el-button type="primary" @click="handleReset">{{ $t('message.reset') }}</el-button>
                     <el-button type="primary" @click="handleBatchExportProject" style="margin-left:0;">{{ $t('message.batchExport') }}</el-button>
                     <el-button type="primary"  @click="UploadFileVisible=true;" style="margin-left:0;">{{ $t('message.importProject') }}</el-button>
@@ -61,7 +61,7 @@
                         
                     </div>
                 </div>
-                <div class="flex-center full-w" style="padding: 10px;">
+                <div class="flex-center full-w" style="padding: 10px;" v-if="!searchData.length">
                     <el-pagination
                     v-model:current-page="currentPage"
                     :page-size="pageSize"
