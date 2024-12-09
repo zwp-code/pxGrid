@@ -57,7 +57,7 @@
                     filterable
                     @change="handleChangeColor"
                     :options="pindouColorList" 
-                    placeholder="请选择" 
+                    placeholder="请搜索" 
                     style="width:200px">
                         <!-- <el-option
                             v-for="(item, index) in pindouColorList"
@@ -85,14 +85,37 @@
                     :style="{backgroundColor:'#' + replaceObj.color}">
                     </div>
                 </div>
-                <div v-if="selectedObj && !isDrawMode">
+                <div v-if="selectedObj && !isDrawMode" style="gap:15px" class="flex-start">
                     <el-checkbox v-model="checked1" label="单独像素" @change="handleChange($evnet, 1)"/>
                     <el-checkbox v-model="checked2" label="所有像素" @change="handleChange($evnet, 2)"/>
                     <el-checkbox v-model="isHighlight" label="高亮显示" @change="handleHighLight"/>
                 </div>
-                <div v-if="selectedObj && isDrawMode">
+                <div v-if="selectedObj && isDrawMode" style="gap:15px" class="flex-start">
                     <el-checkbox v-model="checked1" label="当前图层" @change="handleChange($evnet, 1)"/>
                     <el-checkbox v-model="checked2" label="所有图层" @change="handleChange($evnet, 2)"/>
+                </div>
+                <div v-if="!isDrawMode" class="flex-column-start item" style="gap:4px">
+                    <div>导出拼豆图纸样式</div>
+                    <div class="flex-start" style="gap:15px">
+                        <el-checkbox v-model="pindouPicOptions.isShowRulers" label="显示标尺"/>
+                        <el-checkbox v-model="pindouPicOptions.isShowGrid" label="显示网格"/>
+                        <div class="flex-start" style="gap:10px;height: 32px;" v-if="pindouPicOptions.isShowRulers">
+                            <el-color-picker v-model="pindouPicOptions.rulersBackgroundColor" show-alpha size="small"/>
+                            <span style="line-height:1;">标尺背景色</span>
+                        </div>
+                        <div class="flex-start" style="gap:10px;height: 32px;" v-if="pindouPicOptions.isShowRulers">
+                            <el-color-picker v-model="pindouPicOptions.rulersColor" show-alpha size="small"/>
+                            <span style="line-height:1;">标尺字体色</span>
+                        </div>
+                    </div>
+                    <div class="flex-start" style="gap:15px">
+                        <el-checkbox v-model="pindouPicOptions.isShowCirclePoint" label="空白显示小圆点" @change="handlePoint($event, 'isShowCirclePoint')"/>
+                        <el-checkbox v-model="pindouPicOptions.isShowRectPoint" label="空白显示小方块"  @change="handlePoint($event, 'isShowRectPoint')"/>
+                        <div class="flex-start" style="gap:10px;height: 32px;">
+                            <el-color-picker v-model="pindouPicOptions.pointColor" size="small"/>
+                            <span style="line-height:1;">显示颜色</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <el-tag type="info" v-if="isDrawMode">可通过吸管工具选取颜色进行批量替换喔</el-tag>
@@ -172,7 +195,16 @@ export default defineComponent({
             loading:false,
             isHighlight:false,
             isDrawMode:false,
-            isHide:false
+            isHide:false,
+            pindouPicOptions:{
+                isShowRulers:true,
+                isShowGrid:false,
+                isShowCirclePoint:true,
+                isShowRectPoint:false,
+                rulersBackgroundColor:'#00000000',
+                pointColor:'#000000',
+                rulersColor:'#000000'
+            }
         });
         
         let methods = {
@@ -185,6 +217,17 @@ export default defineComponent({
                 for (let i = 0; i < 2; i++)
                 {
                     data[`checked${i + 1}`] = false;
+                }
+            },
+            handlePoint (e, type)
+            {
+                if (type === 'isShowCirclePoint' && data.pindouPicOptions[type])
+                {
+                    data.pindouPicOptions.isShowRectPoint = false;
+                }
+                else if (type === 'isShowRectPoint' && data.pindouPicOptions[type])
+                {
+                    data.pindouPicOptions.isShowCirclePoint = false;
                 }
             },
             handleChange (e, type)
@@ -252,7 +295,7 @@ export default defineComponent({
             {
                 // 导出拼豆图
                 data.loading = true;
-                context.emit('export', () => data.loading = false);
+                context.emit('export', () => data.loading = false, { ...data.pindouPicOptions });
             },
             handleReplace ()
             {
@@ -367,6 +410,10 @@ export default defineComponent({
             }
         }
     }
+}
+
+.el-checkbox {
+    margin-right: 0;
 }
 
 </style>

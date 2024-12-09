@@ -14,52 +14,65 @@
                     <el-button type="primary"  @click="NewProjectVisible=true;editProjectInfo=null" style="margin-left:0;">{{ $t('message.newProject') }}</el-button>
                 </div>
             </div>
-            <div class="full-layout scrollbar scrollAuto grid-box"
-            v-if="(editSpaceStore.projectList.length || searchData.length) && !isloading">
-                <div v-for="item in searchData.length ? searchData : editSpaceStore.projectList"
-                :class="{ 'active': selectedProject.has(item.id) }"
-                @click="handleSelectProject(item.data)"
-                :key="item.id" class="project-item">
-                    <div class="frameImg flex-center">
-                        <img :src="require('@/assets/grid.png')" v-if="item.data.frameImg===''" class="emptyImg"/>
-                        <img :src="getFrameImg(item.data)" v-else class="previewImg"/>
-                        <!-- <img :src="require('@/assets/top.png')" class="top" v-if="item.data.isTop"/> -->
-                        <el-tag type="danger" effect="dark" v-if="item.data.isTop" class="top">{{$t('message.top')}}</el-tag>
-                        <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
-                        <el-tag type="primary" effect="dark" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
-                    </div>
-                    <div class="info">
-                        <div class="flex-between" style="padding-bottom: 5px;">
-                            <h4 class="oneline" :title="item.data.projectName">{{item.data.projectName }}</h4>
-                            <el-dropdown trigger="click" size="small">
-                                <el-button 
-                                type="primary" 
-                                :icon="ArrowDownBold"
-                                size="small"
-                                @click.stop
-                                style="margin-left:5px"/>
-                                <template #dropdown>
-                                    <el-dropdown-menu>
-                                        <el-dropdown-item @click="handleOpenProject(item.data)" icon="Open">{{ $t('message.open')}}</el-dropdown-item>
-                                        <el-dropdown-item @click="handleEditProject(item.data)" icon="Edit">{{ $t('message.edit')}}</el-dropdown-item>
-                                        <el-dropdown-item @click="handleTopProject(item.data)" icon="Upload">{{ item.data.isTop > 0 ? $t('message.cancelTop') : $t('message.top')}}</el-dropdown-item>
-                                        <el-dropdown-item @click="handleExportProject(item.data)" :disabled="isExporting" icon="FolderOpened">{{ isExporting ? $t('message.exportLoading') : $t('message.export')}}</el-dropdown-item>
-                                        <el-dropdown-item @click="handleDeleteProject(item.data.projectId)" icon="Delete">{{ $t('message.delete')}}</el-dropdown-item>
-                                    </el-dropdown-menu>
-                                </template>
-                            </el-dropdown>
+            <template v-if="(editSpaceStore.projectList.length || searchData.length) && !isloading">
+                <div class="full-layout scrollbar scrollAuto grid-box"
+                @scroll="handleScroll" ref="scroll">
+                    <div v-for="item in searchData.length ? searchData : getProjectList"
+                    :class="{ 'active': selectedProject.has(item.id) }"
+                    @click="handleSelectProject(item.data)"
+                    :key="item.id" class="project-item">
+                        <div class="frameImg flex-center" @dblclick.stop="handleOpenProject(item.data)">
+                            <img :src="require('@/assets/grid.png')" v-if="item.data.frameImg===''" class="emptyImg"/>
+                            <img :src="getFrameImg(item.data)" v-else class="previewImg"/>
+                            <!-- <img :src="require('@/assets/top.png')" class="top" v-if="item.data.isTop"/> -->
+                            <el-tag type="danger" effect="dark" v-if="item.data.isTop" class="top">{{$t('message.top')}}</el-tag>
+                            <el-tag type="success" class="size">{{item.data.width}}x{{item.data.height}}</el-tag>
+                            <el-tag type="primary" effect="dark" v-if="item.data.tip!==''" class="tip">{{ item.data.tip }}</el-tag>
                         </div>
-                        <el-divider border-style="dashed" content-position="left" style="margin:5px 0;">{{ item.data.updateAt }}</el-divider>
-                        <el-tooltip :content="item.data.desc" effect="light">
-                            <div class="twoline" style="font-size: 14px;display: -webkit-inline-box;">
-                                <!-- {{ item.desc !== '' ? $t(`message.${item.desc}`) : $t(`message.None`) }} -->
-                                {{ item.data.desc }} 
+                        <div class="info">
+                            <div class="flex-between" style="padding-bottom: 5px;">
+                                <h4 class="oneline" :title="item.data.projectName">{{item.data.projectName }}</h4>
+                                <el-dropdown trigger="click" size="small">
+                                    <el-button 
+                                    type="primary" 
+                                    :icon="ArrowDownBold"
+                                    size="small"
+                                    @click.stop
+                                    style="margin-left:5px"/>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="handleOpenProject(item.data)" icon="Open">{{ $t('message.open')}}</el-dropdown-item>
+                                            <el-dropdown-item @click="handleEditProject(item.data)" icon="Edit">{{ $t('message.edit')}}</el-dropdown-item>
+                                            <el-dropdown-item @click="handleTopProject(item.data)" icon="Upload">{{ item.data.isTop > 0 ? $t('message.cancelTop') : $t('message.top')}}</el-dropdown-item>
+                                            <el-dropdown-item @click="handleExportProject(item.data)" :disabled="isExporting" icon="FolderOpened">{{ isExporting ? $t('message.exportLoading') : $t('message.export')}}</el-dropdown-item>
+                                            <el-dropdown-item @click="handleDeleteProject(item.data.projectId)" icon="Delete">{{ $t('message.delete')}}</el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
                             </div>
-                        </el-tooltip>
+                            <el-divider border-style="dashed" content-position="left" style="margin:5px 0;">{{ item.data.updateAt }}</el-divider>
+                            <el-tooltip :content="item.data.desc" effect="light">
+                                <div class="twoline" style="font-size: 14px;display: -webkit-inline-box;">
+                                    <!-- {{ item.desc !== '' ? $t(`message.${item.desc}`) : $t(`message.None`) }} -->
+                                    {{ item.data.desc }} 
+                                </div>
+                            </el-tooltip>
+                        </div>
+                        
                     </div>
-                    
                 </div>
-            </div>
+                <div class="flex-center full-w" style="padding: 10px;">
+                    <el-pagination
+                    v-model:current-page="currentPage"
+                    :page-size="pageSize"
+                    background
+                    layout="total, prev, pager, next"
+                    :total="totalCount"
+                    @current-change="handleCurrentChange"
+                    />
+                </div>
+            </template>
+            
             <div 
             v-else-if="!isloading && (!searchData.length || !editSpaceStore.projectList.length)" 
             class="full-layout flex-center scrollbar scrollAuto">
@@ -69,6 +82,8 @@
                 :image-size="200"
                 />
             </div>
+
+            
             <NewProjectDialog 
             v-if="NewProjectVisible" 
             :visible="NewProjectVisible"

@@ -3277,7 +3277,16 @@ export default defineComponent({
                 if (isAddHistory) methods.handleAddHistory();
             },
 
-            handleExportPindou (callback)
+            handleExportPindou (callback, 
+                { 
+                    isShowGrid, 
+                    isShowRulers, 
+                    isShowCirclePoint,
+                    isShowRectPoint,
+                    rulersBackgroundColor,
+                    pointColor,
+                    rulersColor 
+                })
             {
                 // 导出拼豆图
                 const bigCanvas:any = document.createElement('canvas');
@@ -3288,33 +3297,46 @@ export default defineComponent({
                 const bigCtx:any = bigCanvas.getContext('2d');
                 bigCtx.imageSmoothingEnabled = true;
                 const imageData = data.pinDouData.variables;
+
                 // 先绘制标尺
-                for (let y = 0; y < data.canvasHeight; y++) 
+                if (isShowRulers)
                 {
-                    // 绘制左边
-                    let x1 = ruler / 2;
-                    let y1 = (scale * y) + (scale / 2) * 3 + 5;
-                    let x2 = bigCanvas.width - ruler / 2;
-                    let y2 = y1;
-                    bigCtx.font = 'bold 14px Arial';
-                    bigCtx.textAlign = 'center';
-                    bigCtx.fillStyle = 'red';
-                    bigCtx.fillText((y + 1).toString(), x1, y1);
-                    bigCtx.fillText((y + 1).toString(), x2, y2);
+                    for (let y = 0; y < data.canvasHeight; y++) 
+                    {
+                        // 绘制左右边
+                        bigCtx.fillStyle = rulersBackgroundColor;
+                        bigCtx.fillRect(0, y * scale + ruler, scale, scale);
+                        bigCtx.fillRect(bigCanvas.width - ruler, y * scale + ruler, scale, scale);
+                        let x1 = ruler / 2;
+                        let y1 = (scale * y) + (scale / 2) * 3 + 5;
+                        let x2 = bigCanvas.width - ruler / 2;
+                        let y2 = y1;
+                        bigCtx.font = 'bold 14px Arial';
+                        bigCtx.textAlign = 'center';
+                        bigCtx.fillStyle = rulersColor;
+                        bigCtx.fillText((y + 1).toString(), x1, y1);
+                        bigCtx.fillText((y + 1).toString(), x2, y2);
+                        
+                    }
+                    for (let x = 0; x < data.canvasWidth; x++) 
+                    {
+                        // 绘制上下边
+                        bigCtx.fillStyle = rulersBackgroundColor;
+                        bigCtx.fillRect(x * scale + ruler, 0, scale, scale);
+                        bigCtx.fillRect(x * scale + ruler, bigCanvas.height - ruler, scale, scale);
+                        let x1 = (scale * x) + (scale / 2) * 3;
+                        let y1 = ruler / 2 + 5;
+                        let x2 = x1;
+                        let y2 = bigCanvas.height - ruler / 2;
+                        bigCtx.font = 'bold 14px Arial';
+                        bigCtx.fillStyle = rulersColor;
+                        bigCtx.textAlign = 'center';
+                        bigCtx.fillText((x + 1).toString(), x1, y1);
+                        bigCtx.fillText((x + 1).toString(), x2, y2 + 4);
+                        
+                    }
                 }
-                for (let x = 0; x < data.canvasWidth; x++) 
-                {
-                    // 绘制上下
-                    let x1 = (scale * x) + (scale / 2) * 3;
-                    let y1 = ruler / 2 + 5;
-                    let x2 = x1;
-                    let y2 = bigCanvas.height - ruler / 2;
-                    bigCtx.font = 'bold 14px Arial';
-                    bigCtx.fillStyle = 'green';
-                    bigCtx.textAlign = 'center';
-                    bigCtx.fillText((x + 1).toString(), x1, y1);
-                    bigCtx.fillText((x + 1).toString(), x2, y2);
-                }
+                
                 console.log(imageData);
                 let fillPixel = new Map();
                 console.log(fillPixel);
@@ -3332,10 +3354,17 @@ export default defineComponent({
                                 {
                                     if (!fillPixel.has(`${x}-${y}`))
                                     {
-                                        bigCtx.fillStyle = 'black';
-                                        bigCtx.beginPath();
-                                        bigCtx.arc((x * scale + ruler) + (scale / 2), (y * scale + ruler) + (scale / 2), 3, 0, 2 * Math.PI);
-                                        bigCtx.fill();
+                                        bigCtx.fillStyle = pointColor;
+                                        if (isShowCirclePoint)
+                                        {
+                                            bigCtx.beginPath();
+                                            bigCtx.arc((x * scale + ruler) + (scale / 2), (y * scale + ruler) + (scale / 2), 3, 0, 2 * Math.PI);
+                                            bigCtx.fill();
+                                        }
+                                        else if (isShowRectPoint)
+                                        {
+                                            bigCtx.fillRect((x * scale + ruler) + (scale / 2), (y * scale + ruler) + (scale / 2), 6, 6);
+                                        }
                                     }
                                     
                                 }
@@ -3374,6 +3403,27 @@ export default defineComponent({
                         }
                     }
                 }
+
+                if (isShowGrid)
+                {
+                    for (let y = 0; y <= data.canvasHeight; y++)
+                    {
+                        // 绘制水平网格线
+                        bigCtx.beginPath();
+                        bigCtx.moveTo(0, y * scale + ruler);
+                        bigCtx.lineTo((data.canvasWidth + 2) * scale, y * scale + ruler);
+                        bigCtx.stroke();
+                    }
+                    for (let x = 0; x <= data.canvasWidth; x++) 
+                    {
+                        // 绘制垂直网格线
+                        bigCtx.beginPath();
+                        bigCtx.moveTo(x * scale + ruler, 0);
+                        bigCtx.lineTo(x * scale + ruler,  (data.canvasHeight + 2) * scale);
+                        bigCtx.stroke();
+                    }
+                }
+                
                 console.log(fillPixel);
                 
                 downloadImage(bigCanvas, '拼豆图 - ' + data.projectData.projectName);
@@ -3948,7 +3998,12 @@ export default defineComponent({
                 let pixelBoxHeight = pixelBox?.clientHeight;
                 
                 let scale = Math.floor(pixelBoxHeight) / Math.max(data.canvasWidth - data.pindouScaleValue, data.canvasHeight - data.pindouScaleValue);
-                data.scale = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
+                let scaleValue = isEven(Math.floor(scale)) ? Math.floor(scale) : Math.floor(scale) - 1;
+                // if (scaleValue === data.scale)
+                // {
+                //     scaleValue += data.pindouScaleValue;
+                // }
+                data.scale = scaleValue;
                 console.log(data.scale, data.pindouScaleValue);
                 data.canvas.width = (Number(data.canvasWidth) + data.pindouScaleValue) * data.scale;
                 data.canvas.height = (Number(data.canvasHeight) + data.pindouScaleValue) * data.scale;

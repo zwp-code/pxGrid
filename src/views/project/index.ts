@@ -1,4 +1,4 @@
-import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, onActivated, watch, watchEffect, onDeactivated } from 'vue';
+import { reactive, toRefs, onMounted, onBeforeUnmount, defineComponent, getCurrentInstance, ref, provide, computed, onActivated, watch, watchEffect, onDeactivated, nextTick } from 'vue';
 import NewProjectDialog from '@/components/dialog/NewProjectDialog.vue';
 import { useEditSpaceStore } from '@/store';
 import Worker from '@/utils/worker.js?worker';
@@ -32,7 +32,11 @@ export default defineComponent({
             loadingText:'正在加载...',
             selectedProject:new Map(),
             UploadFileVisible:false,
-            count:0
+            count:0,
+            scrollHeight:0,
+            currentPage:1,
+            pageSize:20,
+            totalCount:0
         });
 
 
@@ -55,11 +59,24 @@ export default defineComponent({
                     //     return require('@/assets/grid.png');
                     // }
                 };
+            }),
+            getProjectList:computed(() => 
+            {
+                return editSpaceStore.projectList.slice((data.pageSize * data.currentPage) - data.pageSize, (data.pageSize * data.currentPage));
             })
         };
      
        
         let methods = {
+            handleCurrentChange (val)
+            {
+                data.currentPage = val;
+            },
+            handleScroll (e)
+            {
+                data.scrollHeight = e.target.scrollTop;
+                
+            },
             handleReset ()
             {
                 data.selectedProject.clear();
@@ -350,6 +367,7 @@ export default defineComponent({
             if (newValue === '1' || newValue === '2')
             {
                 data.isloading = false;
+                data.totalCount = editSpaceStore.projectList.length;
             }
         }, {
             immediate:true
@@ -362,10 +380,14 @@ export default defineComponent({
             
         });
 
-        // onActivated(() => 
-        // {
-        //     methods.getProjectData();
-        // });
+        onActivated(() => 
+        {
+            nextTick(() => 
+            {
+                let scrollbar = proxy.$refs['scroll'];
+                scrollbar.scrollTop = data.scrollHeight;
+            });
+        });
         onDeactivated(() => 
         {
             data.isloading = false;

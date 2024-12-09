@@ -60,7 +60,7 @@
                         <el-button type="primary" :icon="Edit" @click="handleSavePindou('edit')" :disabled="pindouBrand===''"/>
                     </el-tooltip>
 
-                <el-popconfirm title="确定删除?" @confirm="handleDeletePindou">
+                <el-popconfirm title="确定删除该拼豆?" @confirm="handleDeletePindou">
                     <template #reference>
                         <el-button type="primary" :icon="Delete" :disabled="pindouBrand===''"/>
                     </template>
@@ -107,7 +107,7 @@
                     </el-table-column>
                     <el-table-column fixed="right" label="操 作" width="120">
                         <template #default="scope">
-                            <el-popconfirm title="确定删除?" @confirm="handleDelete(scope.row)">
+                            <el-popconfirm title="确定删除该色号?" @confirm="handleDelete(scope.row)">
                                 <template #reference>
                                     <el-button link type="primary" size="small">删 除</el-button>
                                 </template>
@@ -206,7 +206,7 @@ export default defineComponent({
             },
             handleSearch ()
             {
-                if (data.searchValue.trim() === '') return proxy.$message.warning('请输入内容');
+                if (data.searchValue.trim() === '') return proxy.$message.warning('请输入搜索内容');
                 let reg = new RegExp(data.searchValue, 'i');
                 data.searchData = data.list && data.list.data.filter((item) => 
                 {
@@ -391,7 +391,7 @@ export default defineComponent({
             },
             handleBatchDelete ()
             {
-                if (!data.selectRows.length) return;
+                if (!data.selectRows.length) return proxy.$message.warning('请先选择拼豆色号');
                 data.selectRows.forEach((row:any) => 
                 {
                     let index = data.list && data.list.data.findIndex((item) => item.name === row.name);
