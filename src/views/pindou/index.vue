@@ -41,7 +41,7 @@
                 <div v-for="item in searchData.length ? searchData : list" :key="item.id" class="download-item">
                     <div class="frameImg">
                         <!-- <img :src="getFrameImg(item.data.pindouKey)"/> -->
-                        <el-image :src="getFrameImg(item.data.pindouKey)" fit="contain" class="full-layout">
+                        <el-image :src="getFrameImg(item.data.pindouKey)" fit="cover" class="full-layout">
                             <template #placeholder>
                                 <el-skeleton animated class="full-layout">
                                     <template #template>

@@ -175,7 +175,7 @@
                                             <el-dropdown-item @click="selectData.copyList = JSON.parse(JSON.stringify(selectData.selectList))" :disabled="!selectData.selectList.length">复 制 [Alt/⌥ + c]</el-dropdown-item>
                                             <!-- <el-dropdown-item @click="handleSelect('copy')" disabled>粘 贴 [Alt/⌥ + v]</el-dropdown-item> -->
                                             <el-dropdown-item @click="handleRemoveSelect" :disabled="!selectData.selectList.length">删 除 [Alt/⌥ + d]</el-dropdown-item>
-                                            <el-dropdown-item disabled>移 动 [Shift + 鼠标左键]</el-dropdown-item>
+                                            <el-dropdown-item disabled>移 动 [鼠标左键 + Shift]</el-dropdown-item>
                                         </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>

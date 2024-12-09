@@ -68,5 +68,12 @@
         "avatar":"https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo316jnehaa0m6049qv2ku7gnqorg4k54o?imageView2/2/w/540/format/webp|imageMogr2/strip2",
         "link":"https://www.xiaohongshu.com/user/profile/59c53c7851783a2355ef5f58",
         "amount":10
+    },
+    {
+        "id":11,
+        "name":"栗原摇摇子",
+        "avatar":null,
+        "link":null,
+        "amount":20
     }
 ]
